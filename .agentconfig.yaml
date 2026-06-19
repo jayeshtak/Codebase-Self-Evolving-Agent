@@ -1,0 +1,33 @@
+# Codebase Agent — per-project configuration
+# All fields are optional. Missing keys use system defaults.
+
+exclude_paths:
+  - venv/
+  - node_modules/
+  - .git/
+  - __pycache__/
+  - dist/
+  - build/
+  - migrations/
+
+enabled_checks:
+  complexity: true
+  dead_code: true
+  security: true
+  type_hints: true
+  sql_injection: true
+  duplicate: true
+  deep_nesting: true
+  long_function: true
+
+# Skip issues below this severity (low / medium / high)
+severity_threshold: low
+
+# Max issues reported per file (prevents noisy files from flooding the list)
+max_issues_per_file: 20
+
+# Auto-apply fixes only when reviewer confidence >= this value (0.0 – 1.0)
+confidence_threshold: 0.85
+
+# Max issues sent to LLM per auto-fix run (keep low to avoid API rate limits)
+max_auto_fix: 5

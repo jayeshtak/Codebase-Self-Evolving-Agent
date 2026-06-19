@@ -1,0 +1,70 @@
+{
+  "timestamp": "2026-04-23T10:15:34.776843",
+  "total": 5,
+  "passed": 5,
+  "accuracy": 1.0,
+  "avg_confidence": 0.9,
+  "avg_reviewer_iters": 1.4,
+  "cases": [
+    {
+      "name": "case_dead_code",
+      "issue_type": "dead_code",
+      "severity": "low",
+      "status": "passed",
+      "confidence": 0.9,
+      "reviewer_iters": 1,
+      "elapsed": 4.8,
+      "validation_detail": "eval('\"_legacy_parse\" not in fixed_code') = True",
+      "error": "",
+      "explanation": "The fix correctly removes the unused function, preserving existing functionality and introducing no new bugs."
+    },
+    {
+      "name": "case_deep_nesting",
+      "issue_type": "deep_nesting",
+      "severity": "medium",
+      "status": "passed",
+      "confidence": 0.9,
+      "reviewer_iters": 1,
+      "elapsed": 7.23,
+      "validation_detail": "eval('fixed_code.count(\"        if \") < 3') = True",
+      "error": "",
+      "explanation": "The proposed fix effectively addresses the deep nesting issue by using early-return guard clauses, improving readability and reducing complexity while preserving existing functionality."
+    },
+    {
+      "name": "case_long_function",
+      "issue_type": "long_function",
+      "severity": "medium",
+      "status": "passed",
+      "confidence": 0.9,
+      "reviewer_iters": 3,
+      "elapsed": 54.82,
+      "validation_detail": "eval('len([l for l in fixed_code.splitlines() if l.strip().startswith(\"def \")]) > 1') = True",
+      "error": "",
+      "explanation": "The proposed fix effectively refactors the long function into smaller, focused helper functions, improving code readability and maintainability while preserving existing functionality."
+    },
+    {
+      "name": "case_security_md5",
+      "issue_type": "security",
+      "severity": "high",
+      "status": "passed",
+      "confidence": 0.9,
+      "reviewer_iters": 1,
+      "elapsed": 5.2,
+      "validation_detail": "eval('\"md5\" not in fixed_code and \"sha256\" in fixed_code') = True",
+      "error": "",
+      "explanation": "The proposed fix correctly replaces the weak MD5 hash with SHA256, preserving existing functionality and improving security."
+    },
+    {
+      "name": "case_unused_import",
+      "issue_type": "undefined_name",
+      "severity": "medium",
+      "status": "passed",
+      "confidence": 0.9,
+      "reviewer_iters": 1,
+      "elapsed": 4.24,
+      "validation_detail": "eval('\"import sys\" not in fixed_code') = True",
+      "error": "",
+      "explanation": "The fix correctly removes the unused import statement for 'sys', preserving existing functionality and not introducing any new bugs."
+    }
+  ]
+}

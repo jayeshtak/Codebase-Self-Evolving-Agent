@@ -1,0 +1,91 @@
+CODEBASE SELF-EVOLVING AGENT — KNOWN LIMITATIONS
+==================================================
+
+1. BUSINESS LOGIC NOT DOCUMENTED ANYWHERE
+------------------------------------------
+The agent cannot fix bugs that exist only in someone's head.
+If the intended behavior is never written down (no docstring, no test,
+no comment), there is no specification for the agent to work from.
+
+What it can do:
+- Flag suspicious patterns (e.g. a function called calculate_tax that
+  always returns 0)
+- Guess intent from function names and variable names (~40% reliable)
+- Still requires a human to confirm "yes, that's the bug"
+
+
+2. RULES THAT ONLY EXIST IN A REQUIREMENTS DOCUMENT
+-----------------------------------------------------
+Solvable only if the document is provided.
+If a PRD or requirements doc is fed into the RAG memory, the agent can
+cross-reference code against the spec. However:
+- The document must actually exist and be provided
+- LLM interpretation of ambiguous requirements is ~60-70% reliable
+- A human must verify the result
+
+
+3. BUGS THAT ONLY APPEAR WITH REAL PRODUCTION DATA
+---------------------------------------------------
+These are invisible to static analysis. The agent cannot reproduce a bug
+it has never seen. To fix these:
+- Real production logs or failing inputs must be provided
+- Once a failing input is known, it becomes a test-driven repair
+  (which the agent CAN handle)
+- Without the data, the bug does not exist from the agent's perspective
+
+
+WHY THESE ARE FUNDAMENTALLY HARD
+---------------------------------
+These three are human problems disguised as code problems.
+The bug is not in the syntax or structure — it is in the gap between
+what someone meant and what got written. Closing that gap requires:
+
+  1. A human who knows the intent
+  2. A test or document that encodes that intent
+  3. Then the agent can fix it
+
+This is why code review exists. The agent handles everything a linter
+and automated reviewer can catch. The rest still needs a human in the
+loop — which is exactly what the confidence threshold and manual review
+queue in this system are designed for.
+
+
+WHAT THE AGENT CAN AND CANNOT FIX
+-----------------------------------
+
+CAN FIX (reliably):
+  - Unused imports and dead code
+  - Weak security hashes (MD5 → SHA256, etc.)
+  - Deep nesting (guard clauses refactoring)
+  - Long functions (extract function refactoring)
+  - Duplicate code blocks
+  - Missing docstrings
+  - Unused variables
+  - Simple SQL injection patterns
+  - Hardcoded secrets (flagging)
+
+CAN FIX (inconsistently):
+  - Complex multi-step refactors (may need 2-3 reviewer iterations)
+  - Cross-file renames (works for simple cases)
+  - Type errors (obvious ones only)
+  - Performance hotspots (suggests fix, correctness not guaranteed)
+
+CANNOT FIX:
+  - Logic bugs without a specification (test/docstring/doc)
+  - Business logic known only to the developer
+  - Race conditions and deadlocks (needs runtime analysis)
+  - Memory leaks (needs profiling + heap data)
+  - Full API redesigns (too many coordinated changes)
+  - Flaky tests (cannot diagnose non-deterministic failures)
+  - Build system and configuration bugs
+  - Database migration bugs (needs schema + production data)
+
+
+NOTE FOR ACADEMIC SUBMISSION
+------------------------------
+Understanding the limitations of automated tools is as important as
+building them. This agent is designed to handle structural and
+surface-level code quality issues automatically, while keeping a human
+in the loop for anything requiring domain knowledge or intent.
+The confidence threshold and manual review queue exist precisely because
+the agent knows what it does not know.

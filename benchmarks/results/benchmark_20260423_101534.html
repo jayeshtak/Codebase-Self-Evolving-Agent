@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Codebase Agent Benchmark Report</title>
+  <style>
+    body { font-family: sans-serif; max-width: 960px; margin: 40px auto; color: #333 }
+    h1 { color: #1a1a2e }
+    .metrics { display: flex; gap: 24px; margin: 24px 0 }
+    .metric { background: #f4f6fb; border-radius: 8px; padding: 16px 24px; text-align: center }
+    .metric .val { font-size: 2rem; font-weight: bold; color: #4361ee }
+    .metric .lbl { font-size: 0.85rem; color: #666 }
+    table { width: 100%; border-collapse: collapse; margin-top: 24px }
+    th { background: #4361ee; color: white; padding: 8px 12px; text-align: left }
+    td { padding: 7px 12px; border-bottom: 1px solid #eee; font-size: 13px }
+    tr:hover { background: #f8f9ff }
+    .ts { color: #999; font-size: 0.8rem }
+  </style>
+</head>
+<body>
+  <h1>🧬 Codebase Agent — Benchmark Report</h1>
+  <p class="ts">Generated: 2026-04-23 10:15:34</p>
+
+  <div class="metrics">
+    <div class="metric"><div class="val">5</div><div class="lbl">Total Cases</div></div>
+    <div class="metric"><div class="val">5/5</div><div class="lbl">Passed</div></div>
+    <div class="metric"><div class="val">100.0%</div><div class="lbl">Accuracy</div></div>
+    <div class="metric"><div class="val">0.90</div><div class="lbl">Avg Confidence</div></div>
+    <div class="metric"><div class="val">1.4</div><div class="lbl">Avg Review Iters</div></div>
+    <div class="metric"><div class="val">0</div><div class="lbl">Errors</div></div>
+  </div>
+
+  <h2>Results by Case</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Case</th><th>Issue Type</th><th>Severity</th>
+        <th>Result</th><th>Confidence</th><th>Iters</th>
+        <th>Time</th><th>Detail</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>✅ case_dead_code</td>
+          <td>dead_code</td>
+          <td>low</td>
+          <td>passed</td>
+          <td>0.90</td>
+          <td>1</td>
+          <td>4.8s</td>
+          <td style="font-size:11px;max-width:300px">eval('"_legacy_parse" not in fixed_code') = True</td>
+        </tr>
+        <tr>
+          <td>✅ case_deep_nesting</td>
+          <td>deep_nesting</td>
+          <td>medium</td>
+          <td>passed</td>
+          <td>0.90</td>
+          <td>1</td>
+          <td>7.2s</td>
+          <td style="font-size:11px;max-width:300px">eval('fixed_code.count("        if ") < 3') = True</td>
+        </tr>
+        <tr>
+          <td>✅ case_long_function</td>
+          <td>long_function</td>
+          <td>medium</td>
+          <td>passed</td>
+          <td>0.90</td>
+          <td>3</td>
+          <td>54.8s</td>
+          <td style="font-size:11px;max-width:300px">eval('len([l for l in fixed_code.splitlines() if l.strip().startswith("def ")]) > 1') = True</td>
+        </tr>
+        <tr>
+          <td>✅ case_security_md5</td>
+          <td>security</td>
+          <td>high</td>
+          <td>passed</td>
+          <td>0.90</td>
+          <td>1</td>
+          <td>5.2s</td>
+          <td style="font-size:11px;max-width:300px">eval('"md5" not in fixed_code and "sha256" in fixed_code') = True</td>
+        </tr>
+        <tr>
+          <td>✅ case_unused_import</td>
+          <td>undefined_name</td>
+          <td>medium</td>
+          <td>passed</td>
+          <td>0.90</td>
+          <td>1</td>
+          <td>4.2s</td>
+          <td style="font-size:11px;max-width:300px">eval('"import sys" not in fixed_code') = True</td>
+        </tr></tbody>
+  </table>
+
+  <h2>Summary</h2>
+  <ul>
+    <li><strong>Accuracy:</strong> 5/5 (100.0%)</li>
+    <li><strong>Failed cases:</strong> none</li>
+    <li><strong>Errors:</strong> none</li>
+    <li><strong>Avg reviewer confidence:</strong> 0.900</li>
+    <li><strong>Avg reviewer iterations:</strong> 1.40</li>
+  </ul>
+</body>
+</html>
