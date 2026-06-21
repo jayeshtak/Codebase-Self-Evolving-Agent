@@ -334,12 +334,12 @@ Output just the raw doc comment, nothing else."""
         return results
 
 
-# ── CLI test ──────────────────────────────────────────────────────────────────
+# -- CLI test ------------------------------------------------------------------
 
 if __name__ == "__main__":
     repo = sys.argv[1] if len(sys.argv) > 1 else "."
     agent = DocWriterAgent()
     issues = agent.scan_missing_docs(repo)
-    print(f"\n── Missing Docs ──────────────────────────────────────────")
+    print(f"\n-- Missing Docs ------------------------------------------")
     for i in issues[:10]:
-        print(f"  {i['file']}:{i['line']} — {i['description']}")
+        print(f"  {i['file']}:{i['line']} - {i['description']}")

@@ -123,7 +123,7 @@ class BrowserTesterAgent:
             # Skip the page's own URL failing — already caught via HTTP status
             if request.url != url:
                 network_failures.append(
-                    f"Network request failed: {request.method} {request.url} — {failure}"
+                    f"Network request failed: {request.method} {request.url} - {failure}"
                 )
 
         page.on("console", on_console)
@@ -133,7 +133,7 @@ class BrowserTesterAgent:
         try:
             resp = page.goto(url, timeout=8000, wait_until="networkidle")
             status = resp.status if resp else 0
-            print(f"[BrowserTester] {route['method']} {path} → {status} "
+            print(f"[BrowserTester] {route['method']} {path} -> {status} "
                   f"| console:{len(console_errors)} net_fail:{len(network_failures)}")
 
             # Screenshot on 4xx/5xx
@@ -250,7 +250,7 @@ if __name__ == "__main__":
     routes = [{"method": "GET", "path": "/"}]
     result = tester.scan(routes, base)
 
-    print(f"\n── Browser Scan Results ──────────────────────────────")
+    print(f"\n-- Browser Scan Results ------------------------------")
     print(f"Routes tested: {result.routes_tested}")
     print(f"Issues found : {len(result.issues)}")
     for i in result.issues:

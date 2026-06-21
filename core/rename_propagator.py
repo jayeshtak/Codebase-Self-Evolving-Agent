@@ -198,7 +198,7 @@ def propagate_renames(
                 files_updated.append(rel)
                 total_replacements += file_replacements
                 print(f"[Rename] {rel}: {file_replacements} replacement(s) "
-                      f"({', '.join(f'{r.old_name}→{r.new_name}' for r in renames)})")
+                      f"({', '.join(f'{r.old_name}->{r.new_name}' for r in renames)})")
         except Exception as e:
             errors.append(f"{path}: {e}")
 

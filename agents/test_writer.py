@@ -248,7 +248,7 @@ JSON only. No markdown. No extra text."""
         if Path(test_file_path).exists():
             existing_tests = Path(test_file_path).read_text(encoding="utf-8", errors="ignore")
 
-        print(f"[TestWriter] Writing tests for {source_file} → {Path(test_file_path).name}")
+        print(f"[TestWriter] Writing tests for {source_file} -> {Path(test_file_path).name}")
 
         prompt = self._build_prompt(
             source_file=source_file,
@@ -333,7 +333,7 @@ JSON only. No markdown. No extra text."""
             )
 
 
-# ── CLI test (requires API key) ───────────────────────────────────────────────
+# -- CLI test (requires API key) -----------------------------------------------
 
 if __name__ == "__main__":
     repo = sys.argv[1] if len(sys.argv) > 1 else "."
@@ -346,7 +346,7 @@ if __name__ == "__main__":
         write_to_disk=False,
     )
 
-    print("\n── TestWriter Result ─────────────────────────────────────")
+    print("\n-- TestWriter Result -------------------------------------")
     print(f"Success   : {result.success}")
     print(f"Test file : {result.test_file}")
     print(f"Covered   : {result.functions_covered}")

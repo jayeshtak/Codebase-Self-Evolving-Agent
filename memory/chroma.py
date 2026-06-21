@@ -8,7 +8,7 @@ from typing import Optional
 # ── Config ────────────────────────────────────────────────────────────────────
 
 CHROMA_PATH = Path(__file__).parent.parent / "data" / "chroma"
-EMBEDDING_MODEL = "all-mpnet-base-v2"
+EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 COLLECTION_NAME = "codebase"
 CHUNK_SIZE = 50
 CHUNK_OVERLAP = 10

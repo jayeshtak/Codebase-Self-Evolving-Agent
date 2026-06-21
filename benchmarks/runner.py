@@ -144,12 +144,17 @@ def _run_case(case: BenchCase, tmp_dir: Path) -> BenchResult:
     t0 = time.time()
     try:
         rag_ctx = rag.search_for_issue(issue, n_results=3)
+
+        # Ensure max_iterations is an int, providing a default if config.MAX_REVIEW_ITERATIONS is None.
+        # config.validate() in main() should ideally ensure this, but mypy needs explicit handling.
+        review_max_iterations = config.MAX_REVIEW_ITERATIONS if config.MAX_REVIEW_ITERATIONS is not None else 5
+
         final_review, fixed_code, _ = reviewer.review_loop(
             issue=issue,
             coder=coder,
             repo_path=str(repo_dir),
             rag_context=rag_ctx,
-            max_iterations=config.MAX_REVIEW_ITERATIONS,
+            max_iterations=review_max_iterations,
         )
         elapsed = time.time() - t0
 
@@ -307,11 +312,11 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Load cases
-    case_files = sorted(cases_dir.glob("case_*.py"))
+    all_files: list[Path] = sorted(cases_dir.glob("case_*.py"))
     if args.case:
-        case_files = [f for f in case_files if f.stem == args.case]
+        all_files = [f for f in all_files if f.stem == args.case]
 
-    cases = [c for f in case_files if (c := _parse_case(f)) is not None]
+    cases = [c for f in all_files if (c := _parse_case(f)) is not None]
     if not cases:
         print("No benchmark cases found.")
         return

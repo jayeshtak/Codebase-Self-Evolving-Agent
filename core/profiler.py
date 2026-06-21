@@ -114,7 +114,7 @@ def profile_python(repo_path: str, entry_script: str,
             file=rel,
             line=lineno,
             description=(
-                f"Slow function '{funcname}' — {cumtime*1000:.1f}ms cumulative "
+                f"Slow function '{funcname}' - {cumtime*1000:.1f}ms cumulative "
                 f"(threshold={threshold_ms}ms)"
             ),
             language="python",
@@ -219,7 +219,7 @@ def profile_node(repo_path: str, entry_script: str,
             file=rel,
             line=lineno,
             description=(
-                f"Hot function '{funcname}' — {pct}% of CPU time "
+                f"Hot function '{funcname}' - {pct}% of CPU time "
                 f"(node --prof)"
             ),
             language="javascript",

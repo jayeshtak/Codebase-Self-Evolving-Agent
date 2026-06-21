@@ -82,8 +82,8 @@ class CodebaseAgent:
         }
         out_path = self.repo_path / "data" / "last_profile_scan.json"
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(json.dumps(out, indent=2))
-        print(f"[Main] Profile scan saved: {len(issues)} hotspot(s) → {out_path}")
+        out_path.write_text(json.dumps(out, indent=2), encoding="utf-8")
+        print(f"[Main] Profile scan saved: {len(issues)} hotspot(s) -> {out_path}")
         return out
 
     # ── Step 1c: Runtime scan ─────────────────────────────────────────────────
@@ -110,8 +110,8 @@ class CodebaseAgent:
         }
         out_path = self.repo_path / "data" / "last_runtime_scan.json"
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(json.dumps(out, indent=2))
-        print(f"[Main] Runtime scan saved: {len(issues)} issue(s) → {out_path}")
+        out_path.write_text(json.dumps(out, indent=2), encoding="utf-8")
+        print(f"[Main] Runtime scan saved: {len(issues)} issue(s) -> {out_path}")
         return out
 
     # ── Step 1d: Doc scan (detect undocumented functions) ────────────────────
@@ -129,7 +129,7 @@ class CodebaseAgent:
         }
         out_path = self.repo_path / "data" / "last_doc_scan.json"
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(json.dumps(out, indent=2))
+        out_path.write_text(json.dumps(out, indent=2), encoding="utf-8")
         print(f"[Main] Doc scan: {len(issues)} undocumented function(s).")
         return out
 
@@ -258,7 +258,7 @@ class CodebaseAgent:
 
         # Save plan to JSON
         plan_path = self.repo_path / "data" / "last_plan.json"
-        plan_path.write_text(json.dumps(plan.to_dict(), indent=2))
+        plan_path.write_text(json.dumps(plan.to_dict(), indent=2), encoding="utf-8")
         print(f"[Main] Plan saved to {plan_path}")
 
         return plan
@@ -306,8 +306,8 @@ class CodebaseAgent:
             # Get RAG context for this issue
             rag_context = self.rag.search_for_issue(issue, n_results=5)
 
-            # Coder → Reviewer loop
-            print(f"\n[Main] Starting Coder→Reviewer loop for {filepath}...")
+            # Coder -> Reviewer loop
+            print(f"\n[Main] Starting Coder->Reviewer loop for {filepath}...")
             final_review, fixed_code, function_name = self.reviewer.review_loop(
                 issue=issue,
                 coder=self.coder,
@@ -347,7 +347,7 @@ class CodebaseAgent:
                 from core.rename_propagator import detect_renames, propagate_renames
                 renames = detect_renames(original_code, patch_result.patched_code, filepath)
                 if renames:
-                    rename_desc = ", ".join(f"{r.old_name}→{r.new_name}" for r in renames)
+                    rename_desc = ", ".join(f"{r.old_name}->{r.new_name}" for r in renames)
                     print(f"[Main] Detected rename(s): {rename_desc}")
                     prop = propagate_renames(str(self.repo_path), renames, filepath)
                     result["renames"] = [{"old": r.old_name, "new": r.new_name, "kind": r.kind} for r in renames]
@@ -376,7 +376,7 @@ class CodebaseAgent:
                     existing_test_path, framework=test_framework, timeout=60
                 )
                 if not pre_result.passed and pre_result.total > 0:
-                    print(f"[Main] Existing tests BROKE after patch — rolling back.")
+                    print(f"[Main] Existing tests BROKE after patch - rolling back.")
                     self.git.rollback_file(filepath)
                     self.git.rollback_branch(branch, "master")
                     result["error"] = (
@@ -611,18 +611,18 @@ if __name__ == "__main__":
     agent = CodebaseAgent(args.repo)
 
     if args.stats:
-        print(f"\n── Stats ─────────────────────────────────────────────────")
+        print(f"\n-- Stats -------------------------------------------------")
         stats = agent.stats()
         for k, v in stats.items():
             print(f"  {k}: {v}")
 
     if args.scan or args.plan:
-        print("\n── Running Scan ──────────────────────────────────────────")
+        print("\n-- Running Scan ------------------------------------------")
         scan_results = agent.scan(full_scan=args.full)
         print(f"Found {scan_results['total_issues']} issue(s).")
 
         if args.plan:
-            print("\n── Generating Plan ───────────────────────────────────────")
+            print("\n-- Generating Plan ---------------------------------------")
             plan = agent.plan(scan_results)
             print(f"\nSummary  : {plan.summary}")
             print(f"Actionable: {len(plan.actionable())}")
@@ -630,4 +630,4 @@ if __name__ == "__main__":
             print("\nTop 5 items:")
             for item in plan.actionable()[:5]:
                 print(f"  [{item.priority_score}] {item.severity.upper()} "
-                      f"{item.file}:{item.line} — {item.description[:60]}")
+                      f"{item.file}:{item.line} - {item.description[:60]}")

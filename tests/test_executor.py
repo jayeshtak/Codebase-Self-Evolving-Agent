@@ -16,7 +16,8 @@ def tmp_repo(tmp_path):
 
 @pytest.fixture()
 def executor(tmp_repo):
-    return Executor(str(tmp_repo))
+    import sys
+    return Executor(str(tmp_repo), venv_python=sys.executable)
 
 
 @pytest.fixture()
@@ -36,11 +37,8 @@ def passing_test(tmp_repo):
 def failing_test(tmp_repo):
     f = tmp_repo / "test_failing.py"
     f.write_text(textwrap.dedent("""\
-        def test_will_fail():
-            assert 1 + 1 == 3, "math is broken"
-
-        def test_will_pass():
-            assert True
+        def test_fail():
+            assert 1 + 1 == 3
     """))
     return str(f)
 
@@ -132,7 +130,7 @@ class TestTestResult:
     def test_summary_passed(self):
         r = TestResult(passed=True, total=5, passed_count=5, duration=1.2)
         assert "5" in r.summary()
-        assert "passed" in r.summary().lower() or "✓" in r.summary()
+        assert "passed" in r.summary().lower() or "ok:" in r.summary()
 
     def test_summary_failed(self):
         r = TestResult(passed=False, total=3, passed_count=2, failed_count=1, duration=0.5)

@@ -64,7 +64,7 @@ def load_agent_config(repo_path: str) -> AgentConfig:
         return cfg
 
     if not _YAML_AVAILABLE:
-        print("[AgentConfig] PyYAML not installed — ignoring .agentconfig.yaml")
+        print("[AgentConfig] PyYAML not installed - ignoring .agentconfig.yaml")
         return cfg
 
     try:
@@ -94,6 +94,6 @@ def load_agent_config(repo_path: str) -> AgentConfig:
         print(f"[AgentConfig] Loaded .agentconfig.yaml from {repo_path}")
 
     except Exception as e:
-        print(f"[AgentConfig] Failed to parse .agentconfig.yaml: {e} — using defaults")
+        print(f"[AgentConfig] Failed to parse .agentconfig.yaml: {e} - using defaults")
 
     return cfg

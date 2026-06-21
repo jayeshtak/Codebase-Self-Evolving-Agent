@@ -1,8 +1,6 @@
 import sys
 import json
 import time
-import tkinter as tk
-from tkinter import filedialog
 from pathlib import Path
 from datetime import datetime
 
@@ -43,12 +41,18 @@ def init_state():
 
 def pick_folder() -> str:
     """Open a native OS folder picker and return the selected path."""
-    root = tk.Tk()
-    root.withdraw()
-    root.wm_attributes("-topmost", True)
-    folder = filedialog.askdirectory(title="Select Repository Folder")
-    root.destroy()
-    return folder or ""
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+        root = tk.Tk()
+        root.withdraw()
+        root.wm_attributes("-topmost", True)
+        folder = filedialog.askdirectory(title="Select Repository Folder")
+        root.destroy()
+        return folder or ""
+    except Exception as e:
+        st.warning(f"Native folder browser not supported: {e}. Please type the path in the text box below.")
+        return ""
 
 init_state()
 
@@ -147,13 +151,13 @@ def load_last_scan(repo_path: str) -> dict:
     """Load last scan results from JSON without running agent."""
     scan_file = Path(repo_path) / "data" / "last_scan.json"
     if scan_file.exists():
-        return json.loads(scan_file.read_text())
+        return json.loads(scan_file.read_text(encoding="utf-8"))
     return {}
 
 def load_last_plan(repo_path: str) -> dict:
     plan_file = Path(repo_path) / "data" / "last_plan.json"
     if plan_file.exists():
-        return json.loads(plan_file.read_text())
+        return json.loads(plan_file.read_text(encoding="utf-8"))
     return {}
 
 
@@ -651,7 +655,7 @@ with tab_runtime:
     if not rt and st.session_state.repo_path:
         rt_file = Path(st.session_state.repo_path) / "data" / "last_runtime_scan.json"
         if rt_file.exists():
-            rt = json.loads(rt_file.read_text())
+            rt = json.loads(rt_file.read_text(encoding="utf-8"))
             st.caption("Showing last saved runtime scan.")
 
     if not rt:

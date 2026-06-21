@@ -29,17 +29,17 @@ def run_scan_job(repo_path: str, full_scan: bool = False):
     mem.start_scan(scan_id, repo_path)
 
     try:
-        print("[Jobs] Step 1/3 — Scanning...")
+        print("[Jobs] Step 1/3 - Scanning...")
         scanner = Scanner(repo_path)
         issues_raw = scanner.scan(full_scan=full_scan)
         issues = [i.to_dict() for i in issues_raw]
 
-        print("\n[Jobs] Step 2/3 — Building dependency graph...")
+        print("\n[Jobs] Step 2/3 - Building dependency graph...")
         dg = DependencyGraph(repo_path)
         dg.build()
         impact_radii = dg.get_all_impact_radii()
 
-        print("\n[Jobs] Step 3/3 — Indexing codebase for RAG...")
+        print("\n[Jobs] Step 3/3 - Indexing codebase for RAG...")
         rag = CodebaseRAG(repo_path)
         changed_files = scanner.get_changed_files()
         rag.index_repo(changed_only=True, changed_files=changed_files)
@@ -73,7 +73,7 @@ def run_scan_job(repo_path: str, full_scan: bool = False):
         }
         out_path = Path(repo_path) / "data" / "last_scan.json"
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(json.dumps(results, indent=2))
+        out_path.write_text(json.dumps(results, indent=2), encoding="utf-8")
 
         print(f"\n{'='*60}")
         print(f"[Jobs] Scan complete: {len(issues)} issue(s) found.")
@@ -148,13 +148,13 @@ if __name__ == "__main__":
     scheduler = ScanScheduler(repo)
     results = scheduler.run_now(full_scan=True)
 
-    print(f"\n── Scan Results ──────────────────────────────────────────")
+    print(f"\n-- Scan Results ------------------------------------------")
     print(f"Scan ID     : {results['scan_id']}")
     print(f"Total issues: {results['total_issues']}")
     print(f"Started     : {results['started_at']}")
     print(f"Finished    : {results['finished_at']}")
 
-    print(f"\n── Issues Found (first 5) ────────────────────────────────")
+    print(f"\n-- Issues Found (first 5) --------------------------------")
     for i, issue in enumerate(results["issues"][:5], 1):
         print(f"[{i}] {issue['severity'].upper()} | {issue['issue_type']}")
-        print(f"     {issue['file']}:{issue['line']} — {issue['description']}")
+        print(f"     {issue['file']}:{issue['line']} - {issue['description']}")

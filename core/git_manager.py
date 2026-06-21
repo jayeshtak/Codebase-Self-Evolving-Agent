@@ -20,6 +20,46 @@ class GitManager:
         # In-memory snapshot store: {filepath: original_content}
         self._snapshots: dict[str, str] = {}
 
+        # Ensure user.name and user.email are set locally if missing
+        try:
+            with self.repo.config_reader() as reader:
+                has_email = reader.has_option("user", "email")
+                has_name = reader.has_option("user", "name")
+        except Exception:
+            has_email = False
+            has_name = False
+
+        if not has_email or not has_name:
+            try:
+                with self.repo.config_writer() as writer:
+                    if not has_name:
+                        writer.set_value("user", "name", "Codebase Agent")
+                    if not has_email:
+                        writer.set_value("user", "email", "agent@example.com")
+                print("[Git] Configured local git user identity (name/email).")
+            except Exception as e:
+                print(f"[Git] Failed to configure local git user: {e}")
+
+        # Check if HEAD is valid (has at least one commit)
+        try:
+            head_valid = self.repo.head.is_valid()
+        except Exception:
+            head_valid = False
+
+        if not head_valid:
+            print("[Git] Repository has no commits. Creating initial commit to resolve HEAD...")
+            try:
+                self.repo.git.add(A=True)
+                if len(self.repo.index.entries) == 0:
+                    readme = self.repo_path / "README.md"
+                    if not readme.exists():
+                        readme.write_text("# Initialized Repository\n", encoding="utf-8")
+                    self.repo.git.add("README.md")
+                self.repo.index.commit("Initial commit by Codebase Agent")
+                print("[Git] Initial commit created successfully.")
+            except Exception as e:
+                print(f"[Git] Failed to create initial commit: {e}")
+
     # ── Branch management ─────────────────────────────────────────────────────
 
     def current_branch(self) -> str:

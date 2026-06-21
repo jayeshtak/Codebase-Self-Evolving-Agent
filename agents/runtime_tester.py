@@ -63,7 +63,7 @@ class RuntimeTesterAgent:
         # ── Node / Express ───────────────────────────────────────────────────
         pkg = repo / "package.json"
         if pkg.exists():
-            data = json.loads(pkg.read_text())
+            data = json.loads(pkg.read_text(encoding="utf-8", errors="ignore"))
             start = data.get("scripts", {}).get("start", "")
             dev = data.get("scripts", {}).get("dev", "")
             if not start and not dev:
@@ -115,11 +115,11 @@ class RuntimeTesterAgent:
         if artisan.exists():
             return "laravel", f"php artisan serve --port={self.TEST_PORT} --host=127.0.0.1"
 
-        # ── PHP Symfony ──────────────────────────────────────────────────────
+        # -- PHP Symfony ------------------------------------------------------
         composer = repo / "composer.json"
         if composer.exists():
             try:
-                comp_data = json.loads(composer.read_text())
+                comp_data = json.loads(composer.read_text(encoding="utf-8", errors="ignore"))
                 deps = {**comp_data.get("require", {}), **comp_data.get("require-dev", {})}
                 if any("symfony" in k for k in deps):
                     public = repo / "public"
@@ -331,7 +331,7 @@ class RuntimeTesterAgent:
             print("[RuntimeTester] Script ran cleanly.")
             return []
         except subprocess.TimeoutExpired:
-            print("[RuntimeTester] Script timed out (may be a server — use web mode).")
+            print("[RuntimeTester] Script timed out (may be a server - use web mode).")
             return []
         except Exception as e:
             print(f"[RuntimeTester] Script run error: {e}")
@@ -359,7 +359,7 @@ class RuntimeTesterAgent:
         nm = self.repo_path / "node_modules"
         pkg = self.repo_path / "package.json"
         if pkg.exists() and not nm.exists():
-            print("[RuntimeTester] node_modules not found — running npm install...")
+            print("[RuntimeTester] node_modules not found - running npm install...")
             try:
                 subprocess.run(
                     ["npm", "install"],
@@ -453,7 +453,7 @@ class RuntimeTesterAgent:
             try:
                 resp = getattr(requests, method.lower())(url, timeout=5)
                 code = resp.status_code
-                print(f"[RuntimeTester] {method} {path} → {code}")
+                print(f"[RuntimeTester] {method} {path} -> {code}")
 
                 if code >= 500:
                     route_issues = parse_http_error(
@@ -466,7 +466,7 @@ class RuntimeTesterAgent:
                     issues.extend(route_issues)
 
             except requests.ConnectionError:
-                print(f"[RuntimeTester] Connection refused on {url} — server may have crashed")
+                print(f"[RuntimeTester] Connection refused on {url} - server may have crashed")
                 break
             except Exception as e:
                 print(f"[RuntimeTester] Error hitting {url}: {e}")
@@ -589,14 +589,14 @@ class RuntimeTesterAgent:
         return result
 
 
-# ── CLI test ──────────────────────────────────────────────────────────────────
+# -- CLI test ------------------------------------------------------------------
 
 if __name__ == "__main__":
     repo = sys.argv[1] if len(sys.argv) > 1 else "."
     tester = RuntimeTesterAgent(repo)
     result = tester.scan()
 
-    print(f"\n── Runtime Scan Results ──────────────────────────────")
+    print(f"\n-- Runtime Scan Results ------------------------------")
     print(f"Framework   : {result.framework}")
     print(f"Command     : {result.run_command}")
     print(f"Server up   : {result.server_started}")

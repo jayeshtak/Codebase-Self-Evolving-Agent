@@ -222,7 +222,7 @@ JSON only. No markdown. No extra text."""
         max_iterations: int = None,
     ) -> tuple[ReviewResult, str]:
         """
-        Run the full Coder → Reviewer → Coder loop.
+        Run the full Coder -> Reviewer -> Coder loop.
 
         Returns (final_review_result, final_fixed_code)
 
@@ -319,7 +319,7 @@ if __name__ == "__main__":
         iteration=1,
     )
 
-    print("\n── Reviewer Result ───────────────────────────────────────")
+    print("\n-- Reviewer Result ---------------------------------------")
     print(f"Approved    : {result.approved}")
     print(f"Confidence  : {result.confidence}")
     print(f"Feedback    : {result.feedback}")

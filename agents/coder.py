@@ -399,7 +399,7 @@ if __name__ == "__main__":
     coder = CoderAgent()
     result = coder.generate_fix(repo_path=repo, issue=mock_issue)
 
-    print("\n── Coder Result ──────────────────────────────────────────")
+    print("\n-- Coder Result ------------------------------------------")
     print(f"Success     : {result.success}")
     print(f"Function    : {result.function_name}")
     print(f"Explanation : {result.explanation}")

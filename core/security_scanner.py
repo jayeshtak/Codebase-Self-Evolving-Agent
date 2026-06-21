@@ -39,26 +39,45 @@ def _npm_latest_version(package: str) -> Optional[str]:
         return None
 
 
+def _resolve_cmd_path(name: str) -> str:
+    import shutil
+    import sys
+    if shutil.which(name):
+        return name
+    local_bin = Path(sys.executable).parent / name
+    if local_bin.exists():
+        return str(local_bin)
+    if local_bin.with_suffix(".exe").exists():
+        return str(local_bin.with_suffix(".exe"))
+    return name
+
+
 def _run(cmd: list[str], cwd: str, timeout: int = 60,
          extra_env: Optional[dict] = None) -> tuple[int, str, str]:
     env = {**os.environ, **(extra_env or {})}
+    resolved_cmd = list(cmd)
+    resolved_cmd[0] = _resolve_cmd_path(resolved_cmd[0])
     try:
         r = subprocess.run(
-            cmd, capture_output=True, text=True,
+            resolved_cmd, capture_output=True, text=True,
             cwd=cwd, timeout=timeout, env=env,
         )
         return r.returncode, r.stdout, r.stderr
     except FileNotFoundError:
-        return -1, "", f"Command not found: {cmd[0]}"
+        return -1, "", f"Command not found: {resolved_cmd[0]}"
     except subprocess.TimeoutExpired:
-        return -1, "", f"Timed out: {' '.join(cmd)}"
+        return -1, "", f"Timed out: {' '.join(resolved_cmd)}"
     except Exception as e:
         return -1, "", str(e)
 
 
 def _cmd_exists(name: str) -> bool:
     import shutil
-    return shutil.which(name) is not None
+    import sys
+    if shutil.which(name):
+        return True
+    local_bin = Path(sys.executable).parent / name
+    return local_bin.exists() or local_bin.with_suffix(".exe").exists()
 
 
 # ── Issue factory ─────────────────────────────────────────────────────────────

@@ -213,7 +213,7 @@ JSON only, no markdown, no explanation."""
             return "No actionable issues found."
 
         items_text = "\n".join(
-            f"- [{i.severity.upper()}] {i.file}:{i.line} — {i.description}"
+            f"- [{i.severity.upper()}] {i.file}:{i.line} - {i.description}"
             for i in items[:10]
         )
 
@@ -297,7 +297,7 @@ Be concise and direct. No bullet points."""
 
             if rejected:
                 skipped_items.append(item)
-                print(f"[Planner] Skipped (rejected): {filepath}:{issue.get('line')} — {reason}")
+                print(f"[Planner] Skipped (rejected): {filepath}:{issue.get('line')} - {reason}")
             else:
                 plan_items.append(item)
 
@@ -389,9 +389,9 @@ if __name__ == "__main__":
         print(f"     Strategy : {item.fix_strategy}")
         print(f"     Risk     : {item.risk_level} (impact={item.impact_radius})")
 
-    print("\n── Skipped Items ─────────────────────────────────────────")
+    print("\n-- Skipped Items -----------------------------------------")
     for item in plan.skipped:
-        print(f"  {item.file}:{item.line} — {item.skip_reason}")
+        print(f"  {item.file}:{item.line} - {item.skip_reason}")
 
     # Save plan
     with open("plan.json", "w") as f:

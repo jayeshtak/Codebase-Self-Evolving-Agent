@@ -26,9 +26,9 @@ class TestResult:  # noqa: pytest-collect
 
     def summary(self) -> str:
         if self.passed:
-            return f"✓ All {self.total} test(s) passed ({self.duration:.2f}s)"
+            return f"ok: All {self.total} test(s) passed ({self.duration:.2f}s)"
         return (
-            f"✗ {self.failed_count} failed, {self.error_count} errors "
+            f"fail: {self.failed_count} failed, {self.error_count} errors "
             f"/ {self.total} total ({self.duration:.2f}s)"
         )
 
@@ -488,9 +488,9 @@ class Executor:
             print(f"[Executor] Attempting self-heal (attempt {attempt})...")
             healed = heal_fn(result, attempt)
             if healed:
-                heal_log.append(f"Attempt {attempt}: failed → heal applied, retrying.")
+                heal_log.append(f"Attempt {attempt}: failed -> heal applied, retrying.")
             else:
-                heal_log.append(f"Attempt {attempt}: failed → heal_fn gave up.")
+                heal_log.append(f"Attempt {attempt}: failed -> heal_fn gave up.")
                 break
 
         return HealingResult(
@@ -537,17 +537,17 @@ def test_will_pass():
     passing_file.write_text(passing_test)
     failing_file.write_text(failing_test)
 
-    print("── Test 1: Passing tests ─────────────────────────────────")
+    print("-- Test 1: Passing tests ---------------------------------")
     result = executor.run_tests(str(passing_file))
     print(result.summary())
     print(f"Total: {result.total}, Passed: {result.passed_count}")
 
-    print("\n── Test 2: Failing tests ─────────────────────────────────")
+    print("\n-- Test 2: Failing tests ---------------------------------")
     result = executor.run_tests(str(failing_file))
     print(result.summary())
     print(f"Failures: {result.failures}")
 
-    print("\n── Test 3: Self-healing loop ─────────────────────────────")
+    print("\n-- Test 3: Self-healing loop -----------------------------")
     heal_calls = []
 
     def mock_heal(result: TestResult, attempt: int) -> bool:

@@ -224,7 +224,7 @@ if __name__ == "__main__":
     repo = sys.argv[1] if len(sys.argv) > 1 else "."
     term = Terminal(repo)
 
-    print("── Whitelist Tests ───────────────────────────────────────\n")
+    print("-- Whitelist Tests ---------------------------------------\n")
 
     # Should pass
     allowed_tests = [
@@ -247,19 +247,19 @@ if __name__ == "__main__":
         "python -c 'import os; os.system(\"rm -rf /\")'",
     ]
 
-    print("✓ Allowed commands:")
+    print("[ALLOW] Allowed commands:")
     for cmd in allowed_tests:
         allowed, reason = term._is_allowed(cmd)
         status = "ALLOW" if allowed else f"BLOCK ({reason})"
         print(f"  [{status}] {cmd}")
 
-    print("\n✗ Blocked commands:")
+    print("\n[BLOCK] Blocked commands:")
     for cmd in blocked_tests:
         allowed, reason = term._is_allowed(cmd)
         status = "ALLOW" if allowed else f"BLOCK ({reason})"
         print(f"  [{status}] {cmd}")
 
-    print("\n── Live Execution Tests ──────────────────────────────────\n")
+    print("\n-- Live Execution Tests ----------------------------------\n")
 
     # Real executions
     print(term.run("git status"))

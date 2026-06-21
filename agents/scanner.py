@@ -546,9 +546,9 @@ class Scanner:
         for filepath in files:
             rel = str(filepath.relative_to(self.repo_path))
             if rel in syntax_files_with_errors:
-                print(f"  → {rel} [skipping static analysis — syntax errors present]")
+                print(f"  -> {rel} [skipping static analysis — syntax errors present]")
                 continue
-            print(f"  → {rel}")
+            print(f"  -> {rel}")
             all_issues += self._analyze_complexity(filepath)
             all_issues += self._analyze_dead_code(filepath)
             all_issues += self._analyze_ast(filepath)
@@ -653,7 +653,7 @@ class Scanner:
         return all_issues
 
 
-# ── CLI test ──────────────────────────────────────────────────────────────────
+# -- CLI test ------------------------------------------------------------------
 
 if __name__ == "__main__":
     import sys
@@ -662,7 +662,7 @@ if __name__ == "__main__":
     scanner = Scanner(repo)
     issues = scanner.scan(full_scan=True)
 
-    print("\n── Issue Report ──────────────────────────────────────────")
+    print("\n-- Issue Report ------------------------------------------")
     for i, issue in enumerate(issues, 1):
         print(f"\n[{i}] {issue.severity.upper()} | {issue.issue_type}")
         print(f"     File : {issue.file}:{issue.line}")
@@ -672,6 +672,6 @@ if __name__ == "__main__":
 
     # Dump to JSON for other agents to consume
     out = [i.to_dict() for i in issues]
-    with open("scan_results.json", "w") as f:
+    with open("scan_results.json", "w", encoding="utf-8") as f:
         json.dump(out, f, indent=2)
     print("Results saved to scan_results.json")
