@@ -254,6 +254,7 @@ class CodebaseAgent:
             impact_radii=impact_radii,
             rag_context=rag_context,
             rejections=rejections,
+            repo_path=str(self.repo_path),
         )
 
         # Save plan to JSON
@@ -262,6 +263,57 @@ class CodebaseAgent:
         print(f"[Main] Plan saved to {plan_path}")
 
         return plan
+
+    def scan_incremental(self) -> dict:
+        """Run incremental scan pipeline reusing valid cached analysis."""
+        from agents.scanner import Scanner
+        from core.graph import DependencyGraph
+        from memory.sqlite import IssueRecord
+
+        scan_id = str(uuid.uuid4())[:8]
+        started = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.mem.start_scan(scan_id, str(self.repo_path))
+
+        scanner = Scanner(str(self.repo_path))
+        issues_raw, scan_meta = scanner.scan_incremental()
+        issues = [i.to_dict() for i in issues_raw]
+
+        dg = DependencyGraph(str(self.repo_path))
+        dg.build()
+        impact_radii = dg.get_all_impact_radii()
+
+        issue_records = [
+            IssueRecord(
+                scan_id=scan_id,
+                file=i.get("file", ""),
+                line=i.get("line", 0),
+                issue_type=i.get("issue_type", ""),
+                severity=i.get("severity", "low"),
+                description=i.get("description", ""),
+                language=i.get("language", "python"),
+                extra=i.get("extra", {}),
+            )
+            for i in issues
+        ]
+        self.mem.save_issues_bulk(issue_records)
+        self.mem.finish_scan(scan_id, total_issues=len(issues))
+        self.mem.record_health_score(scan_id, str(self.repo_path), issues)
+
+        results = {
+            "scan_id": scan_id,
+            "scan_type": scan_meta.get("scan_type", "incremental"),
+            "started_at": started,
+            "finished_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "repo_path": str(self.repo_path),
+            "total_issues": len(issues),
+            "issues": issues,
+            "impact_radii": impact_radii,
+            "meta": scan_meta,
+        }
+        out_path = self.repo_path / "data" / "last_scan.json"
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(results, indent=2), encoding="utf-8")
+        return results
 
     # ── Step 3: Fix single issue ──────────────────────────────────────────────
 
@@ -294,9 +346,27 @@ class CodebaseAgent:
             "fix_id": None,
         }
 
+        # Check working tree cleanliness before any branch operations
+        if self.git.has_uncommitted_changes():
+            err_msg = "Fix blocked: uncommitted user changes detected in working tree. Stash or commit before running auto-fix."
+            print(f"[Main] {err_msg}")
+            result["status"] = "blocked"
+            result["error"] = err_msg
+            return result
+
         # Create fix branch
-        branch = self.git.create_fix_branch(scan_id[:8])
-        result["fix_branch"] = branch
+        try:
+            from core.git_manager import DirtyWorkingTreeError
+            branch = self.git.create_fix_branch(scan_id[:8])
+            result["fix_branch"] = branch
+        except DirtyWorkingTreeError as e:
+            result["status"] = "blocked"
+            result["error"] = str(e)
+            return result
+        except Exception as e:
+            result["status"] = "failed"
+            result["error"] = f"Failed to create fix branch: {e}"
+            return result
 
         # Snapshot original
         self.git.snapshot(filepath)
@@ -318,7 +388,7 @@ class CodebaseAgent:
 
             if not fixed_code:
                 result["error"] = "No fix generated after review loop."
-                self.git.rollback_branch(branch, "master")
+                self.git.rollback_branch(branch, self.git.default_branch)
                 return result
 
             result["explanation"] = final_review.feedback
@@ -334,7 +404,7 @@ class CodebaseAgent:
             if not patch_result.success:
                 result["error"] = f"Patch failed: {patch_result.error}"
                 self.git.rollback_file(filepath)
-                self.git.rollback_branch(branch, "master")
+                self.git.rollback_branch(branch, self.git.default_branch)
                 return result
 
             # Generate diff for UI
@@ -378,77 +448,139 @@ class CodebaseAgent:
                 if not pre_result.passed and pre_result.total > 0:
                     print(f"[Main] Existing tests BROKE after patch - rolling back.")
                     self.git.rollback_file(filepath)
-                    self.git.rollback_branch(branch, "master")
+                    self.git.rollback_branch(branch, self.git.default_branch)
                     result["error"] = (
                         f"Patch broke existing tests: {pre_result.failure_details()[:300]}"
                     )
                     result["status"] = "tests_failed"
                     return result
-                print(f"[Main] Existing tests OK: {pre_result.summary()}")
+                # ── Fix validation (in-memory compile, syntax check, and existing tests) ──
+            # ── Fix validation (AST compile, syntax check, and existing tests) ──
+            attempts = 0
+            max_attempts = config.MAX_HEAL_ATTEMPTS
+            validation_passed = False
+            validation_error = ""
+            failure_category = ""
+            current_code = patch_result.patched_code
 
-            # Write tests
-            print(f"[Main] Writing tests for {filepath}...")
-            test_result = self.test_writer.write_tests(
-                repo_path=str(self.repo_path),
-                source_file=filepath,
-                write_to_disk=True,
-            )
-            result["test_file"] = test_result.test_file
+            while attempts < max_attempts and not validation_passed:
+                attempts += 1
+                print(f"[Main] In-memory validation attempt {attempts}/{max_attempts}...")
+                
+                validation_passed = True
+                validation_error = ""
+                failure_category = ""
 
-            # test_framework already detected above; pick test path for new tests
-            test_path = test_result.test_file if test_result.success else str(self.repo_path / "tests")
+                # 1. Compile check (AST parsing)
+                try:
+                    import ast
+                    ast.parse(current_code, filename=filepath)
+                except SyntaxError as e:
+                    validation_passed = False
+                    validation_error = f"SyntaxError: {e.msg} at line {e.lineno}"
+                    failure_category = "syntax"
 
-            # Run tests with self-healing
-            print(f"[Main] Running {test_framework} tests...")
+                # 2. Run Syntax/Linter Checker on the patched file
+                if validation_passed:
+                    try:
+                        from core.syntax_checker import SyntaxChecker
+                        checker = SyntaxChecker(str(self.repo_path))
+                        syntax_issues = checker.check_files([Path(filepath)])
+                        critical_issues = [si for si in syntax_issues if si.issue_type == "syntax_error"]
+                        if critical_issues:
+                            validation_passed = False
+                            validation_error = f"Syntax errors: {', '.join(ci.description for ci in critical_issues)}"
+                            failure_category = "syntax"
+                    except Exception as e:
+                        err_str = str(e).lower()
+                        if "not found" in err_str or "no module" in err_str:
+                            failure_category = "environment"
+                        else:
+                            print(f"[Main] Syntax checker validation failed (non-fatal): {e}")
 
-            def heal_fn(test_res, attempt):
-                """Self-healing: ask coder to fix the failing fix with full test context."""
-                failure_info = test_res.failure_details()
+                # 3. Existing test validation
+                if validation_passed and existing_test_path:
+                    print(f"[Main] Validating patch against existing tests: {existing_test_path}")
+                    try:
+                        pre_result = self.executor.run_tests(
+                            existing_test_path, framework=test_framework, timeout=60
+                        )
+                        if not pre_result.passed and pre_result.total > 0:
+                            validation_passed = False
+                            details = pre_result.failure_details()[:300]
+                            validation_error = f"Existing tests broke: {details}"
+                            # Classify test failure vs environment vs infrastructure
+                            det_lower = details.lower()
+                            if "modulenotfounderror" in det_lower or "importerror" in det_lower:
+                                failure_category = "environment"
+                            elif "timed out" in det_lower or "permissiondenied" in det_lower:
+                                failure_category = "infrastructure"
+                            else:
+                                failure_category = "tests"
+                    except Exception as e:
+                        validation_passed = False
+                        validation_error = f"Test execution error: {str(e)}"
+                        failure_category = "infrastructure"
+
+                if validation_passed:
+                    break
+
+                if attempts >= max_attempts:
+                    break
+
+                # Self-healing: pass structured diagnostic feedback to coder agent
+                print(f"[Main] Self-healing [{failure_category.upper()}]: attempt {attempts}/{max_attempts}...")
                 heal_issue = dict(issue)
                 heal_issue["description"] = issue.get("description", "")
                 heal_issue["fix_strategy"] = (
-                    f"The previous fix caused test failures (attempt {attempt}). "
-                    f"Test output:\n{failure_info[:600]}\n"
-                    f"Fix the code so that all tests pass without breaking functionality."
+                    f"DIAGNOSTIC FEEDBACK [CATEGORY: {failure_category.upper()} | ATTEMPT {attempts}/{max_attempts}]:\n"
+                    f"The previous revision failed validation:\n"
+                    f"{validation_error}\n\n"
+                    f"REQUIRED ACTION:\n"
+                    f"1. Make minimal, surgical modifications to resolve this exact {failure_category} failure.\n"
+                    f"2. Preserve all existing symbols, function signatures, and unrelated logic.\n"
+                    f"3. Return only the corrected implementation without adding extraneous mock tests."
                 )
                 heal_result = self.coder.generate_fix(
                     repo_path=str(self.repo_path),
                     issue=heal_issue,
                     rag_context=rag_context,
-                    reviewer_feedback=f"Tests failed:\n{failure_info[:400]}",
-                    previous_attempt=fixed_code,
+                    reviewer_feedback=f"Validation error ({failure_category}): {validation_error}",
+                    previous_attempt=current_code,
                 )
                 if heal_result.success:
+                    current_code = heal_result.generated_code
                     if heal_result.function_name:
-                        self.patcher.patch_function(filepath, heal_result.function_name, heal_result.generated_code)
+                        patch_result = self.patcher.patch_function(filepath, heal_result.function_name, current_code)
                     else:
-                        self.patcher.patch_full_file(filepath, heal_result.generated_code)
-                    return True
-                return False
+                        patch_result = self.patcher.patch_full_file(filepath, current_code)
+                    if not patch_result.success:
+                        validation_passed = False
+                        validation_error = f"Patch failed during healing: {patch_result.error}"
+                        failure_category = "infrastructure"
+                else:
+                    break
 
-            healing = self.executor.run_with_healing(
-                test_path=test_path,
-                max_attempts=config.MAX_HEAL_ATTEMPTS,
-                heal_fn=heal_fn,
-                framework=test_framework,
-            )
+            result["test_file"] = ""
+            result["failure_category"] = failure_category if not validation_passed else ""
+            result["test_result"] = {
+                "passed": validation_passed,
+                "category": failure_category,
+                "summary": "In-memory validation passed" if validation_passed else f"Validation failed ({failure_category}): {validation_error}"
+            }
 
-            result["test_result"] = healing.final_result.to_dict() \
-                if hasattr(healing.final_result, "to_dict") \
-                else {"passed": healing.final_result.passed,
-                      "summary": healing.final_result.summary()}
-
-            if healing.final_result.passed:
+            if validation_passed:
                 result["status"] = "ready_for_approval"
-                print(f"[Main] Fix ready for approval. Tests passed.")
+                print(f"[Main] Fix ready for approval. In-memory validation passed.")
             else:
                 result["status"] = "tests_failed"
-                result["error"] = healing.final_result.failure_details()
-                print(f"[Main] Tests failed after {healing.attempts} attempt(s). Rolling back.")
+                result["error"] = f"[{failure_category.upper()}] {validation_error}"
+                print(f"[Main] Validation failed ({failure_category}) after {attempts} attempt(s). Rolling back.")
                 self.git.rollback_file(filepath)
-                self.git.rollback_branch(branch, "master")
+                self.git.rollback_branch(branch, self.git.default_branch)
 
             # Save fix to SQLite
+            test_res_str = "passed" if validation_passed else "failed"
             fix_record = FixRecord(
                 issue_id=issue.get("id", 0),
                 scan_id=scan_id,
@@ -457,13 +589,13 @@ class CodebaseAgent:
                 fixed_code=patch_result.patched_code,
                 fix_description=result["explanation"],
                 status=result["status"],
-                test_result="passed" if healing.final_result.passed else "failed",
+                test_result=test_res_str,
             )
             fix_db_id = self.mem.save_fix(fix_record)
             result["fix_id"] = fix_db_id
 
             # Record outcome for evaluation metrics
-            outcome = result["status"] if not healing.final_result.passed else "ready_for_approval"
+            outcome = "ready_for_approval" if validation_passed else result["status"]
             self.mem.record_fix_outcome(
                 fix_id=fix_db_id,
                 scan_id=scan_id,
@@ -477,13 +609,13 @@ class CodebaseAgent:
             return result
 
         except QuotaExhaustedException:
-            self.git.rollback_branch(branch, "master")
+            self.git.rollback_branch(branch, self.git.default_branch)
             raise  # propagate up to stop the auto-fix loop
         except Exception as e:
             print(f"[Main] Fix pipeline error: {e}")
             self.git.rollback_file(filepath)
             try:
-                self.git.rollback_branch(branch, "master")
+                self.git.rollback_branch(branch, self.git.default_branch)
             except Exception:
                 pass
             result["error"] = str(e)
@@ -491,58 +623,87 @@ class CodebaseAgent:
 
     # ── Step 4: Merge approved fix ────────────────────────────────────────────
 
-    def apply_fix(self, fix_branch: str, fix_id: int, issue_id: int):
+    def apply_fix(self, fix_branch: str, fix_id: int, issue_id: int) -> bool:
         """
         Called after user approves fix in UI.
-        Stages, commits, and merges the fix branch into master.
+        Enforces terminal state validation, stages, commits, and merges the fix branch.
         """
-        print(f"[Main] Applying approved fix: branch={fix_branch}")
-        self.git.checkout_branch(fix_branch)
-        self.git.stage_all()
-        self.git.commit(f"Agent fix: {fix_branch}")
-        success = self.git.merge_branch(fix_branch, "master")
+        print(f"[Main] Applying approved fix: branch={fix_branch}, fix_id={fix_id}")
+        
+        # Enforce idempotent / duplicate approval prevention
+        if fix_id:
+            existing = self.mem.get_fix_by_id(fix_id)
+            if existing and existing.get("status") in ("applied", "rejected", "rolled_back"):
+                print(f"[Main] Duplicate approval rejected: fix #{fix_id} already has terminal status '{existing.get('status')}'.")
+                return False
 
-        if success:
-            self.mem.update_fix_status(fix_id, "applied", "passed")
-            if issue_id:
-                self.mem.update_issue_status(issue_id, "fixed")
-            self.git.delete_branch(fix_branch, force=True)
-            # Update outcome to confirmed "applied"
-            fix = self.mem.get_fix_by_id(fix_id)
-            if fix:
-                self.mem.record_fix_outcome(
-                    fix_id=fix_id, scan_id=fix.get("scan_id", ""),
-                    file=fix.get("file", ""), issue_type="",
-                    predicted_conf=0.0, reviewer_iters=1,
-                    outcome="applied",
-                )
-            print(f"[Main] Fix applied and merged successfully.")
-        else:
-            print(f"[Main] Merge failed.")
+        if not fix_branch or fix_branch not in self.git.list_branches():
+            print(f"[Main] Apply fix failed: fix branch '{fix_branch}' not found in repository.")
+            return False
 
-        return success
+        try:
+            self.git.checkout_branch(fix_branch)
+            self.git.stage_all()
+            self.git.commit(f"Agent fix: {fix_branch}")
+            success = self.git.merge_branch(fix_branch, self.git.default_branch)
 
-    def reject_fix(self, fix_id: int, fix_branch: str, issue: dict, reason: str = ""):
-        """Called when user clicks Reject in the UI — marks as false positive."""
-        self.mem.update_fix_status(fix_id, "rejected")
-        fix = self.mem.get_fix_by_id(fix_id) or {}
+            if success:
+                if fix_id:
+                    self.mem.update_fix_status(fix_id, "applied", "passed")
+                if issue_id:
+                    self.mem.update_issue_status(issue_id, "fixed")
+                self.git.delete_branch(fix_branch, force=True)
+                # Update outcome to confirmed "applied"
+                if fix_id:
+                    fix = self.mem.get_fix_by_id(fix_id)
+                    if fix:
+                        self.mem.record_fix_outcome(
+                            fix_id=fix_id, scan_id=fix.get("scan_id", ""),
+                            file=fix.get("file", ""), issue_type="",
+                            predicted_conf=0.0, reviewer_iters=1,
+                            outcome="applied",
+                        )
+                print(f"[Main] Fix applied and merged successfully into '{self.git.default_branch}'.")
+                return True
+            else:
+                print(f"[Main] Merge failed for branch '{fix_branch}'.")
+                return False
+        except Exception as e:
+            print(f"[Main] Apply fix error: {e}")
+            return False
+
+    def reject_fix(self, fix_id: int, fix_branch: str, issue: dict, reason: str = "") -> bool:
+        """Called when user clicks Reject in UI — logs false positive and rolls back branch."""
+        print(f"[Main] Rejecting fix: fix_id={fix_id}, branch={fix_branch}")
+        
+        # Enforce duplicate rejection prevention
+        if fix_id:
+            existing = self.mem.get_fix_by_id(fix_id)
+            if existing and existing.get("status") in ("applied", "rejected", "rolled_back"):
+                print(f"[Main] Duplicate reject rejected: fix #{fix_id} already has terminal status '{existing.get('status')}'.")
+                return False
+            self.mem.update_fix_status(fix_id, "rejected")
+
+        fix = self.mem.get_fix_by_id(fix_id) or {} if fix_id else {}
         self.mem.record_fix_outcome(
-            fix_id=fix_id, scan_id=fix.get("scan_id", ""),
+            fix_id=fix_id or 0, scan_id=fix.get("scan_id", issue.get("scan_id", "")),
             file=fix.get("file", issue.get("file", "")),
             issue_type=issue.get("issue_type", ""),
             predicted_conf=0.0, reviewer_iters=1,
             outcome="rejected", false_positive=True,
         )
-        if reason:
+        if reason or issue.get("file"):
             self.mem.save_rejection(
                 file=issue.get("file", ""), issue_type=issue.get("issue_type", ""),
                 description=issue.get("description", ""), reason=reason,
             )
-        try:
-            self.git.rollback_branch(fix_branch, "master")
-        except Exception:
-            pass
-        print(f"[Main] Fix #{fix_id} rejected as false positive.")
+        if fix_branch:
+            try:
+                self.git.rollback_branch(fix_branch, self.git.default_branch)
+            except Exception as e:
+                print(f"[Main] Fix branch rollback warning: {e}")
+        print(f"[Main] Fix #{fix_id} rejected and logged to memory.")
+        return True
 
     # ── Step 4b: Rollback applied fix ────────────────────────────────────────
 
@@ -553,15 +714,30 @@ class CodebaseAgent:
         """
         fix = self.mem.get_fix_by_id(fix_id)
         if not fix:
-            print(f"[Main] Rollback: fix {fix_id} not found.")
+            print(f"[Main] Rollback: fix #{fix_id} not found.")
+            return False
+
+        if fix.get("status") == "rolled_back":
+            print(f"[Main] Duplicate rollback rejected: fix #{fix_id} is already rolled back.")
+            return False
+
+        if fix.get("status") != "applied":
+            print(f"[Main] Cannot rollback fix #{fix_id}: only applied fixes can be rolled back (status is '{fix.get('status')}').")
             return False
 
         filepath = fix.get("file", "")
         original_code = fix.get("original_code", "")
-        if not filepath or not original_code:
+        if not filepath or original_code is None:
+            print(f"[Main] Rollback: missing file path or original code in fix #{fix_id}.")
             return False
 
-        full_path = self.repo_path / filepath
+        full_path = (self.repo_path / filepath).resolve()
+        try:
+            full_path.relative_to(self.repo_path)
+        except ValueError:
+            print(f"[Main] Security violation: rollback target outside repository boundary: {filepath}")
+            return False
+
         try:
             full_path.write_text(original_code, encoding="utf-8")
             # Commit the revert
@@ -573,21 +749,6 @@ class CodebaseAgent:
         except Exception as e:
             print(f"[Main] Rollback error: {e}")
             return False
-
-    # ── Step 5: Reject fix ────────────────────────────────────────────────────
-
-    def reject_fix(self, issue: dict, fix_branch: str, fix_id: int, reason: str = ""):
-        """Called when user rejects a fix in UI."""
-        self.git.rollback_branch(fix_branch, "master")
-        self.mem.save_rejection(
-            file=issue.get("file", ""),
-            issue_type=issue.get("issue_type", ""),
-            description=issue.get("description", ""),
-            reason=reason,
-        )
-        if fix_id:
-            self.mem.update_fix_status(fix_id, "rolled_back")
-        print(f"[Main] Fix rejected and logged to memory.")
 
     # ── Stats ─────────────────────────────────────────────────────────────────
 

@@ -1,5 +1,6 @@
 import os
 import json
+import hashlib
 import subprocess
 from pathlib import Path
 from dataclasses import dataclass, field
@@ -78,6 +79,50 @@ class Scanner:
         from core.agent_config import load_agent_config
         self.cfg = load_agent_config(str(self.repo_path))
 
+    # ── Revisions and incremental manifest ────────────────────────────────────
+
+    def _compute_file_hash(self, path: Path) -> str:
+        """Compute sha256 checksum of a file."""
+        try:
+            h = hashlib.sha256()
+            with open(path, "rb") as f:
+                while chunk := f.read(65536):
+                    h.update(chunk)
+            return h.hexdigest()[:16]
+        except Exception:
+            return ""
+
+    def get_repo_revision(self) -> str:
+        """Get current git commit hash or 'unversioned'."""
+        try:
+            return self.repo.head.commit.hexsha[:12]
+        except Exception:
+            return "unversioned"
+
+    def get_file_manifest(self) -> dict[str, str]:
+        """Compute relative path -> hash map for all supported files in repository."""
+        all_files = self._get_all_files()
+        manifest = {}
+        for f in all_files:
+            rel = str(f.relative_to(self.repo_path))
+            if not self.cfg.is_path_excluded(rel):
+                manifest[rel] = self._compute_file_hash(f)
+        return manifest
+
+    def load_last_scan_meta(self) -> Optional[dict]:
+        meta_file = self.repo_path / "data" / "last_scan_meta.json"
+        if meta_file.exists():
+            try:
+                return json.loads(meta_file.read_text(encoding="utf-8"))
+            except Exception:
+                return None
+        return None
+
+    def save_scan_meta(self, meta: dict):
+        meta_file = self.repo_path / "data" / "last_scan_meta.json"
+        meta_file.parent.mkdir(parents=True, exist_ok=True)
+        meta_file.write_text(json.dumps(meta, indent=2), encoding="utf-8")
+
     # ── Git: get changed files since last commit ──────────────────────────────
 
     def get_changed_files(self) -> list[Path]:
@@ -90,10 +135,11 @@ class Scanner:
             untracked = [self.repo_path / f for f in self.repo.untracked_files]
             all_files = list(set(changed + untracked))
 
-            # Filter to supported extensions only
+            # Filter to supported extensions and verify they are not excluded
             supported = [
                 f for f in all_files
                 if f.suffix in EXTENSION_TO_LANGUAGE and f.exists()
+                and not self.cfg.is_path_excluded(str(f.relative_to(self.repo_path)))
             ]
 
             if not supported:
@@ -136,15 +182,22 @@ class Scanner:
 
     def _get_all_files(self) -> list[Path]:
         files = []
-        for ext in EXTENSION_TO_LANGUAGE:
-            files.extend(self.repo_path.rglob(f"*{ext}"))
-        return [
-            f for f in files
-            if not self.cfg.is_path_excluded(str(f.relative_to(self.repo_path)))
-            and "venv" not in f.parts
-            and "node_modules" not in f.parts
-            and not any(part.startswith(".") for part in f.parts)
-        ]
+        ignore_dirs = {
+            "venv", ".venv", "env", ".env", "node_modules", ".git",
+            "__pycache__", ".pytest_cache", ".mypy_cache", "dist", "build", "data"
+        }
+        for root, dirs, filenames in os.walk(self.repo_path):
+            dirs[:] = [d for d in dirs if d not in ignore_dirs and not d.startswith(".")]
+            for filename in filenames:
+                p = Path(root) / filename
+                if p.suffix in EXTENSION_TO_LANGUAGE:
+                    try:
+                        rel = str(p.relative_to(self.repo_path))
+                        if not self.cfg.is_path_excluded(rel):
+                            files.append(p)
+                    except Exception:
+                        continue
+        return files
 
     # ── Radon: cyclomatic complexity ──────────────────────────────────────────
 
@@ -429,9 +482,8 @@ class Scanner:
         if not js_files:
             return []
 
-        # Check npx is available
-        npx = subprocess.run(["which", "npx"], capture_output=True, text=True)
-        if npx.returncode != 0:
+        import shutil
+        if not shutil.which("npx"):
             print("[Scanner] npx not found — skipping ESLint analysis.")
             return []
 
@@ -509,17 +561,26 @@ class Scanner:
 
     # ── Main scan ─────────────────────────────────────────────────────────────
 
-    def scan(self, full_scan: bool = False) -> list[Issue]:
+    def scan(self, full_scan: bool = False, files_override: Optional[list[Path]] = None) -> list[Issue]:
         from core.syntax_checker import SyntaxChecker
         from core.security_scanner import SecurityScanner
 
-        files = self._get_all_files() if full_scan else self.get_changed_files()
+        if files_override is not None:
+            files = files_override
+        else:
+            files = self._get_all_files() if full_scan else self.get_changed_files()
 
-        # ── Graph-aware incremental expansion ────────────────────────────────
-        # For non-full scans, also re-scan files that *import* changed files,
-        # because a change can break its dependents even if they weren't edited.
-        if not full_scan and files:
-            files = self._expand_with_dependents(files)
+            # ── Graph-aware incremental expansion ────────────────────────────────
+            # For non-full scans, also re-scan files that *import* changed files,
+            # because a change can break its dependents even if they weren't edited.
+            if not full_scan and files:
+                files = self._expand_with_dependents(files)
+
+        # Filter out excluded paths
+        files = [
+            f for f in files
+            if not self.cfg.is_path_excluded(str(f.relative_to(self.repo_path)))
+        ]
 
         print(f"[Scanner] Scanning {len(files)} file(s)...")
 
@@ -647,10 +708,171 @@ class Scanner:
             if per_file[iss.file] < self.cfg.max_issues_per_file:
                 filtered.append(iss)
                 per_file[iss.file] += 1
-        all_issues = filtered
+        # Double check: ignore any issue in excluded paths
+        all_issues = [i for i in all_issues if not self.cfg.is_path_excluded(i.file)]
 
         print(f"[Scanner] Found {len(all_issues)} issue(s).")
         return all_issues
+
+    def scan_incremental(self, base_scan: Optional[dict] = None) -> tuple[list[Issue], dict]:
+        """
+        Incrementally scan the repository:
+        1. Compares current file manifest against last scan metadata.
+        2. Detects added, modified, deleted, and renamed files.
+        3. If no base scan or metadata exists, falls back safely to full scan.
+        4. Re-analyzes only affected files and their dependent modules.
+        5. Invalidates stale findings for modified/deleted/affected files.
+        6. Reuses valid unchanged findings from base_scan.
+        7. Returns (all_current_issues, scan_metadata).
+        """
+        from datetime import datetime
+        current_rev = self.get_repo_revision()
+        current_manifest = self.get_file_manifest()
+        last_meta = self.load_last_scan_meta()
+
+        if base_scan is None:
+            last_scan_file = self.repo_path / "data" / "last_scan.json"
+            if last_scan_file.exists():
+                try:
+                    base_scan = json.loads(last_scan_file.read_text(encoding="utf-8"))
+                except Exception:
+                    base_scan = None
+
+        # Fallback to full baseline scan if no prior state is trustworthy
+        if not last_meta or not base_scan or "file_hashes" not in last_meta:
+            print("[Scanner] No previous scan baseline found. Performing full baseline scan.")
+            issues = self.scan(full_scan=True)
+            meta = {
+                "revision": current_rev,
+                "scanned_at": datetime.now().isoformat(),
+                "scan_type": "full_baseline",
+                "file_hashes": current_manifest,
+                "total_files": len(current_manifest),
+                "stats": {
+                    "added": list(current_manifest.keys()),
+                    "modified": [],
+                    "deleted": [],
+                    "renamed": [],
+                    "analyzed_count": len(current_manifest),
+                    "cached_count": 0,
+                    "cache_hit_rate": 0.0,
+                }
+            }
+            self.save_scan_meta(meta)
+            return issues, meta
+
+        old_manifest = last_meta.get("file_hashes", {})
+        old_files = set(old_manifest.keys())
+        cur_files = set(current_manifest.keys())
+
+        added = list(cur_files - old_files)
+        deleted = list(old_files - cur_files)
+        modified = [f for f in (cur_files & old_files) if current_manifest[f] != old_manifest[f]]
+
+        # Detect renames using git status
+        renamed = []
+        try:
+            status_output = self.repo.git.status("--porcelain")
+            for line in status_output.splitlines():
+                if line.startswith("R ") or line.startswith(" R"):
+                    parts = line[3:].split(" -> ")
+                    if len(parts) == 2:
+                        renamed.append({"old": parts[0].strip(), "new": parts[1].strip()})
+        except Exception:
+            pass
+
+        affected_rel_paths = set(added + modified)
+        affected_file_paths = [self.repo_path / f for f in affected_rel_paths if (self.repo_path / f).exists()]
+
+        # If absolutely nothing changed, reuse previous analysis directly
+        if not affected_file_paths and not deleted:
+            print(f"[Scanner] Repository files unchanged. Reusing cached scan findings.")
+            cached_issues = []
+            for d in base_scan.get("issues", []):
+                cached_issues.append(Issue(
+                    file=d.get("file", ""),
+                    line=d.get("line", 0),
+                    issue_type=d.get("issue_type", ""),
+                    severity=d.get("severity", "low"),
+                    description=d.get("description", ""),
+                    language=d.get("language", "python"),
+                    extra=d.get("extra", {}),
+                ))
+            meta = {
+                "revision": current_rev,
+                "scanned_at": datetime.now().isoformat(),
+                "scan_type": "incremental_cached",
+                "file_hashes": current_manifest,
+                "total_files": len(current_manifest),
+                "stats": {
+                    "added": [],
+                    "modified": [],
+                    "deleted": [],
+                    "renamed": renamed,
+                    "analyzed_count": 0,
+                    "cached_count": len(current_manifest),
+                    "cache_hit_rate": 1.0,
+                }
+            }
+            self.save_scan_meta(meta)
+            return cached_issues, meta
+
+        # Expand affected files to include direct dependents
+        expanded_paths = self._expand_with_dependents(affected_file_paths)
+        analyzed_rel_paths = {str(p.relative_to(self.repo_path)) for p in expanded_paths}
+
+        print(f"[Scanner] Incremental scan: {len(modified)} modified, {len(added)} added, {len(deleted)} deleted.")
+        print(f"[Scanner] Re-analyzing {len(expanded_paths)} file(s) (including dependents).")
+
+        # Run analysis specifically on affected + dependent files
+        fresh_issues = self.scan(full_scan=False, files_override=expanded_paths)
+
+        # Invalidate stale findings for modified, deleted, or re-analyzed files
+        stale_files = analyzed_rel_paths | set(deleted) | set(modified)
+        valid_retained_issues = []
+        for d in base_scan.get("issues", []):
+            if d.get("file") not in stale_files and (self.repo_path / d.get("file", "")).exists():
+                valid_retained_issues.append(Issue(
+                    file=d.get("file", ""),
+                    line=d.get("line", 0),
+                    issue_type=d.get("issue_type", ""),
+                    severity=d.get("severity", "low"),
+                    description=d.get("description", ""),
+                    language=d.get("language", "python"),
+                    extra=d.get("extra", {}),
+                ))
+
+        # Merge fresh issues and valid retained issues
+        merged = list(valid_retained_issues)
+        seen_keys = {(i.file, i.line, i.issue_type, i.description[:60]) for i in merged}
+        for iss in fresh_issues:
+            key = (iss.file, iss.line, iss.issue_type, iss.description[:60])
+            if key not in seen_keys:
+                merged.append(iss)
+                seen_keys.add(key)
+
+        cached_file_count = max(0, len(current_manifest) - len(analyzed_rel_paths))
+        hit_rate = round(cached_file_count / max(1, len(current_manifest)), 3)
+
+        meta = {
+            "revision": current_rev,
+            "scanned_at": datetime.now().isoformat(),
+            "scan_type": "incremental",
+            "file_hashes": current_manifest,
+            "total_files": len(current_manifest),
+            "stats": {
+                "added": added,
+                "modified": modified,
+                "deleted": deleted,
+                "renamed": renamed,
+                "analyzed_count": len(analyzed_rel_paths),
+                "cached_count": cached_file_count,
+                "cache_hit_rate": hit_rate,
+            }
+        }
+        self.save_scan_meta(meta)
+        print(f"[Scanner] Incremental scan completed: {len(merged)} total issues ({len(fresh_issues)} fresh, {len(valid_retained_issues)} retained, {hit_rate*100:.1f}% cache hit rate).")
+        return merged, meta
 
 
 # -- CLI test ------------------------------------------------------------------

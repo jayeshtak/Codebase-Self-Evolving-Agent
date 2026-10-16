@@ -1,3 +1,4 @@
+import sys
 import json
 import re
 import subprocess
@@ -59,12 +60,14 @@ class Executor:
             self.python = venv_python
         else:
             candidates = [
-                self.repo_path / "venv" / "bin" / "python",
-                self.repo_path / ".venv" / "bin" / "python",
+                self.repo_path / "venv" / "Scripts" / "python.exe",  # Windows
+                self.repo_path / ".venv" / "Scripts" / "python.exe", # Windows
+                self.repo_path / "venv" / "bin" / "python",          # Unix
+                self.repo_path / ".venv" / "bin" / "python",         # Unix
             ]
             self.python = next(
                 (str(p) for p in candidates if p.exists()),
-                "python3"
+                sys.executable or "python"
             )
 
         print(f"[Executor] Using python: {self.python}")
@@ -129,11 +132,11 @@ class Executor:
     # ── pytest ────────────────────────────────────────────────────────────────
 
     def _run_pytest(self, test_path: str, timeout: int) -> TestResult:
-        cmd = f"{self.python} -m pytest {test_path} -v --tb=short --no-header -q"
+        cmd = [self.python, "-m", "pytest", test_path, "-v", "--tb=short", "--no-header", "-q", "-p", "no:cacheprovider"]
         start = time.time()
         try:
             proc = subprocess.run(
-                shlex.split(cmd),
+                cmd,
                 capture_output=True, text=True,
                 timeout=timeout, cwd=str(self.repo_path),
             )

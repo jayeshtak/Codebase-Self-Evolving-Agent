@@ -38,29 +38,38 @@ class ReviewResult:
 
 class ReviewerAgent:
     def __init__(self):
-        self.groq = Groq(api_key=config.GROQ_API_KEY)
-        self.gemini = genai.Client(api_key=config.GEMINI_API_KEY)
+        self.groq = Groq(api_key=config.GROQ_API_KEY) if getattr(config, "has_groq", lambda: bool(config.GROQ_API_KEY))() else None
+        self.gemini = genai.Client(api_key=config.GEMINI_API_KEY) if getattr(config, "has_gemini", lambda: bool(config.GEMINI_API_KEY))() else None
 
     def _call_llm(self, prompt: str) -> str:
-        """Try Groq first (faster/cheaper for review), fall back to Gemini on 429."""
-        try:
-            response = self.groq.chat.completions.create(
-                model=config.GROQ_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.1,
-                max_tokens=500,
-            )
-            return response.choices[0].message.content.strip()
-        except Exception as e:
-            if "429" not in str(e) and "rate_limit" not in str(e).lower():
+        """Try Groq first (faster/cheaper for review), fall back to Gemini on 429 or absence."""
+        if self.groq:
+            try:
+                response = self.groq.chat.completions.create(
+                    model=config.GROQ_MODEL,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.1,
+                    max_tokens=500,
+                )
+                return response.choices[0].message.content.strip()
+            except Exception as e:
+                if "429" not in str(e) and "rate_limit" not in str(e).lower() and "API_KEY" not in str(e):
+                    raise
+                print(f"[Reviewer] Groq error/rate limited ({e}). Falling back to Gemini Flash...")
+
+        if self.gemini:
+            try:
+                response = self.gemini.models.generate_content(
+                    model=config.GEMINI_FLASH,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(temperature=0.1, max_output_tokens=500),
+                )
+                return response.text.strip()
+            except Exception as e:
+                print(f"[Reviewer] Gemini call failed: {e}")
                 raise
-        print("[Reviewer] Groq rate limited. Falling back to Gemini Flash...")
-        response = self.gemini.models.generate_content(
-            model=config.GEMINI_FLASH,
-            contents=prompt,
-            config=types.GenerateContentConfig(temperature=0.1, max_output_tokens=500),
-        )
-        return response.text.strip()
+
+        raise RuntimeError("No LLM provider available for review (set GROQ_API_KEY or GEMINI_API_KEY).")
 
     # ── Build prompt ──────────────────────────────────────────────────────────
 

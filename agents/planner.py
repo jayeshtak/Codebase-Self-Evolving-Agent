@@ -47,6 +47,14 @@ class PlanItem:
     skip_reason: str = ""
     skipped: bool = False
     extra: dict = field(default_factory=dict)
+    priority_explanation: str = ""
+    estimated_difficulty: str = "moderate"
+    regression_likelihood: str = "low"
+    has_test_coverage: bool = False
+    requires_human_approval: bool = False
+    patch_scope: str = "targeted"
+    group_id: str = ""
+    conflicts_with: list[str] = field(default_factory=list)
 
     def to_dict(self):
         return {
@@ -63,6 +71,14 @@ class PlanItem:
             "fix_strategy": self.fix_strategy,
             "skipped": self.skipped,
             "skip_reason": self.skip_reason,
+            "priority_explanation": self.priority_explanation,
+            "estimated_difficulty": self.estimated_difficulty,
+            "regression_likelihood": self.regression_likelihood,
+            "has_test_coverage": self.has_test_coverage,
+            "requires_human_approval": self.requires_human_approval,
+            "patch_scope": self.patch_scope,
+            "group_id": self.group_id,
+            "conflicts_with": self.conflicts_with,
         }
 
 
@@ -92,44 +108,205 @@ class Plan:
 
 class PlannerAgent:
     def __init__(self):
-        self.client = genai.Client(api_key=config.GEMINI_API_KEY)
-        self.groq = Groq(api_key=config.GROQ_API_KEY)
+        self.client = genai.Client(api_key=config.GEMINI_API_KEY) if getattr(config, "has_gemini", lambda: bool(config.GEMINI_API_KEY))() else None
+        self.groq = Groq(api_key=config.GROQ_API_KEY) if getattr(config, "has_groq", lambda: bool(config.GROQ_API_KEY))() else None
 
     def _call_llm(self, prompt: str, max_tokens: int = 1000) -> str:
-        """Call Gemini Flash, fall back to Groq on 429."""
-        try:
-            response = self.client.models.generate_content(
-                model=config.GEMINI_FLASH,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.2,
-                    max_output_tokens=max_tokens,
+        """Call Gemini Flash, fall back to Groq on 429 or absence."""
+        if self.client:
+            try:
+                response = self.client.models.generate_content(
+                    model=config.GEMINI_FLASH,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=0.2,
+                        max_output_tokens=max_tokens,
+                    )
                 )
-            )
-            return response.text.strip()
-        except Exception as e:
-            if "429" not in str(e) and "RESOURCE_EXHAUSTED" not in str(e):
-                raise
-        print("[Planner] Gemini rate limited. Falling back to Groq...")
-        response = self.groq.chat.completions.create(
-            model=config.GROQ_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,
-            max_tokens=max_tokens,
-        )
-        return response.choices[0].message.content.strip()
+                return response.text.strip()
+            except Exception as e:
+                if "429" not in str(e) and "RESOURCE_EXHAUSTED" not in str(e) and "API_KEY" not in str(e):
+                    raise
+                print(f"[Planner] Gemini rate limited ({e}). Falling back to Groq...")
 
-    # ── Priority scoring ──────────────────────────────────────────────────────
+        if self.groq:
+            try:
+                response = self.groq.chat.completions.create(
+                    model=config.GROQ_MODEL,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.2,
+                    max_tokens=max_tokens,
+                )
+                return response.choices[0].message.content.strip()
+            except Exception as e:
+                print(f"[Planner] Groq call failed: {e}")
+                raise
+
+        raise RuntimeError("No LLM provider available for planning (set GEMINI_API_KEY or GROQ_API_KEY).")
+
+    # ── Priority scoring & evaluation ─────────────────────────────────────────
+
+    def _detect_test_coverage(self, filepath: str, repo_path: Optional[str] = None) -> bool:
+        """Check if automated test files exist for the given source file."""
+        try:
+            base = Path(repo_path) if repo_path else Path.cwd()
+            p = Path(filepath)
+            stem = p.stem.lower()
+            candidates = [
+                base / "tests" / f"test_{stem}.py",
+                base / "tests" / f"{stem}.test.js",
+                base / "tests" / f"{stem}.test.ts",
+                base / "tests" / f"{stem}_test.go",
+                base / p.parent / f"test_{stem}.py",
+                base / p.parent / f"{stem}_test.py",
+            ]
+            if any(c.exists() for c in candidates):
+                return True
+            tests_dir = base / "tests"
+            if tests_dir.exists():
+                for f in tests_dir.glob("*.*"):
+                    if stem in f.name.lower() and f.suffix in (".py", ".js", ".ts", ".go", ".java"):
+                        return True
+        except Exception:
+            pass
+        return False
+
+    def _evaluate_priority(
+        self,
+        issue: dict,
+        impact: dict,
+        has_tests: bool,
+        rejection_counts: dict[str, int],
+    ) -> tuple[float, str, str, str, bool, str]:
+        """
+        Multi-factor transparent priority evaluation:
+        - Severity: High (+4.0), Medium (+2.5), Low (+1.0)
+        - Code Complexity: CC >= 15 (+1.5), CC >= 10 (+0.8)
+        - Dependency Impact: +min(impact_radius * 0.35, 2.0)
+        - Regression Likelihood: High (impact >= 4), Medium (impact >= 2), Low
+        - Estimated Difficulty: quick_win (+0.5), moderate (0.0), complex (-0.2)
+        - Test Presence: +0.8 boost (safe to fix & verify automatically)
+        - Past Rejections Penalty: deduction if user frequently rejected this pattern
+        - Human Approval: Required if regression_likelihood is High or impact >= 3 or High severity
+        Returns: (score, explanation, difficulty, regression_likelihood, requires_approval, patch_scope)
+        """
+        sev = issue.get("severity", "low").lower()
+        sev_weights = {"high": 4.0, "medium": 2.5, "low": 1.0}
+        base_sev = sev_weights.get(sev, 1.0)
+        parts = [f"Severity {sev.capitalize()} (+{base_sev})"]
+        score = base_sev
+
+        # 1. Cyclomatic Complexity
+        extra = issue.get("extra") or {}
+        cc = extra.get("complexity", 0)
+        if cc >= 15:
+            score += 1.5
+            parts.append(f"High complexity CC={cc} (+1.5)")
+        elif cc >= 10:
+            score += 0.8
+            parts.append(f"Moderate complexity CC={cc} (+0.8)")
+
+        # 2. Dependency Impact (fan-in)
+        impact_radius = impact.get("impact_score", 0)
+        if impact_radius > 0:
+            dep_bonus = min(round(impact_radius * 0.35, 2), 2.0)
+            score += dep_bonus
+            parts.append(f"Fan-in impact={impact_radius} (+{dep_bonus})")
+
+        # 3. Regression Likelihood
+        if impact_radius >= 4 or "core" in issue.get("file", "").lower():
+            regression_likelihood = "high"
+        elif impact_radius >= 2:
+            regression_likelihood = "medium"
+        else:
+            regression_likelihood = "low"
+
+        # 4. Estimated Fix Difficulty
+        itype = issue.get("issue_type", "").lower()
+        if itype in ("undefined_name", "dead_code", "missing_docs", "syntax_error"):
+            difficulty = "quick_win"
+            score += 0.5
+            parts.append("Quick-win resolution (+0.5)")
+            patch_scope = "targeted"
+        elif itype in ("complexity", "deep_nesting", "long_function", "style"):
+            difficulty = "moderate"
+            patch_scope = "targeted"
+        else:
+            difficulty = "complex"
+            score -= 0.2
+            parts.append("Complex architectural fix (-0.2)")
+            patch_scope = "targeted" if itype != "duplicate" else "rewrite"
+
+        # 5. Test Availability
+        if has_tests:
+            score += 0.8
+            parts.append("Automated test coverage verified (+0.8)")
+        else:
+            parts.append("No automated test coverage")
+
+        # 6. Past Rejection Pattern
+        rej_count = rejection_counts.get(itype, 0)
+        if rej_count > 0:
+            penalty = min(round(rej_count * 0.4, 2), 1.5)
+            score -= penalty
+            parts.append(f"Historical rejection pattern penalty (-{penalty})")
+
+        # 7. Required Human Approval Gate
+        requires_approval = (
+            regression_likelihood == "high" or
+            impact_radius >= 3 or
+            sev == "high" or
+            difficulty == "complex"
+        )
+
+        final_score = max(0.1, round(score, 2))
+        explanation = " | ".join(parts) + f" => Score {final_score:.2f}"
+        return final_score, explanation, difficulty, regression_likelihood, requires_approval, patch_scope
 
     def _score_issue(self, issue: dict, impact: dict) -> float:
+        """Backward compatible scoring method."""
+        score, _, _, _, _, _ = self._evaluate_priority(
+            issue=issue,
+            impact=impact,
+            has_tests=False,
+            rejection_counts={},
+        )
+        return score
+
+    def _cluster_issues(self, items: list[PlanItem]) -> None:
         """
-        Score = severity_weight × (1 + impact_score / 10)
-        Higher = fix sooner.
+        Groups issues in the same file that are within 10 lines of each other.
+        Sets group_id and populates conflicts_with to prevent conflicting parallel edits.
         """
-        severity_weights = {"high": 3.0, "medium": 2.0, "low": 1.0}
-        base = severity_weights.get(issue.get("severity", "low"), 1.0)
-        impact_score = impact.get("impact_score", 0)
-        return round(base * (1 + impact_score / 10), 3)
+        from collections import defaultdict
+        by_file: dict[str, list[PlanItem]] = defaultdict(list)
+        for it in items:
+            by_file[it.file].append(it)
+
+        for filepath, f_items in by_file.items():
+            f_items.sort(key=lambda x: x.line)
+            cluster_id = 1
+            for i in range(len(f_items)):
+                cur = f_items[i]
+                conflicts = []
+                shared_group = cur.group_id
+                for j in range(len(f_items)):
+                    if i == j:
+                        continue
+                    other = f_items[j]
+                    if abs(cur.line - other.line) <= 10:
+                        conflicts.append(f"{other.file}:{other.line}")
+                        if other.group_id:
+                            shared_group = other.group_id
+                if conflicts:
+                    if not shared_group:
+                        shared_group = f"{filepath}#grp_{cluster_id}"
+                        cluster_id += 1
+                    cur.group_id = shared_group
+                    cur.conflicts_with = conflicts
+                    for j in range(len(f_items)):
+                        if i != j and abs(cur.line - f_items[j].line) <= 10:
+                            f_items[j].group_id = shared_group
 
     # ── Rejection filter ──────────────────────────────────────────────────────
 
@@ -241,20 +418,29 @@ Be concise and direct. No bullet points."""
         rag_context: Optional[list[dict]] = None,
         rejections: Optional[list[dict]] = None,
         issue_ids: Optional[list[int]] = None,
+        repo_path: Optional[str] = None,
     ) -> Plan:
         """
-        Build a prioritized fix plan from scanner issues.
+        Build an intelligently prioritized fix plan from scanner issues.
 
         issues       : list of issue dicts from scanner
         impact_radii : {filepath: impact_dict} from graph
         rag_context  : search hits from ChromaDB
         rejections   : past rejections from SQLite
         issue_ids    : DB ids corresponding to each issue (parallel list)
+        repo_path    : optional path to the target repository root
         """
         impact_radii = impact_radii or {}
         rag_context = rag_context or []
         rejections = rejections or []
         issue_ids = issue_ids or [None] * len(issues)
+
+        # Build rejection frequency by issue_type for learning
+        rejection_counts: dict[str, int] = {}
+        for r in rejections:
+            it = r.get("issue_type", "")
+            if it:
+                rejection_counts[it] = rejection_counts.get(it, 0) + 1
 
         print(f"[Planner] Planning {len(issues)} issue(s)...")
 
@@ -273,7 +459,23 @@ Be concise and direct. No bullet points."""
 
             # Check rejection memory
             rejected, reason = self._is_rejected(issue, rejections)
-            score = self._score_issue(issue, impact)
+            has_tests = self._detect_test_coverage(filepath, repo_path=repo_path)
+
+            # Evaluate multi-factor priority score & attributes
+            (
+                score,
+                explanation,
+                difficulty,
+                regression_likelihood,
+                requires_approval,
+                patch_scope
+            ) = self._evaluate_priority(
+                issue=issue,
+                impact=impact,
+                has_tests=has_tests,
+                rejection_counts=rejection_counts,
+            )
+
             issue_type = issue.get("issue_type", "")
             fallback = _FALLBACK_STRATEGIES.get(issue_type, "Refactor to improve quality.")
             strategy = strategies.get(issue.get("description", ""), fallback)
@@ -293,6 +495,12 @@ Be concise and direct. No bullet points."""
                 skipped=rejected,
                 skip_reason=reason,
                 extra=issue.get("extra", {}),
+                priority_explanation=explanation,
+                estimated_difficulty=difficulty,
+                regression_likelihood=regression_likelihood,
+                has_test_coverage=has_tests,
+                requires_human_approval=requires_approval,
+                patch_scope=patch_scope,
             )
 
             if rejected:
@@ -301,9 +509,11 @@ Be concise and direct. No bullet points."""
             else:
                 plan_items.append(item)
 
-        # Sort: high severity first, then lowest impact radius (safest high-value fix first)
-        _sev_order = {"high": 0, "medium": 1, "low": 2}
-        plan_items.sort(key=lambda x: (_sev_order.get(x.severity, 2), x.impact_radius))
+        # Detect groups and conflicting proximate edits
+        self._cluster_issues(plan_items)
+
+        # Sort: Highest priority score first, tie-break by lowest impact radius (safest high-value fix first)
+        plan_items.sort(key=lambda x: (-x.priority_score, x.impact_radius))
 
         summary = self._get_plan_summary(plan_items)
 

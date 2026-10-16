@@ -46,8 +46,8 @@ class CoderResult:
 
 class CoderAgent:
     def __init__(self):
-        self.client = genai.Client(api_key=config.GEMINI_API_KEY)
-        self.groq = Groq(api_key=config.GROQ_API_KEY)
+        self.client = genai.Client(api_key=config.GEMINI_API_KEY) if getattr(config, "has_gemini", lambda: bool(config.GEMINI_API_KEY))() else None
+        self.groq = Groq(api_key=config.GROQ_API_KEY) if getattr(config, "has_groq", lambda: bool(config.GROQ_API_KEY))() else None
 
     # ── Read file context ─────────────────────────────────────────────────────
 
@@ -242,36 +242,39 @@ CODE:
     # ── LLM call with Groq fallback ───────────────────────────────────────────
 
     def _call_llm(self, prompt: str) -> str:
-        """Call Gemini. On repeated 429s fall back to Groq automatically."""
-        try:
-            response = self.client.models.generate_content(
-                model=config.GEMINI_PRO,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.1,
-                    max_output_tokens=8000,
+        """Call Gemini. On repeated 429s or if Gemini is absent fall back to Groq automatically."""
+        if self.client:
+            try:
+                response = self.client.models.generate_content(
+                    model=config.GEMINI_PRO,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=0.1,
+                        max_output_tokens=8000,
+                    )
                 )
-            )
-            return response.text.strip()
-        except Exception as e:
-            err = str(e)
-            if "429" not in err and "RESOURCE_EXHAUSTED" not in err:
-                raise
+                return response.text.strip()
+            except Exception as e:
+                err = str(e)
+                if "429" not in err and "RESOURCE_EXHAUSTED" not in err and "API_KEY" not in err:
+                    raise
+                print(f"[Coder] Gemini error/quota hit ({e}). Falling back to Groq...")
 
-        # Gemini rate limited — fall back to Groq immediately
-        print("[Coder] Gemini rate limited. Falling back to Groq...")
-        try:
-            response = self.groq.chat.completions.create(
-                model=config.GROQ_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.1,
-                max_tokens=8000,
-            )
-            return response.choices[0].message.content.strip()
-        except Exception as e:
-            if "429" in str(e) or "rate_limit" in str(e).lower() or "quota" in str(e).lower():
-                raise QuotaExhaustedException("Both Gemini and Groq quotas exhausted.")
-            raise
+        if self.groq:
+            try:
+                response = self.groq.chat.completions.create(
+                    model=config.GROQ_MODEL,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.1,
+                    max_tokens=8000,
+                )
+                return response.choices[0].message.content.strip()
+            except Exception as e:
+                if "429" in str(e) or "rate_limit" in str(e).lower() or "quota" in str(e).lower():
+                    raise QuotaExhaustedException("Both Gemini and Groq quotas exhausted.")
+                raise
+        
+        raise QuotaExhaustedException("No configured LLM provider available (Gemini or Groq required).")
 
     # ── Generate fix ──────────────────────────────────────────────────────────
 

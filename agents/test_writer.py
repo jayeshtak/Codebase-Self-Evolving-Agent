@@ -18,6 +18,7 @@ import config
 
 @dataclass
 class TestWriterResult:
+    __test__ = False
     success: bool
     source_file: str
     test_file: str
@@ -39,35 +40,44 @@ class TestWriterResult:
 # ── TestWriterAgent ───────────────────────────────────────────────────────────
 
 class TestWriterAgent:
+    __test__ = False
     def __init__(self):
-        self.client = genai.Client(api_key=config.GEMINI_API_KEY)
-        self.groq = Groq(api_key=config.GROQ_API_KEY)
+        self.client = genai.Client(api_key=config.GEMINI_API_KEY) if getattr(config, "has_gemini", lambda: bool(config.GEMINI_API_KEY))() else None
+        self.groq = Groq(api_key=config.GROQ_API_KEY) if getattr(config, "has_groq", lambda: bool(config.GROQ_API_KEY))() else None
 
     def _call_llm(self, prompt: str) -> str:
-        """Call Gemini Flash. On repeated 429s fall back to Groq."""
-        try:
-            response = self.client.models.generate_content(
-                model=config.GEMINI_FLASH,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.2,
-                    max_output_tokens=3000,
+        """Call Gemini Flash. On repeated 429s or absence fall back to Groq."""
+        if self.client:
+            try:
+                response = self.client.models.generate_content(
+                    model=config.GEMINI_FLASH,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=0.2,
+                        max_output_tokens=3000,
+                    )
                 )
-            )
-            return response.text.strip()
-        except Exception as e:
-            err = str(e)
-            if "429" not in err and "RESOURCE_EXHAUSTED" not in err:
+                return response.text.strip()
+            except Exception as e:
+                err = str(e)
+                if "429" not in err and "RESOURCE_EXHAUSTED" not in err and "API_KEY" not in err:
+                    raise
+                print(f"[TestWriter] Gemini rate limited ({e}). Falling back to Groq...")
+
+        if self.groq:
+            try:
+                response = self.groq.chat.completions.create(
+                    model=config.GROQ_MODEL,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.2,
+                    max_tokens=3000,
+                )
+                return response.choices[0].message.content.strip()
+            except Exception as e:
+                print(f"[TestWriter] Groq call failed: {e}")
                 raise
 
-        print("[TestWriter] Gemini rate limited. Falling back to Groq...")
-        response = self.groq.chat.completions.create(
-            model=config.GROQ_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,
-            max_tokens=3000,
-        )
-        return response.choices[0].message.content.strip()
+        raise RuntimeError("No LLM provider available for test writing (set GEMINI_API_KEY or GROQ_API_KEY).")
 
     _LANG_META = {
         ".py":   {"lang": "python",     "framework": "pytest",   "fence": "python",     "ext": ".py",   "prefix": "test_"},

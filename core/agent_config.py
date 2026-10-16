@@ -18,7 +18,8 @@ except ImportError:
 @dataclass
 class AgentConfig:
     exclude_paths: list[str] = field(default_factory=lambda: [
-        "venv/", "node_modules/", ".git/", "__pycache__/", "dist/", "build/",
+        "tests/", ".pytest_cache/", ".mypy_cache/", "venv/", "__pycache__/", "data/",
+        "node_modules/", ".git/", "dist/", "build/",
     ])
     enabled_checks: dict[str, bool] = field(default_factory=lambda: {
         "complexity": True,
@@ -36,9 +37,22 @@ class AgentConfig:
     max_auto_fix: int = 5
 
     def is_path_excluded(self, filepath: str) -> bool:
-        for exc in self.exclude_paths:
-            if exc.rstrip("/") in filepath:
+        normalized_path = filepath.replace('\\', '/')
+        parts = normalized_path.split('/')
+        ignore_dirs = {
+            "tests", ".pytest_cache", ".mypy_cache", "__pycache__", "pycache",
+            "venv", ".venv", "data", "node_modules", ".git", "dist", "build"
+        }
+        for part in parts:
+            if part in ignore_dirs:
                 return True
+
+        for exc in self.exclude_paths:
+            exc_normalized = exc.replace('\\', '/').rstrip('/')
+            exc_parts = exc_normalized.split('/')
+            for i in range(len(parts) - len(exc_parts) + 1):
+                if parts[i:i+len(exc_parts)] == exc_parts:
+                    return True
         return False
 
     def is_check_enabled(self, check_name: str) -> bool:

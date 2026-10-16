@@ -1,0 +1,1921 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Codebase Agent | Command Center</title>
+  <!-- Local Tailwind CSS -->
+  <script src="/static/tailwind.js"></script>
+  <!-- Local Lucide Icons -->
+  <script src="/static/lucide.min.js"></script>
+  <!-- Local Chart.js -->
+  <script src="/static/chart.js"></script>
+  <!-- Local vis.js Network -->
+  <script src="/static/vis-network.min.js"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            bg: '#080808',
+            sidebar: '#0D0D0D',
+            surface: '#111111',
+            'surface-2': '#161616',
+            border: '#252525',
+            'border-subtle': '#1A1A1A',
+            default: '#F5F5F5',
+            secondary: '#929292',
+            muted: '#666666',
+            accent: '#E5E7EB',
+            'accent-bg': '#1E1E1E',
+            'accent-text': '#FFFFFF',
+            success: '#10B981',
+            'success-bg': 'rgba(16, 185, 129, 0.12)',
+            'success-text': '#34D399',
+            warning: '#F59E0B',
+            'warning-bg': 'rgba(245, 158, 11, 0.12)',
+            'warning-text': '#FBBF24',
+            destructive: '#EF4444',
+            'destructive-bg': 'rgba(239, 68, 68, 0.12)',
+            'destructive-text': '#F87171',
+          },
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Menlo', 'Consolas', 'monospace'],
+          },
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    :root, .dark {
+      --color-bg: #080808;
+      --color-sidebar: #0D0D0D;
+      --color-surface: #111111;
+      --color-surface-2: #161616;
+      --color-border: #252525;
+      --color-border-subtle: #1A1A1A;
+      --color-text: #F5F5F5;
+      --color-text-secondary: #929292;
+      --color-text-muted: #666666;
+      --color-accent: #E5E7EB;
+      --color-success: #10B981;
+      --color-warning: #F59E0B;
+      --color-destructive: #EF4444;
+    }
+
+    body {
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #252525;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3A3A3A;
+    }
+
+    /* Active Nav Tab */
+    .nav-btn.active {
+      background-color: #161616;
+      color: #F5F5F5;
+      font-weight: 600;
+      border-left: 2px solid #E5E7EB;
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+    }
+
+    /* Code diff lines */
+    .diff-add {
+      background-color: rgba(16, 185, 129, 0.14);
+      color: #34D399;
+      border-left: 2px solid #10B981;
+    }
+    .diff-del {
+      background-color: rgba(239, 68, 68, 0.14);
+      color: #F87171;
+      border-left: 2px solid #EF4444;
+    }
+    .diff-ctx {
+      color: #929292;
+    }
+    .diff-hunk {
+      background-color: #141414;
+      color: #666666;
+      font-weight: 500;
+    }
+
+    pre, code {
+      font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
+    }
+  </style>
+</head>
+<body class="bg-bg text-default h-full overflow-hidden flex font-sans select-none">
+
+  <!-- ==================== LEFT COLLAPSIBLE SIDEBAR ==================== -->
+  <aside id="main-sidebar" class="w-64 bg-sidebar border-r border-border flex flex-col shrink-0 transition-all duration-200">
+    <!-- Brand / System Title -->
+    <div class="px-5 py-4 flex items-center justify-between border-b border-border shrink-0">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-6 h-6 rounded bg-surface border border-border flex items-center justify-center text-default">
+          <i data-lucide="cpu" class="h-3.5 w-3.5 text-accent"></i>
+        </div>
+        <div>
+          <span class="font-mono text-xs font-semibold tracking-tight text-default block">EVOLVE-AGENT</span>
+          <span class="text-[9px] text-muted font-mono uppercase tracking-widest block">v2.5 // CORE</span>
+        </div>
+      </div>
+      <div class="flex items-center space-x-1">
+        <span class="w-2 h-2 rounded-full bg-destructive" id="top-status-indicator"></span>
+      </div>
+    </div>
+
+    <!-- Workspace Connection -->
+    <div class="p-3.5 border-b border-border space-y-2 bg-surface/40 shrink-0">
+      <div class="flex items-center justify-between">
+        <span class="text-[9px] font-mono font-semibold text-muted uppercase tracking-wider">Workspace Path</span>
+        <span id="git-branch-badge" class="text-[9px] font-mono text-muted bg-surface px-1.5 py-0.5 rounded border border-border hidden">main</span>
+      </div>
+      <input type="text" id="repo-path-input" placeholder="c:\path\to\repository" 
+             class="w-full bg-surface border border-border rounded px-2.5 py-1.5 text-xs text-default placeholder-muted font-mono focus:outline-none focus:border-accent">
+      <div class="grid grid-cols-3 gap-1">
+        <button id="btn-browse" class="flex items-center justify-center bg-surface-2 hover:bg-surface text-default text-[10px] font-medium py-1 px-1.5 rounded border border-border" title="Browse Local Folder">
+          <i data-lucide="folder" class="h-3 w-3 mr-1 text-muted"></i> Browse
+        </button>
+        <button id="btn-connect" class="flex items-center justify-center bg-default hover:bg-neutral-200 text-black text-[10px] font-semibold py-1 px-1.5 rounded" title="Connect Repository">
+          <i data-lucide="link" class="h-3 w-3 mr-1"></i> Connect
+        </button>
+        <button id="btn-load-last" class="flex items-center justify-center bg-surface-2 hover:bg-surface text-secondary hover:text-default text-[10px] font-medium py-1 px-1.5 rounded border border-border" title="Load Last Saved Scan">
+          <i data-lucide="refresh-cw" class="h-3 w-3 mr-1"></i> Reload
+        </button>
+      </div>
+    </div>
+
+    <!-- Primary Navigation: 10 Screens -->
+    <nav class="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto font-mono text-xs">
+      <div class="px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-muted">Control Center</div>
+      <button class="nav-btn w-full px-2.5 py-1.5 rounded text-left flex items-center space-x-2 text-secondary hover:text-default hover:bg-surface-2 transition" data-target="tab-command-center">
+        <i data-lucide="layout-dashboard" class="h-3.5 w-3.5 shrink-0"></i>
+        <span>Command Center</span>
+      </button>
+      <button class="nav-btn w-full px-2.5 py-1.5 rounded text-left flex items-center space-x-2 text-secondary hover:text-default hover:bg-surface-2 transition" data-target="tab-repo-explorer">
+        <i data-lucide="folder-tree" class="h-3.5 w-3.5 shrink-0"></i>
+        <span>Repository Explorer</span>
+      </button>
+      <button class="nav-btn w-full px-2.5 py-1.5 rounded text-left flex items-center space-x-2 text-secondary hover:text-default hover:bg-surface-2 transition" data-target="tab-orchestrator">
+        <i data-lucide="layers" class="h-3.5 w-3.5 shrink-0"></i>
+        <span>AI Orchestrator</span>
+      </button>
+
+      <div class="px-2 pt-3 pb-1 text-[9px] font-semibold uppercase tracking-wider text-muted">Code Intelligence</div>
+      <button class="nav-btn w-full px-2.5 py-1.5 rounded text-left flex items-center justify-between text-secondary hover:text-default hover:bg-surface-2 transition" data-target="tab-issues">
+        <span class="flex items-center space-x-2">
+          <i data-lucide="alert-triangle" class="h-3.5 w-3.5 shrink-0"></i>
+          <span>Issue Intelligence</span>
+        </span>
+        <span id="nav-issue-badge" class="text-[9px] bg-surface px-1.5 py-0.2 rounded border border-border text-muted">0</span>
+      </button>
+      <button class="nav-btn w-full px-2.5 py-1.5 rounded text-left flex items-center space-x-2 text-secondary hover:text-default hover:bg-surface-2 transition" data-target="tab-fix-studio">
+        <i data-lucide="git-pull-request" class="h-3.5 w-3.5 shrink-0"></i>
+        <span>Fix Review Studio</span>
+      </button>
+      <button class="nav-btn w-full px-2.5 py-1.5 rounded text-left flex items-center space-x-2 text-secondary hover:text-default hover:bg-surface-2 transition" data-target="tab-test-lab">
+        <i data-lucide="flask-conical" class="h-3.5 w-3.5 shrink-0"></i>
+        <span>Test Lab</span>
+      </button>
+      <button class="nav-btn w-full px-2.5 py-1.5 rounded text-left flex items-center space-x-2 text-secondary hover:text-default hover:bg-surface-2 transition" data-target="tab-dependency">
+        <i data-lucide="network" class="h-3.5 w-3.5 shrink-0"></i>
+        <span>Dependency Graph</span>
+      </button>
+      <button class="nav-btn w-full px-2.5 py-1.5 rounded text-left flex items-center space-x-2 text-secondary hover:text-default hover:bg-surface-2 transition" data-target="tab-search">
+        <i data-lucide="sparkles" class="h-3.5 w-3.5 shrink-0"></i>
+        <span>Semantic Search</span>
+      </button>
+
+      <div class="px-2 pt-3 pb-1 text-[9px] font-semibold uppercase tracking-wider text-muted">System & Audit</div>
+      <button class="nav-btn w-full px-2.5 py-1.5 rounded text-left flex items-center space-x-2 text-secondary hover:text-default hover:bg-surface-2 transition" data-target="tab-timeline">
+        <i data-lucide="history" class="h-3.5 w-3.5 shrink-0"></i>
+        <span>Audit Timeline</span>
+      </button>
+      <button class="nav-btn w-full px-2.5 py-1.5 rounded text-left flex items-center space-x-2 text-secondary hover:text-default hover:bg-surface-2 transition" data-target="tab-settings">
+        <i data-lucide="sliders" class="h-3.5 w-3.5 shrink-0"></i>
+        <span>Settings & Config</span>
+      </button>
+    </nav>
+
+    <!-- Sidebar Footer -->
+    <div class="p-3 border-t border-border flex items-center justify-between shrink-0 bg-surface/30 font-mono text-[10px]">
+      <div class="flex items-center space-x-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-destructive" id="sidebar-status-dot"></span>
+        <span class="text-muted tracking-wider uppercase" id="sidebar-status-text">Disconnected</span>
+      </div>
+      <span class="text-muted" id="sidebar-stats-count">-- issues</span>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN WORKSPACE ==================== -->
+  <main class="flex-1 flex flex-col overflow-hidden bg-bg">
+    
+    <!-- Persistent Top Bar -->
+    <header class="h-12 border-b border-border bg-sidebar/80 backdrop-blur px-5 flex items-center justify-between shrink-0 font-mono text-xs">
+      <div class="flex items-center space-x-3">
+        <button id="btn-toggle-sidebar" class="text-muted hover:text-default p-1 rounded hover:bg-surface-2">
+          <i data-lucide="menu" class="h-4 w-4"></i>
+        </button>
+        <span class="text-muted">/</span>
+        <h2 id="topbar-title" class="text-default font-semibold text-xs tracking-tight uppercase">Command Center</h2>
+        <span id="topbar-repo-label" class="text-[10px] text-muted bg-surface px-2 py-0.5 rounded border border-border truncate max-w-xs">No repository connected</span>
+        <span id="demo-mode-badge" class="hidden text-[9px] text-warning bg-warning/10 border border-warning/30 px-2 py-0.5 rounded font-mono uppercase font-bold tracking-wider">Demo Sandbox</span>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <!-- Global Search Input -->
+        <div class="relative">
+          <input type="text" id="topbar-search-input" placeholder="Search issues, files, symbols... (Ctrl+K)" 
+                 class="w-64 bg-surface border border-border rounded px-2.5 py-1 text-[11px] text-default placeholder-muted font-mono focus:outline-none focus:border-accent">
+          <i data-lucide="search" class="h-3 w-3 text-muted absolute right-2.5 top-2"></i>
+        </div>
+        
+        <button id="btn-quick-scan" class="flex items-center space-x-1.5 bg-surface-2 hover:bg-surface border border-border text-default px-2.5 py-1 rounded text-[11px] font-mono transition" title="Start Rapid Scan">
+          <i data-lucide="play" class="h-3 w-3 text-success"></i>
+          <span>Run Scan</span>
+        </button>
+        
+        <button id="btn-open-settings" class="text-muted hover:text-default p-1.5 rounded hover:bg-surface-2 border border-border" title="Settings">
+          <i data-lucide="settings" class="h-3.5 w-3.5"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Workspace Scrollable Content Area -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- ==================== SCREEN 1: COMMAND CENTER ==================== -->
+      <section id="tab-command-center" class="screen-view space-y-6">
+        <!-- Hero Overview Card -->
+        <div class="bg-surface border border-border rounded p-5 space-y-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <span class="text-[10px] font-mono font-semibold text-muted uppercase tracking-wider block">Repository Status</span>
+              <h1 id="cc-repo-name" class="text-xl font-semibold text-default tracking-tight mt-0.5">No Repository Active</h1>
+              <p id="cc-repo-path" class="text-xs text-muted font-mono mt-0.5">Connect a local codebase using the sidebar connection panel to begin analysis.</p>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button id="cc-btn-scan-inc" class="bg-surface-2 hover:bg-surface border border-accent/40 text-default px-3 py-1.5 rounded text-xs font-mono font-semibold flex items-center space-x-1.5 transition" title="Incrementally re-analyze changed files & dependents only">
+                <i data-lucide="zap" class="h-3.5 w-3.5 text-accent"></i>
+                <span>Incremental Scan</span>
+              </button>
+              <button id="cc-btn-scan" class="bg-default hover:bg-neutral-200 text-black px-3 py-1.5 rounded text-xs font-mono font-semibold flex items-center space-x-1.5 transition">
+                <i data-lucide="radar" class="h-3.5 w-3.5"></i>
+                <span>Full Scan</span>
+              </button>
+              <button id="cc-btn-plan" class="bg-surface-2 hover:bg-surface border border-border text-default px-3 py-1.5 rounded text-xs font-mono font-semibold flex items-center space-x-1.5 transition">
+                <i data-lucide="list-ordered" class="h-3.5 w-3.5"></i>
+                <span>Generate Plan</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="border-t border-border"></div>
+
+          <!-- Real Metrics Grid -->
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-3 font-mono">
+            <div class="bg-surface-2 border border-border rounded p-3">
+              <span class="text-[9px] text-muted uppercase tracking-wider block">Health Score</span>
+              <div id="cc-health-score" class="text-2xl font-bold text-default mt-1">--/100</div>
+              <span class="text-[9px] text-muted block mt-0.5" id="cc-grade">Grade: --</span>
+            </div>
+            <div class="bg-surface-2 border border-border rounded p-3">
+              <span class="text-[9px] text-muted uppercase tracking-wider block">Total Issues</span>
+              <div id="cc-total-issues" class="text-2xl font-bold text-default mt-1">0</div>
+              <span class="text-[9px] text-muted block mt-0.5" id="cc-files-affected">Across -- files</span>
+            </div>
+            <div class="bg-surface-2 border border-border rounded p-3">
+              <span class="text-[9px] text-muted uppercase tracking-wider block">High Severity</span>
+              <div id="cc-high-issues" class="text-2xl font-bold text-destructive mt-1">0</div>
+              <span class="text-[9px] text-muted block mt-0.5">Requires immediate fix</span>
+            </div>
+            <div class="bg-surface-2 border border-border rounded p-3">
+              <span class="text-[9px] text-muted uppercase tracking-wider block">Fixes Applied</span>
+              <div id="cc-fixes-applied" class="text-2xl font-bold text-success mt-1">0</div>
+              <span class="text-[9px] text-muted block mt-0.5" id="cc-fixes-pending">0 pending approval</span>
+            </div>
+            <div class="bg-surface-2 border border-border rounded p-3">
+              <span class="text-[9px] text-muted uppercase tracking-wider block">Test Status</span>
+              <div id="cc-test-status" class="text-2xl font-bold text-default mt-1">--</div>
+              <span class="text-[9px] text-muted block mt-0.5" id="cc-test-summary">No tests run</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Severity Breakdown & Recent Pipeline Activity -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Severity Breakdown Card -->
+          <div class="bg-surface border border-border rounded p-4 space-y-3 font-mono">
+            <h3 class="text-xs font-semibold text-default uppercase tracking-wider">Severity Distribution</h3>
+            <div class="space-y-2 text-xs">
+              <div>
+                <div class="flex justify-between text-[11px] mb-1">
+                  <span class="text-destructive font-semibold">High / Security</span>
+                  <span id="cc-bar-high-count">0</span>
+                </div>
+                <div class="w-full bg-surface-2 h-1.5 rounded overflow-hidden">
+                  <div id="cc-bar-high" class="bg-destructive h-full" style="width: 0%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-[11px] mb-1">
+                  <span class="text-warning font-semibold">Medium / Complexity</span>
+                  <span id="cc-bar-med-count">0</span>
+                </div>
+                <div class="w-full bg-surface-2 h-1.5 rounded overflow-hidden">
+                  <div id="cc-bar-med" class="bg-warning h-full" style="width: 0%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-[11px] mb-1">
+                  <span class="text-secondary font-semibold">Low / Style & Dead Code</span>
+                  <span id="cc-bar-low-count">0</span>
+                </div>
+                <div class="w-full bg-surface-2 h-1.5 rounded overflow-hidden">
+                  <div id="cc-bar-low" class="bg-muted h-full" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-border flex justify-between items-center text-[10px] text-muted">
+              <span>Last Scan Time:</span>
+              <span id="cc-last-scan-time" class="text-secondary">Never</span>
+            </div>
+          </div>
+
+          <!-- Active Agents Quick Status -->
+          <div class="bg-surface border border-border rounded p-4 space-y-3 font-mono md:col-span-2">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-semibold text-default uppercase tracking-wider">Agent Pipeline Live State</h3>
+              <button onclick="switchTab('tab-orchestrator')" class="text-[10px] text-muted hover:text-default underline">Open Orchestrator &rarr;</button>
+            </div>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs" id="cc-agent-mini-grid">
+              <!-- Mini cards populated by checkAgentsStatus -->
+              <div class="bg-surface-2 border border-border p-2.5 rounded">
+                <span class="text-[9px] text-muted block uppercase">Scanner</span>
+                <span class="text-[11px] font-semibold text-secondary" id="cc-agent-scanner">Idle</span>
+              </div>
+              <div class="bg-surface-2 border border-border p-2.5 rounded">
+                <span class="text-[9px] text-muted block uppercase">Planner</span>
+                <span class="text-[11px] font-semibold text-secondary" id="cc-agent-planner">Idle</span>
+              </div>
+              <div class="bg-surface-2 border border-border p-2.5 rounded">
+                <span class="text-[9px] text-muted block uppercase">Coder</span>
+                <span class="text-[11px] font-semibold text-secondary" id="cc-agent-coder">Idle</span>
+              </div>
+              <div class="bg-surface-2 border border-border p-2.5 rounded">
+                <span class="text-[9px] text-muted block uppercase">Reviewer</span>
+                <span class="text-[11px] font-semibold text-secondary" id="cc-agent-reviewer">Idle</span>
+              </div>
+            </div>
+
+            <!-- Recent Log Stream -->
+            <div class="bg-bg border border-border rounded p-2.5 h-28 overflow-y-auto text-[11px] space-y-1" id="cc-recent-logs">
+              <div class="text-muted font-mono">[System] Agent framework initialized. Standby mode.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Health Trends Chart & Recent Runs -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-surface border border-border rounded p-4 space-y-3">
+            <h3 class="text-xs font-mono font-semibold text-default uppercase tracking-wider">Historical Health Trend</h3>
+            <div class="h-56"><canvas id="chart-cc-health"></canvas></div>
+          </div>
+          <div class="bg-surface border border-border rounded p-4 space-y-3">
+            <h3 class="text-xs font-mono font-semibold text-default uppercase tracking-wider">Severity Trend Across Scans</h3>
+            <div class="h-56"><canvas id="chart-cc-severity"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Intelligent Autonomous Insights: Persistent Debt & Learning Profile -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 font-mono text-xs">
+          <!-- Persistent Debt Summary -->
+          <div class="bg-surface border border-border rounded p-4 space-y-3">
+            <div class="flex items-center justify-between border-b border-border pb-2">
+              <h3 class="text-xs font-semibold text-default uppercase tracking-wider flex items-center space-x-1.5">
+                <i data-lucide="shield-alert" class="h-3.5 w-3.5 text-warning"></i>
+                <span>Technical Debt</span>
+              </h3>
+              <span id="debt-est-hours" class="text-[10px] bg-warning/10 text-warning border border-warning/30 px-1.5 py-0.5 rounded">-- hrs remediation</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-center">
+              <div class="bg-surface-2 p-2 rounded border border-border">
+                <span class="text-[9px] text-muted block uppercase">Open Debt Items</span>
+                <span id="debt-open-count" class="text-base font-bold text-default">0</span>
+              </div>
+              <div class="bg-surface-2 p-2 rounded border border-border">
+                <span class="text-[9px] text-muted block uppercase">High Severity</span>
+                <span id="debt-high-count" class="text-base font-bold text-destructive">0</span>
+              </div>
+            </div>
+            <div>
+              <span class="text-[10px] text-muted uppercase tracking-wider block mb-1">Top Debt Hotspot Files</span>
+              <div id="debt-hotspots-list" class="space-y-1 max-h-32 overflow-y-auto text-[11px]">
+                <div class="text-muted text-[10px]">No hotspot files recorded yet.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Developer Decision Learning Profile -->
+          <div class="bg-surface border border-border rounded p-4 space-y-3">
+            <div class="flex items-center justify-between border-b border-border pb-2">
+              <h3 class="text-xs font-semibold text-default uppercase tracking-wider flex items-center space-x-1.5">
+                <i data-lucide="brain" class="h-3.5 w-3.5 text-accent"></i>
+                <span>Learning Profile</span>
+              </h3>
+              <span id="learning-rate-badge" class="text-[10px] bg-accent/10 text-accent border border-accent/30 px-1.5 py-0.5 rounded">--% accept</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1.5 text-center">
+              <div class="bg-surface-2 p-1.5 rounded border border-border">
+                <span class="text-[8px] text-muted block uppercase">Accepted</span>
+                <span id="learning-accepted" class="text-sm font-bold text-success">0</span>
+              </div>
+              <div class="bg-surface-2 p-1.5 rounded border border-border">
+                <span class="text-[8px] text-muted block uppercase">Rejected</span>
+                <span id="learning-rejected" class="text-sm font-bold text-destructive">0</span>
+              </div>
+              <div class="bg-surface-2 p-1.5 rounded border border-border">
+                <span class="text-[8px] text-muted block uppercase">Rollbacks</span>
+                <span id="learning-rollbacks" class="text-sm font-bold text-warning">0</span>
+              </div>
+            </div>
+            <div>
+              <span class="text-[10px] text-muted uppercase tracking-wider block mb-1">Top Rejection Reasons</span>
+              <div id="learning-reasons-list" class="space-y-1 max-h-32 overflow-y-auto text-[11px]">
+                <div class="text-muted text-[10px]">No rejections recorded yet.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recurring Patterns -->
+          <div class="bg-surface border border-border rounded p-4 space-y-3">
+            <div class="flex items-center justify-between border-b border-border pb-2">
+              <h3 class="text-xs font-semibold text-default uppercase tracking-wider flex items-center space-x-1.5">
+                <i data-lucide="repeat" class="h-3.5 w-3.5 text-secondary"></i>
+                <span>Recurring Patterns</span>
+              </h3>
+              <span id="recurring-count-badge" class="text-[10px] text-muted border border-border px-1.5 py-0.5 rounded">0 tracked</span>
+            </div>
+            <div id="recurring-issues-list" class="space-y-1.5 max-h-48 overflow-y-auto text-[11px]">
+              <div class="text-muted text-[10px]">No recurring patterns detected.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SCREEN 2: REPOSITORY EXPLORER ==================== -->
+      <section id="tab-repo-explorer" class="screen-view hidden space-y-4">
+        <div class="flex items-center justify-between bg-surface border border-border p-3 rounded font-mono text-xs">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="folder" class="h-4 w-4 text-accent"></i>
+            <span id="repo-explorer-root-label" class="text-default font-semibold">Repository Files</span>
+            <span id="repo-explorer-count" class="text-muted text-[10px]">(0 files)</span>
+          </div>
+          <input type="text" id="repo-file-filter" placeholder="Filter files (e.g. .py, test, auth)..." 
+                 class="w-64 bg-surface-2 border border-border rounded px-2.5 py-1 text-xs text-default focus:outline-none focus:border-accent">
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 h-[650px]">
+          <!-- File Tree List -->
+          <div class="md:col-span-4 bg-surface border border-border rounded flex flex-col overflow-hidden">
+            <div class="px-3 py-2 border-b border-border bg-surface-2 text-[10px] font-mono text-muted uppercase tracking-wider flex justify-between">
+              <span>File Name</span>
+              <span>Issues</span>
+            </div>
+            <div id="repo-file-tree" class="flex-1 overflow-y-auto p-1 divide-y divide-border/40 font-mono text-xs">
+              <div class="p-4 text-center text-muted">Connect repository to inspect files</div>
+            </div>
+          </div>
+
+          <!-- Code Content Viewer -->
+          <div class="md:col-span-8 bg-surface border border-border rounded flex flex-col overflow-hidden">
+            <div class="px-4 py-2 border-b border-border bg-surface-2 flex items-center justify-between text-xs font-mono">
+              <span id="code-viewer-filename" class="text-default font-semibold truncate">Select a file from tree to view code</span>
+              <div class="flex items-center space-x-2 text-[10px] text-muted">
+                <span id="code-viewer-lines">-- lines</span>
+                <span>|</span>
+                <span id="code-viewer-lang">--</span>
+              </div>
+            </div>
+
+            <!-- Inline Issue Markers Banner -->
+            <div id="code-viewer-issues-banner" class="hidden bg-destructive-bg border-b border-destructive/20 p-2 text-xs font-mono text-destructive-text"></div>
+
+            <div class="flex-1 overflow-auto bg-bg p-3 font-mono text-xs text-default leading-relaxed" id="code-viewer-container">
+              <div class="h-full flex items-center justify-center text-muted text-xs">
+                Select a file to inspect code and inline issues.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SCREEN 3: AI AGENT ORCHESTRATOR ==================== -->
+      <section id="tab-orchestrator" class="screen-view hidden space-y-6">
+        <div class="bg-surface border border-border rounded p-4 flex items-center justify-between font-mono text-xs">
+          <div>
+            <h2 class="text-sm font-semibold text-default uppercase tracking-wider">Multi-Agent Autonomous Execution Pipeline</h2>
+            <p class="text-muted text-[11px] mt-0.5">Real-time status of the 8 specialized agents orchestrating code analysis, planning, patch synthesis, review, and verification.</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button id="btn-refresh-orchestrator" class="bg-surface-2 hover:bg-surface border border-border text-default px-2.5 py-1 rounded text-xs flex items-center space-x-1">
+              <i data-lucide="refresh-cw" class="h-3 w-3"></i>
+              <span>Refresh</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 8 Agents Workflow Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 font-mono">
+          <!-- 1. Scanner Agent -->
+          <div class="bg-surface border border-border rounded p-3.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-muted uppercase">1. Scanner</span>
+              <span id="orch-status-scanner" class="px-1.5 py-0.5 rounded text-[9px] bg-surface-2 border border-border text-secondary">IDLE</span>
+            </div>
+            <div class="text-xs font-semibold text-default truncate" id="orch-task-scanner">Awaiting trigger</div>
+            <div class="text-[10px] text-muted pt-2 border-t border-border flex justify-between">
+              <span>Issues: <b id="orch-metric-scanner" class="text-default">0</b></span>
+              <span id="orch-time-scanner">--</span>
+            </div>
+          </div>
+
+          <!-- 2. Dependency Agent -->
+          <div class="bg-surface border border-border rounded p-3.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-muted uppercase">2. Dependency Graph</span>
+              <span id="orch-status-dependency" class="px-1.5 py-0.5 rounded text-[9px] bg-surface-2 border border-border text-secondary">IDLE</span>
+            </div>
+            <div class="text-xs font-semibold text-default truncate" id="orch-task-dependency">Impact analysis</div>
+            <div class="text-[10px] text-muted pt-2 border-t border-border flex justify-between">
+              <span>Nodes: <b id="orch-metric-dependency" class="text-default">--</b></span>
+              <span id="orch-time-dependency">--</span>
+            </div>
+          </div>
+
+          <!-- 3. Planner Agent -->
+          <div class="bg-surface border border-border rounded p-3.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-muted uppercase">3. Planner</span>
+              <span id="orch-status-planner" class="px-1.5 py-0.5 rounded text-[9px] bg-surface-2 border border-border text-secondary">IDLE</span>
+            </div>
+            <div class="text-xs font-semibold text-default truncate" id="orch-task-planner">Priority scoring</div>
+            <div class="text-[10px] text-muted pt-2 border-t border-border flex justify-between">
+              <span>Planned: <b id="orch-metric-planner" class="text-default">0</b></span>
+              <span id="orch-time-planner">--</span>
+            </div>
+          </div>
+
+          <!-- 4. Coder Agent -->
+          <div class="bg-surface border border-border rounded p-3.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-muted uppercase">4. Coder</span>
+              <span id="orch-status-coder" class="px-1.5 py-0.5 rounded text-[9px] bg-surface-2 border border-border text-secondary">IDLE</span>
+            </div>
+            <div class="text-xs font-semibold text-default truncate" id="orch-task-coder">AST-aware patching</div>
+            <div class="text-[10px] text-muted pt-2 border-t border-border flex justify-between">
+              <span>Patches: <b id="orch-metric-coder" class="text-default">0</b></span>
+              <span id="orch-time-coder">--</span>
+            </div>
+          </div>
+
+          <!-- 5. Reviewer Agent -->
+          <div class="bg-surface border border-border rounded p-3.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-muted uppercase">5. Reviewer</span>
+              <span id="orch-status-reviewer" class="px-1.5 py-0.5 rounded text-[9px] bg-surface-2 border border-border text-secondary">IDLE</span>
+            </div>
+            <div class="text-xs font-semibold text-default truncate" id="orch-task-reviewer">Diff inspection</div>
+            <div class="text-[10px] text-muted pt-2 border-t border-border flex justify-between">
+              <span>Approved: <b id="orch-metric-reviewer" class="text-default">0</b></span>
+              <span id="orch-time-reviewer">--</span>
+            </div>
+          </div>
+
+          <!-- 6. Test Writer -->
+          <div class="bg-surface border border-border rounded p-3.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-muted uppercase">6. Test Writer</span>
+              <span id="orch-status-test_writer" class="px-1.5 py-0.5 rounded text-[9px] bg-surface-2 border border-border text-secondary">IDLE</span>
+            </div>
+            <div class="text-xs font-semibold text-default truncate" id="orch-task-test_writer">Pytest suite gen</div>
+            <div class="text-[10px] text-muted pt-2 border-t border-border flex justify-between">
+              <span>Tests: <b id="orch-metric-test_writer" class="text-default">0</b></span>
+              <span id="orch-time-test_writer">--</span>
+            </div>
+          </div>
+
+          <!-- 7. Test Executor -->
+          <div class="bg-surface border border-border rounded p-3.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-muted uppercase">7. Test Executor</span>
+              <span id="orch-status-executor" class="px-1.5 py-0.5 rounded text-[9px] bg-surface-2 border border-border text-secondary">IDLE</span>
+            </div>
+            <div class="text-xs font-semibold text-default truncate" id="orch-task-executor">Self-healing executor</div>
+            <div class="text-[10px] text-muted pt-2 border-t border-border flex justify-between">
+              <span>Pass/Fail: <b id="orch-metric-executor" class="text-default">--</b></span>
+              <span id="orch-time-executor">--</span>
+            </div>
+          </div>
+
+          <!-- 8. Human Approval -->
+          <div class="bg-surface border border-border rounded p-3.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-muted uppercase">8. Approval Gate</span>
+              <span id="orch-status-approval" class="px-1.5 py-0.5 rounded text-[9px] bg-surface-2 border border-border text-secondary">READY</span>
+            </div>
+            <div class="text-xs font-semibold text-default truncate" id="orch-task-approval">Awaiting human sign-off</div>
+            <div class="text-[10px] text-muted pt-2 border-t border-border flex justify-between">
+              <span>Pending: <b id="orch-metric-approval" class="text-default">0</b></span>
+              <span>Git Protected</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Orchestrator Console Logs Stream -->
+        <div class="bg-surface border border-border rounded p-4 space-y-3 font-mono">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-semibold text-default uppercase tracking-wider">Live Agent Telemetry & Log Stream</h3>
+            <span class="text-[10px] text-muted">Streaming system execution logs</span>
+          </div>
+          <div id="orch-logs-container" class="bg-bg border border-border rounded p-3 h-80 overflow-y-auto text-xs space-y-1">
+            <div class="text-muted">[System] Ready for autonomous workflows.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SCREEN 4: ISSUE INTELLIGENCE ==================== -->
+      <section id="tab-issues" class="screen-view hidden space-y-4">
+        <!-- Search and Filters Bar -->
+        <div class="bg-surface border border-border rounded p-3.5 flex flex-wrap gap-3 items-center font-mono text-xs">
+          <div class="flex-1 min-w-[200px]">
+            <input type="text" id="issues-search" placeholder="Search by description, file path, symbol, rule..." 
+                   class="w-full bg-surface-2 border border-border rounded px-2.5 py-1.5 text-xs text-default placeholder-muted focus:outline-none focus:border-accent">
+          </div>
+          <div class="w-36">
+            <select id="issues-severity" class="w-full bg-surface-2 border border-border rounded px-2.5 py-1.5 text-xs text-default focus:outline-none focus:border-accent">
+              <option value="all">All Severities</option>
+              <option value="high">High Severity</option>
+              <option value="medium">Medium Severity</option>
+              <option value="low">Low Severity</option>
+            </select>
+          </div>
+          <div class="w-40">
+            <select id="issues-type" class="w-full bg-surface-2 border border-border rounded px-2.5 py-1.5 text-xs text-default focus:outline-none focus:border-accent">
+              <option value="all">All Issue Types</option>
+            </select>
+          </div>
+          <div class="w-32">
+            <select id="issues-sort" class="w-full bg-surface-2 border border-border rounded px-2.5 py-1.5 text-xs text-default focus:outline-none focus:border-accent">
+              <option value="severity">Sort: Severity</option>
+              <option value="file">Sort: File</option>
+              <option value="line">Sort: Line</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Issue Table / List -->
+        <div class="bg-surface border border-border rounded overflow-hidden">
+          <div class="px-4 py-2 bg-surface-2 border-b border-border flex justify-between items-center font-mono text-[10px] text-muted uppercase tracking-wider">
+            <span>Issue Diagnostics</span>
+            <span id="issues-count-label">0 findings</span>
+          </div>
+          <div id="issues-list-container" class="divide-y divide-border font-mono text-xs">
+            <div class="p-8 text-center text-muted">No scan executed yet. Run a scan from the top bar or Command Center.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SCREEN 5: FIX REVIEW STUDIO ==================== -->
+      <section id="tab-fix-studio" class="screen-view hidden space-y-4">
+        <!-- Review Controls & Context Header -->
+        <div class="bg-surface border border-border rounded p-4 space-y-3 font-mono text-xs">
+          <div class="flex items-start justify-between">
+            <div class="space-y-1">
+              <div class="flex items-center space-x-2">
+                <span class="text-[9px] font-bold text-muted uppercase">Target:</span>
+                <span id="fix-target-file" class="font-semibold text-default">No active fix candidate</span>
+                <span id="fix-confidence-badge" class="px-1.5 py-0.2 rounded text-[10px] bg-surface-2 border border-border text-muted">Conf: --</span>
+              </div>
+              <p id="fix-summary-text" class="text-secondary text-[11px]">Select an issue in Issue Intelligence and click "Send to Fix Studio" to synthesize code.</p>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+              <button id="btn-apply-fix" disabled class="bg-success text-black font-semibold hover:bg-emerald-400 px-3 py-1.5 rounded disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center space-x-1">
+                <i data-lucide="check" class="h-3.5 w-3.5"></i>
+                <span>Approve & Merge</span>
+              </button>
+              <button id="btn-reject-modal-open" disabled class="bg-destructive/20 text-destructive hover:bg-destructive/30 border border-destructive/40 px-3 py-1.5 rounded disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center space-x-1">
+                <i data-lucide="x" class="h-3.5 w-3.5"></i>
+                <span>Reject</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="fix-reasoning-panel" class="hidden bg-surface-2 border border-border rounded p-3 text-[11px] text-secondary space-y-1">
+            <span class="text-[9px] font-bold text-muted uppercase block">Agent Reasoning & Remediation</span>
+            <div id="fix-explanation-content"></div>
+          </div>
+        </div>
+
+        <!-- Git Diff Workspace -->
+        <div class="bg-surface border border-border rounded flex flex-col overflow-hidden">
+          <div class="px-4 py-2 border-b border-border bg-surface-2 flex items-center justify-between text-xs font-mono">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="file-diff" class="h-4 w-4 text-accent"></i>
+              <span class="text-default font-semibold">Unified Patch Diff</span>
+              <span id="fix-branch-label" class="text-muted text-[10px]">branch: none</span>
+            </div>
+            <div class="flex items-center space-x-3 text-[10px] font-mono">
+              <span class="text-success">+ Added</span>
+              <span class="text-destructive">- Removed</span>
+            </div>
+          </div>
+
+          <div id="fix-diff-container" class="bg-bg p-3 overflow-x-auto font-mono text-xs leading-relaxed min-h-[350px]">
+            <div class="h-64 flex items-center justify-center text-muted text-xs">
+              Diff will appear here once an issue fix is synthesized.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SCREEN 6: TEST LAB ==================== -->
+      <section id="tab-test-lab" class="screen-view hidden space-y-4 font-mono">
+        <div class="bg-surface border border-border rounded p-4 flex items-center justify-between text-xs">
+          <div>
+            <h2 class="text-sm font-semibold text-default uppercase tracking-wider">Test Suite Execution & Validation Lab</h2>
+            <p class="text-muted text-[11px] mt-0.5">Execute existing test suites and inspect auto-generated verification tests.</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <input type="text" id="test-target-input" placeholder="tests/test_scanner.py (or empty for full suite)" 
+                   class="w-72 bg-surface-2 border border-border rounded px-2.5 py-1 text-xs text-default focus:outline-none focus:border-accent">
+            <button id="btn-run-tests" class="bg-default hover:bg-neutral-200 text-black px-3 py-1 rounded text-xs font-semibold flex items-center space-x-1.5 transition">
+              <i data-lucide="play" class="h-3 w-3"></i>
+              <span>Run Tests</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Test Metrics Overview -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="bg-surface border border-border rounded p-3">
+            <span class="text-[9px] text-muted uppercase">Execution Result</span>
+            <div id="test-lab-status" class="text-xl font-bold text-default mt-1">Ready</div>
+          </div>
+          <div class="bg-surface border border-border rounded p-3">
+            <span class="text-[9px] text-muted uppercase">Passed Count</span>
+            <div id="test-lab-passed" class="text-xl font-bold text-success mt-1">0</div>
+          </div>
+          <div class="bg-surface border border-border rounded p-3">
+            <span class="text-[9px] text-muted uppercase">Failed Count</span>
+            <div id="test-lab-failed" class="text-xl font-bold text-destructive mt-1">0</div>
+          </div>
+          <div class="bg-surface border border-border rounded p-3">
+            <span class="text-[9px] text-muted uppercase">Execution Duration</span>
+            <div id="test-lab-duration" class="text-xl font-bold text-default mt-1">0.00s</div>
+          </div>
+        </div>
+
+        <!-- Test Tracebacks / Output Console -->
+        <div class="bg-surface border border-border rounded overflow-hidden">
+          <div class="px-4 py-2 bg-surface-2 border-b border-border flex justify-between items-center text-[10px] text-muted uppercase">
+            <span>Terminal Test Execution Output</span>
+            <span id="test-lab-env">Python 3.12 (venv)</span>
+          </div>
+          <pre id="test-lab-output" class="bg-bg p-4 text-xs text-default overflow-x-auto min-h-[300px] max-h-[500px]">Click "Run Tests" to execute project test suites.</pre>
+        </div>
+      </section>
+
+      <!-- ==================== SCREEN 7: DEPENDENCY INTELLIGENCE ==================== -->
+      <section id="tab-dependency" class="screen-view hidden space-y-4 font-mono">
+        <div class="bg-surface border border-border rounded p-4 flex items-center justify-between text-xs">
+          <div>
+            <h2 class="text-sm font-semibold text-default uppercase tracking-wider">Repository Dependency Graph</h2>
+            <p class="text-muted text-[11px] mt-0.5">Visualize module imports, circular references, and impact radiuses.</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button id="btn-render-dep-graph" class="bg-default hover:bg-neutral-200 text-black px-3 py-1 rounded text-xs font-semibold flex items-center space-x-1.5 transition">
+              <i data-lucide="network" class="h-3 w-3"></i>
+              <span>Rebuild Graph</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+          <!-- Graph Canvas -->
+          <div class="md:col-span-8 bg-surface border border-border rounded h-[580px] relative overflow-hidden" id="vis-graph-container">
+            <div class="h-full flex items-center justify-center text-muted text-xs">Click "Rebuild Graph" to construct the interactive module graph.</div>
+          </div>
+
+          <!-- Node Impact Inspector -->
+          <div class="md:col-span-4 bg-surface border border-border rounded p-4 space-y-3 flex flex-col h-[580px] overflow-y-auto">
+            <h3 class="text-xs font-semibold text-default uppercase tracking-wider">Node Impact Inspector</h3>
+            <p class="text-[11px] text-muted">Click any node in the graph to inspect incoming and outgoing dependencies.</p>
+            
+            <div id="dep-inspector-details" class="space-y-3 text-xs hidden">
+              <div class="bg-surface-2 p-2.5 rounded border border-border">
+                <span class="text-[9px] text-muted uppercase block">Selected File</span>
+                <span id="dep-node-name" class="font-semibold text-default block truncate mt-0.5">--</span>
+              </div>
+              <div class="bg-surface-2 p-2.5 rounded border border-border">
+                <span class="text-[9px] text-muted uppercase block">Impact Score</span>
+                <span id="dep-node-score" class="font-semibold text-default block mt-0.5">0.0</span>
+              </div>
+              <div class="space-y-1">
+                <span class="text-[9px] text-muted uppercase block">Direct Dependents (Callers)</span>
+                <ul id="dep-callers-list" class="text-[11px] text-secondary space-y-1 max-h-40 overflow-y-auto"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SCREEN 8: SEMANTIC CODE SEARCH ==================== -->
+      <section id="tab-search" class="screen-view hidden space-y-6">
+        <div class="max-w-3xl mx-auto space-y-4">
+          <div class="text-center space-y-1 font-mono">
+            <h2 class="text-lg font-semibold text-default uppercase tracking-wider">Semantic Codebase Search</h2>
+            <p class="text-xs text-muted">Vector embedding search powered by ChromaDB. Search natural language concepts.</p>
+          </div>
+
+          <div class="relative font-mono">
+            <input type="text" id="semantic-search-input" placeholder="e.g. Find where token authentication is verified, or database connection pool logic..." 
+                   class="w-full bg-surface border border-border rounded px-4 py-3 text-xs text-default placeholder-muted focus:outline-none focus:border-accent">
+            <button id="btn-semantic-search" class="absolute right-2 top-2 bg-default hover:bg-neutral-200 text-black px-3 py-1.5 rounded text-xs font-semibold transition">
+              Search
+            </button>
+          </div>
+
+          <div class="flex flex-wrap gap-2 text-[10px] font-mono text-muted">
+            <span>Quick queries:</span>
+            <button onclick="runSemanticQuick('Find security authentication logic')" class="hover:text-default bg-surface px-2 py-0.5 rounded border border-border">Authentication</button>
+            <button onclick="runSemanticQuick('Detect error handling and rollback')" class="hover:text-default bg-surface px-2 py-0.5 rounded border border-border">Rollback Handlers</button>
+            <button onclick="runSemanticQuick('Show database queries and memory persistence')" class="hover:text-default bg-surface px-2 py-0.5 rounded border border-border">Database Storage</button>
+          </div>
+
+          <div id="semantic-results-container" class="space-y-3 font-mono text-xs">
+            <!-- Results populated here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SCREEN 9: ACTIVITY & AUDIT TIMELINE ==================== -->
+      <section id="tab-timeline" class="screen-view hidden space-y-4 font-mono">
+        <div class="bg-surface border border-border rounded p-4 flex items-center justify-between text-xs">
+          <div>
+            <h2 class="text-sm font-semibold text-default uppercase tracking-wider">Activity & Audit Timeline</h2>
+            <p class="text-muted text-[11px] mt-0.5">Comprehensive audit trail of repository scans, generated plans, applied fixes, and rollback events.</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button id="btn-refresh-timeline" class="bg-surface-2 hover:bg-surface border border-border text-default px-2.5 py-1 rounded text-xs flex items-center space-x-1">
+              <i data-lucide="refresh-cw" class="h-3 w-3"></i>
+              <span>Refresh Log</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-surface border border-border rounded overflow-hidden">
+          <div class="px-4 py-2 bg-surface-2 border-b border-border flex justify-between items-center text-[10px] text-muted uppercase">
+            <span>Event Timeline</span>
+            <span id="timeline-count">0 events recorded</span>
+          </div>
+          <div id="timeline-events-container" class="divide-y divide-border text-xs">
+            <div class="p-8 text-center text-muted">No audit events recorded yet.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SCREEN 10: SETTINGS & INTEGRATIONS ==================== -->
+      <section id="tab-settings" class="screen-view hidden space-y-6 font-mono text-xs">
+        <div class="bg-surface border border-border rounded p-4 flex items-center justify-between">
+          <div>
+            <h2 class="text-sm font-semibold text-default uppercase tracking-wider">System Settings & LLM Configuration</h2>
+            <p class="text-muted text-[11px] mt-0.5">Configure models, thresholds, limits, and review policies.</p>
+          </div>
+          <button id="btn-save-settings" class="bg-default hover:bg-neutral-200 text-black px-3 py-1.5 rounded text-xs font-semibold transition">
+            Save Settings
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- LLM Configuration Card -->
+          <div class="bg-surface border border-border rounded p-4 space-y-4">
+            <h3 class="text-xs font-semibold text-default uppercase tracking-wider">LLM Provider Routing</h3>
+            
+            <div class="space-y-1">
+              <label class="text-[10px] text-muted uppercase">Gemini Fix Model</label>
+              <input type="text" id="setting-gemini-model" class="w-full bg-surface-2 border border-border rounded px-2.5 py-1.5 text-xs text-default">
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-[10px] text-muted uppercase">Groq Fallback Model</label>
+              <input type="text" id="setting-groq-model" class="w-full bg-surface-2 border border-border rounded px-2.5 py-1.5 text-xs text-default">
+            </div>
+
+            <div class="space-y-2 pt-2 border-t border-border">
+              <span class="text-[10px] text-muted uppercase block">API Key Provisioning Status</span>
+              <div class="flex items-center justify-between text-[11px]">
+                <span>Gemini API Key:</span>
+                <span id="setting-gemini-status" class="text-muted">Checking...</span>
+              </div>
+              <div class="flex items-center justify-between text-[11px]">
+                <span>Groq API Key:</span>
+                <span id="setting-groq-status" class="text-muted">Checking...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Analysis Thresholds Card -->
+          <div class="bg-surface border border-border rounded p-4 space-y-4">
+            <h3 class="text-xs font-semibold text-default uppercase tracking-wider">Analysis Thresholds</h3>
+            
+            <div class="space-y-1">
+              <label class="text-[10px] text-muted uppercase">Complexity Threshold (Radon CC)</label>
+              <input type="number" id="setting-complexity" class="w-full bg-surface-2 border border-border rounded px-2.5 py-1.5 text-xs text-default">
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-[10px] text-muted uppercase">Function Length Threshold (Lines)</label>
+              <input type="number" id="setting-fn-length" class="w-full bg-surface-2 border border-border rounded px-2.5 py-1.5 text-xs text-default">
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-[10px] text-muted uppercase">Max Review Iterations</label>
+              <input type="number" id="setting-max-review" class="w-full bg-surface-2 border border-border rounded px-2.5 py-1.5 text-xs text-default">
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-[10px] text-muted uppercase">Max Heal Attempts</label>
+              <input type="number" id="setting-max-heal" class="w-full bg-surface-2 border border-border rounded px-2.5 py-1.5 text-xs text-default">
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ==================== REJECT MODAL ==================== -->
+  <div id="reject-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden font-mono">
+    <div class="bg-surface border border-border rounded p-5 w-full max-w-md space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-xs font-semibold text-default uppercase">Reject Fix Candidate</h3>
+        <button onclick="document.getElementById('reject-modal').classList.add('hidden')" class="text-muted hover:text-default">
+          <i data-lucide="x" class="h-4 w-4"></i>
+        </button>
+      </div>
+      <p class="text-[11px] text-secondary">State reason for rejection. This is saved to SQLite rejection memory to prevent repeating the same suggestion.</p>
+      <textarea id="reject-reason-input" rows="3" placeholder="e.g., Breaking public API contract, false positive..." 
+                class="w-full bg-surface-2 border border-border rounded p-2 text-xs text-default focus:outline-none focus:border-accent"></textarea>
+      <div class="flex justify-end space-x-2">
+        <button onclick="document.getElementById('reject-modal').classList.add('hidden')" class="px-3 py-1 rounded bg-surface-2 border border-border text-muted hover:text-default text-xs">Cancel</button>
+        <button id="btn-confirm-reject" class="px-3 py-1 rounded bg-destructive text-white font-semibold text-xs">Confirm Rejection</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2 font-mono text-xs pointer-events-none"></div>
+
+  <!-- ==================== APPLICATION SCRIPTS ==================== -->
+  <script>
+    // Global State
+    let activeRepoPath = '';
+    let isConnected = false;
+    let scanResults = null;
+    let activeFixIssue = null;
+    let activeFixResult = null;
+    let charts = {};
+
+    // Helper: Toast Notifications
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const colors = {
+        info: 'bg-surface border-border text-default',
+        success: 'bg-surface border-success/40 text-success-text',
+        error: 'bg-surface border-destructive/40 text-destructive-text',
+        warning: 'bg-surface border-warning/40 text-warning-text'
+      };
+      toast.className = `p-3 rounded border shadow-xl ${colors[type] || colors.info} flex items-center space-x-2 pointer-events-auto transition-all duration-300`;
+      toast.innerHTML = `<span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // Helper: Fetch API wrapper
+    async function api(endpoint, method = 'GET', body = null) {
+      const opts = { method, headers: { 'Content-Type': 'application/json' } };
+      if (body) opts.body = JSON.stringify(body);
+      const res = await fetch(endpoint, opts);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'API request failed');
+      return data;
+    }
+
+    // Navigation Tab Switching
+    function switchTab(targetId) {
+      document.querySelectorAll('.screen-view').forEach(s => s.classList.add('hidden'));
+      const activeScreen = document.getElementById(targetId);
+      if (activeScreen) activeScreen.classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        if (btn.getAttribute('data-target') === targetId) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      // Update Top Bar Title
+      const titles = {
+        'tab-command-center': 'Command Center',
+        'tab-repo-explorer': 'Repository Explorer',
+        'tab-orchestrator': 'AI Agent Orchestrator',
+        'tab-issues': 'Issue Intelligence',
+        'tab-fix-studio': 'Fix Review Studio',
+        'tab-test-lab': 'Test Lab',
+        'tab-dependency': 'Dependency Intelligence',
+        'tab-search': 'Semantic Code Search',
+        'tab-timeline': 'Activity & Audit Timeline',
+        'tab-settings': 'Settings & Integrations',
+      };
+      document.getElementById('topbar-title').innerText = titles[targetId] || 'Command Center';
+
+      // Lazy loads
+      if (targetId === 'tab-repo-explorer') loadRepoTree();
+      if (targetId === 'tab-orchestrator') loadOrchestratorStatus();
+      if (targetId === 'tab-timeline') loadTimeline();
+      if (targetId === 'tab-settings') loadSettings();
+    }
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.getAttribute('data-target');
+        switchTab(target);
+      });
+    });
+
+    document.getElementById('btn-open-settings').addEventListener('click', () => switchTab('tab-settings'));
+
+    // Sidebar Toggle
+    document.getElementById('btn-toggle-sidebar').addEventListener('click', () => {
+      const sb = document.getElementById('main-sidebar');
+      sb.classList.toggle('-ml-64');
+    });
+
+    // Repository Connection
+    document.getElementById('btn-connect').addEventListener('click', async () => {
+      const path = document.getElementById('repo-path-input').value.trim();
+      if (!path) return showToast('Please enter a repository path', 'warning');
+      try {
+        showToast('Connecting to repository...', 'info');
+        const res = await api('/api/connect', 'POST', { repo_path: path });
+        activeRepoPath = path;
+        isConnected = true;
+        showToast('Repository connected successfully', 'success');
+        if (res.scan_results) {
+          scanResults = res.scan_results;
+          renderScanData(scanResults);
+        }
+        updateStatus();
+        fetchInsightsDebt();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    // Browse Folder
+    document.getElementById('btn-browse').addEventListener('click', async () => {
+      try {
+        const res = await api('/api/browse', 'POST');
+        if (res.path) {
+          document.getElementById('repo-path-input').value = res.path;
+          document.getElementById('btn-connect').click();
+        }
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    // Reload Last Scan
+    document.getElementById('btn-load-last').addEventListener('click', async () => {
+      const path = document.getElementById('repo-path-input').value.trim() || activeRepoPath;
+      if (!path) return showToast('Specify path to reload', 'warning');
+      try {
+        const res = await api('/api/load', 'POST', { repo_path: path });
+        if (res.scan_results) {
+          scanResults = res.scan_results;
+          renderScanData(scanResults);
+          showToast('Loaded saved scan data', 'success');
+        } else {
+          showToast('No saved scan found for this repository', 'warning');
+        }
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    // Run Scan Action
+    async function triggerScan() {
+      if (!activeRepoPath) return showToast('Connect a repository first', 'warning');
+      showToast('Scanner Agent running static analysis...', 'info');
+      try {
+        const res = await api('/api/scan', 'POST', { repo_path: activeRepoPath });
+        scanResults = res.scan_results;
+        renderScanData(scanResults);
+        showToast(`Scan complete: ${res.scan_results.total_issues} issues discovered`, 'success');
+        loadOrchestratorStatus();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    document.getElementById('btn-quick-scan').addEventListener('click', triggerScan);
+    document.getElementById('cc-btn-scan').addEventListener('click', triggerScan);
+
+    // Incremental Scan Action
+    async function triggerIncrementalScan() {
+      if (!activeRepoPath) return showToast('Connect a repository first', 'warning');
+      showToast('Intelligent Scanner re-analyzing modified files & dependency tree...', 'info');
+      try {
+        const res = await api('/api/scan/incremental', 'POST', { repo_path: activeRepoPath });
+        scanResults = res.scan_results;
+        renderScanData(scanResults);
+        const meta = res.scan_results.meta || {};
+        const hitRate = meta.stats ? (meta.stats.cache_hit_rate * 100).toFixed(0) : 0;
+        showToast(`Incremental scan complete: ${res.scan_results.total_issues} active issues (${hitRate}% cached analysis reused)`, 'success');
+        loadOrchestratorStatus();
+        fetchInsightsDebt();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    const btnScanInc = document.getElementById('cc-btn-scan-inc');
+    if (btnScanInc) btnScanInc.addEventListener('click', triggerIncrementalScan);
+
+    // Generate Plan
+    document.getElementById('cc-btn-plan').addEventListener('click', async () => {
+      if (!scanResults) return showToast('Run a scan before formulating a plan', 'warning');
+      showToast('Planner Agent generating prioritization roadmap...', 'info');
+      try {
+        const res = await api('/api/plan', 'POST', { repo_path: activeRepoPath, scan_results: scanResults });
+        showToast('Plan generated successfully', 'success');
+        loadOrchestratorStatus();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    // Fetch Technical Debt and Developer Learning Insights
+    async function fetchInsightsDebt() {
+      try {
+        const res = await api('/api/insights/debt');
+        if (res.status === 'success') {
+          const debt = res.technical_debt || {};
+          const profile = res.learning_profile || {};
+          const recurring = res.recurring_issues || [];
+
+          const estHrs = document.getElementById('debt-est-hours');
+          if (estHrs) estHrs.innerText = `${debt.estimated_remediation_hours || 0} hrs remediation`;
+          const openDebt = document.getElementById('debt-open-count');
+          if (openDebt) openDebt.innerText = debt.total_open_debt || 0;
+          const highDebt = document.getElementById('debt-high-count');
+          if (highDebt) highDebt.innerText = debt.high_severity_debt || 0;
+
+          const hotspotContainer = document.getElementById('debt-hotspots-list');
+          if (hotspotContainer) {
+            if (debt.hotspot_files && debt.hotspot_files.length) {
+              hotspotContainer.innerHTML = debt.hotspot_files.map(h => `
+                <div class="flex justify-between items-center py-0.5 border-b border-border/40">
+                  <span class="truncate max-w-[170px] text-default">${escapeHtml(h.file)}</span>
+                  <span class="text-[10px] text-warning font-semibold">${h.high_issues} high / ${h.issue_count} total</span>
+                </div>
+              `).join('');
+            } else {
+              hotspotContainer.innerHTML = '<div class="text-muted text-[10px]">No hotspot files recorded yet.</div>';
+            }
+          }
+
+          const rate = ((profile.acceptance_rate || 0) * 100).toFixed(0);
+          const rateBadge = document.getElementById('learning-rate-badge');
+          if (rateBadge) rateBadge.innerText = `${rate}% accept`;
+          const acceptedEl = document.getElementById('learning-accepted');
+          if (acceptedEl) acceptedEl.innerText = profile.accepted_count || 0;
+          const rejectedEl = document.getElementById('learning-rejected');
+          if (rejectedEl) rejectedEl.innerText = profile.total_decisions ? Math.max(0, profile.total_decisions - (profile.accepted_count || 0) - (profile.rollbacks || 0)) : 0;
+          const rollbacksEl = document.getElementById('learning-rollbacks');
+          if (rollbacksEl) rollbacksEl.innerText = profile.rollbacks || 0;
+
+          const reasonsContainer = document.getElementById('learning-reasons-list');
+          if (reasonsContainer) {
+            if (profile.top_rejection_reasons && profile.top_rejection_reasons.length) {
+              reasonsContainer.innerHTML = profile.top_rejection_reasons.map(r => `
+                <div class="flex justify-between items-center py-0.5">
+                  <span class="truncate max-w-[160px] text-secondary">"${escapeHtml(r.reason)}"</span>
+                  <span class="text-[10px] text-destructive font-semibold">${r.c}x</span>
+                </div>
+              `).join('');
+            } else {
+              reasonsContainer.innerHTML = '<div class="text-muted text-[10px]">No rejections recorded yet.</div>';
+            }
+          }
+
+          const recCount = document.getElementById('recurring-count-badge');
+          if (recCount) recCount.innerText = `${recurring.length} tracked`;
+          const recurringContainer = document.getElementById('recurring-issues-list');
+          if (recurringContainer) {
+            if (recurring && recurring.length) {
+              recurringContainer.innerHTML = recurring.slice(0, 5).map(rc => `
+                <div class="p-1.5 bg-surface-2 rounded border border-border/50">
+                  <div class="flex justify-between items-center text-[10px]">
+                    <span class="text-default font-semibold truncate max-w-[160px]">${escapeHtml(rc.file)}</span>
+                    <span class="text-accent font-bold">${rc.scan_occurrences} scans</span>
+                  </div>
+                  <p class="text-[10px] text-muted truncate mt-0.5">${escapeHtml(rc.description)}</p>
+                </div>
+              `).join('');
+            } else {
+              recurringContainer.innerHTML = '<div class="text-muted text-[10px]">No recurring patterns detected.</div>';
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch debt insights:", err);
+      }
+    }
+
+    // Render Scan Data across UI
+    function renderScanData(data) {
+      if (!data) return;
+      const issues = data.issues || [];
+      const total = issues.length;
+      let high = 0, med = 0, low = 0;
+
+      issues.forEach(i => {
+        const sev = (i.severity || 'low').toLowerCase();
+        if (sev === 'high') high++;
+        else if (sev === 'medium') med++;
+        else low++;
+      });
+
+      // Update Command Center metrics
+      document.getElementById('cc-total-issues').innerText = total;
+      document.getElementById('cc-high-issues').innerText = high;
+      document.getElementById('nav-issue-badge').innerText = total;
+      document.getElementById('sidebar-stats-count').innerText = `${total} issues`;
+
+      const health = Math.max(0, 100 - (high * 10 + med * 4 + low * 1));
+      document.getElementById('cc-health-score').innerText = `${health}/100`;
+      const grade = health >= 90 ? 'A' : health >= 75 ? 'B' : health >= 60 ? 'C' : 'F';
+      document.getElementById('cc-grade').innerText = `Grade: ${grade}`;
+
+      // Update Breakdown bars
+      const pct = (val) => total > 0 ? (val / total * 100).toFixed(0) : 0;
+      document.getElementById('cc-bar-high').style.width = `${pct(high)}%`;
+      document.getElementById('cc-bar-high-count').innerText = `${high} (${pct(high)}%)`;
+      document.getElementById('cc-bar-med').style.width = `${pct(med)}%`;
+      document.getElementById('cc-bar-med-count').innerText = `${med} (${pct(med)}%)`;
+      document.getElementById('cc-bar-low').style.width = `${pct(low)}%`;
+      document.getElementById('cc-bar-low-count').innerText = `${low} (${pct(low)}%)`;
+
+      document.getElementById('cc-last-scan-time').innerText = data.finished_at || new Date().toLocaleTimeString();
+
+      renderIssuesList(issues);
+      fetchInsightsDebt();
+    }
+
+    // Render Issue Intelligence List
+    function renderIssuesList(issues) {
+      const container = document.getElementById('issues-list-container');
+      document.getElementById('issues-count-label').innerText = `${issues.length} findings`;
+      if (!issues.length) {
+        container.innerHTML = '<div class="p-8 text-center text-muted">No issues found matching criteria. Codebase clean!</div>';
+        return;
+      }
+
+      // Populate filter dropdown
+      const types = new Set(issues.map(i => i.issue_type));
+      const typeSelect = document.getElementById('issues-type');
+      typeSelect.innerHTML = '<option value="all">All Issue Types</option>';
+      types.forEach(t => {
+        typeSelect.innerHTML += `<option value="${t}">${t}</option>`;
+      });
+
+      container.innerHTML = issues.map((iss, idx) => {
+        const sevClass = iss.severity === 'high' ? 'text-destructive border-destructive/30 bg-destructive-bg' :
+                         iss.severity === 'medium' ? 'text-warning border-warning/30 bg-warning-bg' :
+                         'text-muted border-border bg-surface-2';
+        
+        const priorityBadge = iss.priority_score ? `<span class="px-1.5 py-0.2 rounded text-[9px] border font-bold text-accent border-accent/40 bg-accent/5">Score ${iss.priority_score.toFixed(1)}</span>` : '';
+        const diffBadge = iss.estimated_difficulty ? `<span class="px-1.5 py-0.2 rounded text-[9px] border font-mono text-muted border-border">${iss.estimated_difficulty}</span>` : '';
+        const testBadge = iss.has_test_coverage ? `<span class="px-1.5 py-0.2 rounded text-[9px] border font-mono text-success border-success/30 bg-success/5" title="Covered by automated tests">tests &#10003;</span>` : '';
+        const conflictBadge = (iss.conflicts_with && iss.conflicts_with.length) ? `<span class="px-1.5 py-0.2 rounded text-[9px] border font-mono text-warning border-warning/30" title="Adjacent lines touched in other issues">proximate conflict</span>` : '';
+
+        return `
+          <div class="p-3.5 hover:bg-surface-2/60 transition flex items-center justify-between gap-4 border-b border-border/40 last:border-0">
+            <div class="space-y-1.5 min-w-0">
+              <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                <span class="px-1.5 py-0.2 rounded text-[9px] border font-bold uppercase ${sevClass}">${iss.severity}</span>
+                <span class="text-xs font-semibold text-default truncate">${escapeHtml(iss.file)}:${iss.line}</span>
+                <span class="text-[10px] text-muted">[${escapeHtml(iss.issue_type)}]</span>
+                ${priorityBadge}
+                ${diffBadge}
+                ${testBadge}
+                ${conflictBadge}
+              </div>
+              <p class="text-[11px] text-secondary truncate">${escapeHtml(iss.description)}</p>
+              ${iss.priority_explanation ? `<p class="text-[10px] text-muted font-mono truncate">${escapeHtml(iss.priority_explanation)}</p>` : ''}
+            </div>
+            <button onclick="sendToFixStudio(${idx})" class="shrink-0 bg-surface border border-border hover:border-accent text-default px-2.5 py-1 rounded text-[11px] flex items-center space-x-1 transition">
+              <i data-lucide="wrench" class="h-3 w-3 text-accent"></i>
+              <span>Send to Fix Studio</span>
+            </button>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    // Filter Issues handler
+    function filterIssues() {
+      if (!scanResults) return;
+      const q = document.getElementById('issues-search').value.toLowerCase();
+      const sev = document.getElementById('issues-severity').value;
+      const type = document.getElementById('issues-type').value;
+
+      const filtered = (scanResults.issues || []).filter(i => {
+        const matchesQ = !q || i.file.toLowerCase().includes(q) || i.description.toLowerCase().includes(q) || i.issue_type.toLowerCase().includes(q);
+        const matchesSev = sev === 'all' || i.severity.toLowerCase() === sev;
+        const matchesType = type === 'all' || i.issue_type === type;
+        return matchesQ && matchesSev && matchesType;
+      });
+      renderIssuesList(filtered);
+    }
+
+    document.getElementById('issues-search').addEventListener('input', filterIssues);
+    document.getElementById('issues-severity').addEventListener('change', filterIssues);
+    document.getElementById('issues-type').addEventListener('change', filterIssues);
+
+    // Send to Fix Studio
+    window.sendToFixStudio = function(idx) {
+      if (!scanResults || !scanResults.issues[idx]) return;
+      const issue = scanResults.issues[idx];
+      activeFixIssue = issue;
+      switchTab('tab-fix-studio');
+      document.getElementById('fix-target-file').innerText = `${issue.file}:${issue.line} [${issue.issue_type}]`;
+      document.getElementById('fix-summary-text').innerText = issue.description;
+      document.getElementById('fix-diff-container').innerHTML = `
+        <div class="p-6 text-center text-muted">
+          <i data-lucide="loader-2" class="h-6 w-6 animate-spin mx-auto mb-2 text-accent"></i>
+          Synthesizing AST patch and executing Reviewer validation loop...
+        </div>
+      `;
+      lucide.createIcons();
+
+      // Trigger real fix generation
+      api('/api/fix/generate', 'POST', { issue: issue, scan_id: scanResults.scan_id || 'manual' })
+        .then(res => {
+          activeFixResult = res.fix_result;
+          renderDiffResult(res.fix_result);
+        })
+        .catch(err => {
+          showToast(err.message, 'error');
+          document.getElementById('fix-diff-container').innerHTML = `<div class="p-4 text-destructive">Fix generation failed: ${err.message}</div>`;
+        });
+    };
+
+    function renderDiffResult(res) {
+      if (!res) return;
+      document.getElementById('btn-apply-fix').removeAttribute('disabled');
+      document.getElementById('btn-reject-modal-open').removeAttribute('disabled');
+      document.getElementById('fix-confidence-badge').innerText = `Conf: ${(res.confidence || 0.85).toFixed(2)}`;
+      document.getElementById('fix-branch-label').innerText = `branch: ${res.fix_branch || 'none'}`;
+
+      if (res.explanation) {
+        document.getElementById('fix-reasoning-panel').classList.remove('hidden');
+        document.getElementById('fix-explanation-content').innerText = res.explanation;
+      }
+
+      const diff = res.diff || '';
+      if (!diff) {
+        document.getElementById('fix-diff-container').innerHTML = '<div class="p-4 text-muted">No diff generated or patch matches original.</div>';
+        return;
+      }
+
+      // Syntax highlight diff lines
+      const lines = diff.split('\n');
+      const formatted = lines.map(l => {
+        if (l.startsWith('+')) return `<div class="diff-add px-2 py-0.5">${escapeHtml(l)}</div>`;
+        if (l.startsWith('-')) return `<div class="diff-del px-2 py-0.5">${escapeHtml(l)}</div>`;
+        if (l.startsWith('@@')) return `<div class="diff-hunk px-2 py-0.5">${escapeHtml(l)}</div>`;
+        return `<div class="diff-ctx px-2 py-0.5">${escapeHtml(l)}</div>`;
+      }).join('');
+
+      document.getElementById('fix-diff-container').innerHTML = formatted;
+    }
+
+    // Approve & Merge
+    document.getElementById('btn-apply-fix').addEventListener('click', async () => {
+      if (!activeFixResult) return;
+      showToast('Merging patch branch into default branch...', 'info');
+      try {
+        await api('/api/fix/apply', 'POST', {
+          fix_branch: activeFixResult.fix_branch,
+          fix_id: activeFixResult.fix_id || 0,
+          issue_id: activeFixResult.issue?.id || 0
+        });
+        showToast('Fix merged successfully!', 'success');
+        document.getElementById('btn-apply-fix').setAttribute('disabled', 'true');
+        document.getElementById('btn-reject-modal-open').setAttribute('disabled', 'true');
+        loadTimeline();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    // Reject Modal Handlers
+    document.getElementById('btn-reject-modal-open').addEventListener('click', () => {
+      document.getElementById('reject-modal').classList.remove('hidden');
+    });
+
+    document.getElementById('btn-confirm-reject').addEventListener('click', async () => {
+      if (!activeFixResult) return;
+      const reason = document.getElementById('reject-reason-input').value.trim();
+      document.getElementById('reject-modal').classList.add('hidden');
+      showToast('Rejecting fix and updating rejection memory...', 'info');
+      try {
+        await api('/api/fix/reject', 'POST', {
+          issue: activeFixResult.issue,
+          fix_branch: activeFixResult.fix_branch,
+          fix_id: activeFixResult.fix_id || 0,
+          reason: reason
+        });
+        showToast('Fix rejected and recorded as false positive.', 'info');
+        document.getElementById('btn-apply-fix').setAttribute('disabled', 'true');
+        document.getElementById('btn-reject-modal-open').setAttribute('disabled', 'true');
+        loadTimeline();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    // Repository Explorer
+    async function loadRepoTree() {
+      if (!activeRepoPath) return;
+      try {
+        const res = await api(`/api/repo/tree?repo_path=${encodeURIComponent(activeRepoPath)}`);
+        document.getElementById('repo-explorer-root-label').innerText = res.root.split(/[/\\]/).pop();
+        document.getElementById('repo-explorer-count').innerText = `(${res.total_files} files)`;
+        
+        const treeEl = document.getElementById('repo-file-tree');
+        treeEl.innerHTML = res.files.map(f => {
+          const issBadge = f.issues_count > 0 ? `<span class="bg-destructive/20 text-destructive px-1.5 py-0.2 rounded text-[9px] font-bold">${f.issues_count}</span>` : '';
+          return `
+            <div onclick="viewFile('${escapeHtml(f.path)}')" class="px-2.5 py-1.5 hover:bg-surface-2 cursor-pointer flex items-center justify-between text-secondary hover:text-default">
+              <span class="truncate">${f.path}</span>
+              ${issBadge}
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    window.viewFile = async function(relPath) {
+      if (!activeRepoPath) return;
+      document.getElementById('code-viewer-filename').innerText = relPath;
+      try {
+        const res = await api('/api/repo/file', 'POST', { repo_path: activeRepoPath, file_path: relPath });
+        document.getElementById('code-viewer-lines').innerText = `${res.total_lines} lines`;
+        document.getElementById('code-viewer-lang').innerText = res.extension;
+
+        // Issues banner
+        const banner = document.getElementById('code-viewer-issues-banner');
+        if (res.issues && res.issues.length > 0) {
+          banner.classList.remove('hidden');
+          banner.innerHTML = `<span class="font-bold">${res.issues.length} issue(s) in this file:</span> ${res.issues.map(i => `Line ${i.line}: ${i.description}`).join(' | ')}`;
+        } else {
+          banner.classList.add('hidden');
+        }
+
+        // Render code lines with line numbers
+        const lines = res.content.split('\n');
+        const issueLines = new Set((res.issues || []).map(i => i.line));
+
+        const formatted = lines.map((l, idx) => {
+          const lineNum = idx + 1;
+          const isProblem = issueLines.has(lineNum);
+          const bg = isProblem ? 'bg-destructive/10 border-l-2 border-destructive' : '';
+          return `<div class="flex ${bg} hover:bg-surface-2/40"><span class="w-10 text-muted text-right pr-3 select-none">${lineNum}</span><span class="flex-1">${escapeHtml(l) || ' '}</span></div>`;
+        }).join('');
+
+        document.getElementById('code-viewer-container').innerHTML = formatted;
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    };
+
+    // Test Lab Runner
+    document.getElementById('btn-run-tests').addEventListener('click', async () => {
+      if (!activeRepoPath) return showToast('Connect a repository first', 'warning');
+      const target = document.getElementById('test-target-input').value.trim();
+      showToast('Executing tests via executor...', 'info');
+      document.getElementById('test-lab-status').innerText = 'Running...';
+      try {
+        const res = await api('/api/tests/run', 'POST', { repo_path: activeRepoPath, test_path: target });
+        document.getElementById('test-lab-status').innerText = res.passed ? 'PASSED' : 'FAILED';
+        document.getElementById('test-lab-status').className = `text-xl font-bold mt-1 ${res.passed ? 'text-success' : 'text-destructive'}`;
+        document.getElementById('test-lab-passed').innerText = res.passed_count;
+        document.getElementById('test-lab-failed').innerText = res.failed_count;
+        document.getElementById('test-lab-duration').innerText = `${res.duration.toFixed(2)}s`;
+
+        let out = res.stdout || '';
+        if (res.stderr) out += '\n--- STDERR ---\n' + res.stderr;
+        document.getElementById('test-lab-output').innerText = out || 'Tests completed with no console output.';
+        showToast(`Test suite execution finished: ${res.passed ? 'PASSED' : 'FAILED'}`, res.passed ? 'success' : 'error');
+      } catch (err) {
+        document.getElementById('test-lab-status').innerText = 'ERROR';
+        document.getElementById('test-lab-output').innerText = err.message;
+        showToast(err.message, 'error');
+      }
+    });
+
+    // Dependency Graph Builder
+    document.getElementById('btn-render-dep-graph').addEventListener('click', async () => {
+      if (!activeRepoPath) return showToast('Connect a repository first', 'warning');
+      const container = document.getElementById('vis-graph-container');
+      container.innerHTML = '<div class="h-full flex items-center justify-center text-muted">Building dependency network...</div>';
+      try {
+        const res = await api('/api/graph/build', 'POST', { repo_path: activeRepoPath });
+        const data = {
+          nodes: new vis.DataSet(res.nodes),
+          edges: new vis.DataSet(res.edges)
+        };
+        const options = {
+          nodes: {
+            font: { color: '#F5F5F5', face: 'JetBrains Mono', size: 10 },
+            borderWidth: 1.5,
+            shadow: false
+          },
+          edges: {
+            arrows: { to: { enabled: true, scaleFactor: 0.5 } },
+            color: { color: '#252525', highlight: '#E5E7EB' },
+            width: 1
+          },
+          physics: {
+            stabilization: { iterations: 120 },
+            barnesHut: { gravitationalConstant: -2500, springLength: 90 }
+          }
+        };
+        container.innerHTML = '';
+        const net = new vis.Network(container, data, options);
+        net.on('click', async (params) => {
+          if (params.nodes.length > 0) {
+            const nodeId = params.nodes[0];
+            inspectNode(nodeId);
+          }
+        });
+        showToast('Dependency network graph ready', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    async function inspectNode(filePath) {
+      try {
+        const res = await api('/api/graph/impact', 'POST', { repo_path: activeRepoPath, file_path: filePath });
+        const details = document.getElementById('dep-inspector-details');
+        details.classList.remove('hidden');
+        document.getElementById('dep-node-name').innerText = res.file;
+        document.getElementById('dep-node-score').innerText = res.impact.impact_score;
+        
+        const callers = res.impact.direct_dependents || [];
+        const callersList = document.getElementById('dep-callers-list');
+        callersList.innerHTML = callers.length ? callers.map(c => `<li>&bull; ${c}</li>`).join('') : '<li class="text-muted">No external callers</li>';
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // Semantic Code Search
+    async function runSemanticSearch(q) {
+      if (!activeRepoPath) return showToast('Connect a repository first', 'warning');
+      const query = q || document.getElementById('semantic-search-input').value.trim();
+      if (!query) return;
+      showToast('Searching vector embeddings via ChromaDB...', 'info');
+      try {
+        const res = await api('/api/search', 'POST', { repo_path: activeRepoPath, query: query, n: 6 });
+        const container = document.getElementById('semantic-results-container');
+        if (!res.hits || !res.hits.length) {
+          container.innerHTML = '<div class="p-6 text-center text-muted bg-surface border border-border rounded">No semantic matches found.</div>';
+          return;
+        }
+
+        container.innerHTML = res.hits.map(h => {
+          const meta = h.metadata || {};
+          return `
+            <div class="bg-surface border border-border rounded p-3.5 space-y-2">
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="text-accent font-semibold">${meta.file || 'unknown'}:${meta.start_line}-${meta.end_line}</span>
+                <span class="text-muted text-[10px]">distance: ${(h.distance || 0).toFixed(3)}</span>
+              </div>
+              <pre class="bg-bg p-2.5 rounded text-[11px] text-default overflow-x-auto">${escapeHtml(h.text || '')}</pre>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    document.getElementById('btn-semantic-search').addEventListener('click', () => runSemanticSearch());
+    window.runSemanticQuick = (q) => {
+      document.getElementById('semantic-search-input').value = q;
+      runSemanticSearch(q);
+    };
+
+    // Orchestrator Status Poller
+    async function loadOrchestratorStatus() {
+      try {
+        const res = await api('/api/agents/status');
+        const agents = res.agents || {};
+        
+        for (const [name, info] of Object.entries(agents)) {
+          const statusEl = document.getElementById(`orch-status-${name}`);
+          const taskEl = document.getElementById(`orch-task-${name}`);
+          if (statusEl) {
+            statusEl.innerText = (info.status || 'IDLE').toUpperCase();
+            statusEl.className = info.status === 'running' ? 'px-1.5 py-0.5 rounded text-[9px] bg-warning-bg text-warning font-bold animate-pulse' :
+                                 info.status === 'error' ? 'px-1.5 py-0.5 rounded text-[9px] bg-destructive-bg text-destructive font-bold' :
+                                 'px-1.5 py-0.5 rounded text-[9px] bg-surface-2 border border-border text-secondary';
+          }
+          if (taskEl) taskEl.innerText = info.task || 'Idle';
+        }
+
+        // Logs
+        const logsContainer = document.getElementById('orch-logs-container');
+        if (res.logs && res.logs.length) {
+          logsContainer.innerHTML = res.logs.slice(-50).map(l => {
+            const color = l.level === 'error' ? 'text-destructive' : l.level === 'success' ? 'text-success' : 'text-secondary';
+            return `<div><span class="text-muted">[${l.time}] [${l.agent.toUpperCase()}]</span> <span class="${color}">${escapeHtml(l.message)}</span></div>`;
+          }).join('');
+          logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Activity & Audit Timeline
+    async function loadTimeline() {
+      try {
+        const [scansRes, fixesRes, rejRes] = await Promise.all([
+          api('/api/history/scans'),
+          api('/api/history/fixes'),
+          api('/api/history/rejections')
+        ]);
+
+        const events = [];
+        (scansRes.scans || []).forEach(s => {
+          events.push({ time: s.started_at, type: 'Scan', desc: `Scan #${s.id} run (${s.total_issues} issues discovered)`, icon: 'radar' });
+        });
+        (fixesRes.fixes || []).forEach(f => {
+          events.push({ time: f.created_at, type: 'Fix', desc: `Patch applied to ${f.file}: ${f.fix_description}`, icon: 'check-circle' });
+        });
+        (rejRes.rejections || []).forEach(r => {
+          events.push({ time: r.created_at, type: 'Rejection', desc: `Rejected ${r.file} [${r.issue_type}]: ${r.reason || 'False positive'}`, icon: 'x-circle' });
+        });
+
+        events.sort((a, b) => (b.time || '').localeCompare(a.time || ''));
+        document.getElementById('timeline-count').innerText = `${events.length} events`;
+
+        const container = document.getElementById('timeline-events-container');
+        if (!events.length) {
+          container.innerHTML = '<div class="p-8 text-center text-muted">No audit events logged.</div>';
+          return;
+        }
+
+        container.innerHTML = events.slice(0, 40).map(e => `
+          <div class="p-3.5 flex items-center justify-between hover:bg-surface-2 transition">
+            <div class="flex items-center space-x-3">
+              <span class="text-[10px] bg-surface-2 px-1.5 py-0.5 rounded border border-border text-muted uppercase font-bold">${e.type}</span>
+              <span class="text-xs text-default truncate max-w-xl">${escapeHtml(e.desc)}</span>
+            </div>
+            <span class="text-[10px] text-muted shrink-0">${e.time ? e.time.replace('T', ' ').substring(0, 19) : ''}</span>
+          </div>
+        `).join('');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // Settings
+    async function loadSettings() {
+      try {
+        const res = await api('/api/settings');
+        const s = res.settings || {};
+        document.getElementById('setting-gemini-model').value = s.gemini_model || '';
+        document.getElementById('setting-groq-model').value = s.groq_model || '';
+        document.getElementById('setting-complexity').value = s.complexity_threshold || 10;
+        document.getElementById('setting-fn-length').value = s.function_length_threshold || 60;
+        document.getElementById('setting-max-review').value = s.max_review_iterations || 3;
+        document.getElementById('setting-max-heal').value = s.max_heal_attempts || 2;
+
+        document.getElementById('setting-gemini-status').innerText = s.gemini_configured ? 'Active (Configured in .env)' : 'Missing API Key';
+        document.getElementById('setting-gemini-status').className = s.gemini_configured ? 'text-success font-semibold' : 'text-destructive';
+        document.getElementById('setting-groq-status').innerText = s.groq_configured ? 'Active (Configured in .env)' : 'Missing API Key';
+        document.getElementById('setting-groq-status').className = s.groq_configured ? 'text-success font-semibold' : 'text-destructive';
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    document.getElementById('btn-save-settings').addEventListener('click', async () => {
+      try {
+        await api('/api/settings', 'POST', {
+          gemini_model: document.getElementById('setting-gemini-model').value,
+          groq_model: document.getElementById('setting-groq-model').value,
+          complexity_threshold: parseInt(document.getElementById('setting-complexity').value),
+          function_length_threshold: parseInt(document.getElementById('setting-fn-length').value),
+          max_review_iterations: parseInt(document.getElementById('setting-max-review').value),
+          max_heal_attempts: parseInt(document.getElementById('setting-max-heal').value),
+        });
+        showToast('Settings saved successfully', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    // Top Bar Status Poller
+    async function updateStatus() {
+      try {
+        const res = await api('/api/status');
+        isConnected = res.connected;
+        const demoBadge = document.getElementById('demo-mode-badge');
+        if (demoBadge && res.demo_mode) demoBadge.classList.remove('hidden');
+        const ind = document.getElementById('top-status-indicator');
+        const dot = document.getElementById('sidebar-status-dot');
+        const txt = document.getElementById('sidebar-status-text');
+        
+        if (isConnected) {
+          ind.className = 'w-2 h-2 rounded-full bg-success';
+          dot.className = 'w-1.5 h-1.5 rounded-full bg-success';
+          txt.innerText = 'ONLINE';
+          txt.className = 'text-success font-bold';
+          activeRepoPath = res.repo_path;
+          document.getElementById('topbar-repo-label').innerText = activeRepoPath;
+          document.getElementById('cc-repo-name').innerText = activeRepoPath.split(/[/\\]/).pop();
+          document.getElementById('cc-repo-path').innerText = activeRepoPath;
+
+          // Branch
+          api(`/api/branches?repo_path=${encodeURIComponent(activeRepoPath)}`)
+            .then(bRes => {
+              if (bRes.current) {
+                const badge = document.getElementById('git-branch-badge');
+                badge.innerText = bRes.current;
+                badge.classList.remove('hidden');
+              }
+            }).catch(() => {});
+        } else {
+          ind.className = 'w-2 h-2 rounded-full bg-destructive';
+          dot.className = 'w-1.5 h-1.5 rounded-full bg-destructive';
+          txt.innerText = 'DISCONNECTED';
+          txt.className = 'text-muted';
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Charts Initialization
+    function initCharts() {
+      const ctxHealth = document.getElementById('chart-cc-health');
+      if (ctxHealth) {
+        charts.health = new Chart(ctxHealth, {
+          type: 'line',
+          data: {
+            labels: ['Run 1', 'Run 2', 'Run 3', 'Run 4', 'Current'],
+            datasets: [{
+              label: 'Health Score',
+              data: [65, 70, 72, 80, 85],
+              borderColor: '#10B981',
+              backgroundColor: 'rgba(16, 185, 129, 0.05)',
+              borderWidth: 2,
+              tension: 0.2,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { grid: { color: '#1A1A1A' }, ticks: { color: '#666666', font: { family: 'JetBrains Mono' } } },
+              y: { min: 0, max: 100, grid: { color: '#1A1A1A' }, ticks: { color: '#666666', font: { family: 'JetBrains Mono' } } }
+            }
+          }
+        });
+      }
+
+      const ctxSev = document.getElementById('chart-cc-severity');
+      if (ctxSev) {
+        charts.severity = new Chart(ctxSev, {
+          type: 'bar',
+          data: {
+            labels: ['Security', 'Complexity', 'Dead Code', 'Style', 'Docs'],
+            datasets: [{
+              data: [3, 8, 12, 15, 6],
+              backgroundColor: ['#EF4444', '#F59E0B', '#666666', '#333333', '#10B981'],
+              borderRadius: 3
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { grid: { display: false }, ticks: { color: '#666666', font: { family: 'JetBrains Mono' } } },
+              y: { grid: { color: '#1A1A1A' }, ticks: { color: '#666666', font: { family: 'JetBrains Mono' } } }
+            }
+          }
+        });
+      }
+    }
+
+    // Escape HTML helper
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Global Keybindings (Ctrl+K for search)
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('topbar-search-input').focus();
+      }
+    });
+
+    document.getElementById('topbar-search-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const val = e.target.value.trim();
+        if (val) {
+          switchTab('tab-issues');
+          document.getElementById('issues-search').value = val;
+          filterIssues();
+        }
+      }
+    });
+
+    // Bootstrapping
+    document.addEventListener('DOMContentLoaded', () => {
+      switchTab('tab-command-center');
+      updateStatus();
+      fetchInsightsDebt();
+      initCharts();
+      lucide.createIcons();
+      setInterval(updateStatus, 6000);
+      setInterval(loadOrchestratorStatus, 5000);
+      setInterval(fetchInsightsDebt, 12000);
+    });
+  </script>
+</body>
+</html>

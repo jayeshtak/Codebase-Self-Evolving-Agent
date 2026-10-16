@@ -105,10 +105,12 @@ class SyntaxChecker:
 
         # 3. Mypy — type errors
         try:
+            import tempfile
             result = subprocess.run(
                 [sys.executable, "-m", "mypy", str(filepath),
                  "--ignore-missing-imports", "--no-error-summary",
-                 "--no-pretty", "--show-column-numbers"],
+                 "--no-pretty", "--show-column-numbers",
+                 "--cache-dir", tempfile.gettempdir()],
                 capture_output=True, text=True, cwd=str(self.repo_path)
             )
             for line in result.stdout.splitlines():

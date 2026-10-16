@@ -2,7 +2,7 @@ import sqlite3
 import json
 from pathlib import Path
 from datetime import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 
@@ -18,9 +18,9 @@ class IssueRecord:
     issue_type: str
     severity: str
     description: str
-    language: str
-    extra: dict
-    scan_id: str
+    language: str = "python"
+    extra: dict = field(default_factory=dict)
+    scan_id: str = ""
     status: str = "open"          # open | fixed | rejected | failed
     id: Optional[int] = None
     created_at: Optional[str] = None
@@ -142,6 +142,18 @@ class SQLiteMemory:
                 med_count    INTEGER DEFAULT 0,
                 low_count    INTEGER DEFAULT 0,
                 recorded_at  TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS developer_decisions (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                file        TEXT NOT NULL,
+                issue_type  TEXT NOT NULL,
+                description TEXT NOT NULL,
+                decision    TEXT NOT NULL, -- 'accepted' | 'rejected' | 'false_positive' | 'rollback'
+                reason      TEXT DEFAULT '',
+                scan_id     TEXT,
+                fix_id      INTEGER,
+                created_at  TEXT NOT NULL
             );
         """)
         self.conn.commit()
@@ -302,12 +314,131 @@ class SQLiteMemory:
         ).fetchone()
         return row is not None
 
+    def is_rejected_pattern(self, file: str, issue_type: str, description: str) -> bool:
+        """Alias for is_rejected."""
+        return self.is_rejected(file, issue_type, description)
+
     def get_rejection_summary(self) -> dict:
         """Return rejection counts by issue_type — fed to Planner to learn preferences."""
         rows = self.conn.execute(
             "SELECT issue_type, COUNT(*) as count FROM rejections GROUP BY issue_type"
         ).fetchall()
         return {r["issue_type"]: r["count"] for r in rows}
+
+    # ── Developer Decisions & Learning ────────────────────────────────────────
+
+    def record_developer_decision(
+        self,
+        file: str,
+        issue_type: str,
+        description: str,
+        decision: str,  # 'accepted' | 'rejected' | 'false_positive' | 'rollback'
+        reason: str = "",
+        scan_id: Optional[str] = None,
+        fix_id: Optional[int] = None,
+    ):
+        """Record explicit user action to continuously refine agent prioritization."""
+        self.conn.execute(
+            """INSERT INTO developer_decisions
+               (file, issue_type, description, decision, reason, scan_id, fix_id, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (file, issue_type, description, decision, reason, scan_id, fix_id, datetime.now().isoformat())
+        )
+        # If rejected or marked as false positive, save to preference memory
+        if decision in ("rejected", "false_positive"):
+            self.save_rejection(file, issue_type, description, reason)
+        self.conn.commit()
+
+    def get_developer_learning_profile(self) -> dict:
+        """Aggregate developer feedback into an explainable learning profile."""
+        total = self.conn.execute("SELECT COUNT(*) FROM developer_decisions").fetchone()[0]
+        if not total:
+            return {
+                "total_decisions": 0,
+                "acceptance_rate": 0.0,
+                "rejection_rate": 0.0,
+                "false_positives": 0,
+                "rollbacks": 0,
+                "top_rejection_reasons": [],
+                "by_issue_type": [],
+            }
+
+        accepted = self.conn.execute("SELECT COUNT(*) FROM developer_decisions WHERE decision='accepted'").fetchone()[0]
+        rejected = self.conn.execute("SELECT COUNT(*) FROM developer_decisions WHERE decision='rejected'").fetchone()[0]
+        false_pos = self.conn.execute("SELECT COUNT(*) FROM developer_decisions WHERE decision='false_positive'").fetchone()[0]
+        rollbacks = self.conn.execute("SELECT COUNT(*) FROM developer_decisions WHERE decision='rollback'").fetchone()[0]
+
+        reasons = self.conn.execute(
+            """SELECT reason, COUNT(*) as c FROM developer_decisions
+               WHERE reason != '' AND decision IN ('rejected', 'false_positive')
+               GROUP BY reason ORDER BY c DESC LIMIT 5"""
+        ).fetchall()
+
+        by_type = self.conn.execute(
+            """SELECT issue_type,
+                      COUNT(*) as total,
+                      SUM(CASE WHEN decision='accepted' THEN 1 ELSE 0 END) as accepted,
+                      SUM(CASE WHEN decision='rejected' THEN 1 ELSE 0 END) as rejected
+               FROM developer_decisions GROUP BY issue_type"""
+        ).fetchall()
+
+        return {
+            "total_decisions": total,
+            "accepted_count": accepted,
+            "acceptance_rate": round(accepted / total, 3) if total else 0.0,
+            "rejection_rate": round(rejected / total, 3) if total else 0.0,
+            "false_positives": false_pos,
+            "rollbacks": rollbacks,
+            "top_rejection_reasons": [dict(r) for r in reasons],
+            "by_issue_type": [dict(r) for r in by_type],
+        }
+
+    def get_technical_debt_summary(self) -> dict:
+        """Calculate persistent technical debt analytics from stored issues and scans."""
+        open_issues = self.conn.execute("SELECT * FROM issues WHERE status='open'").fetchall()
+        total_open = len(open_issues)
+        high = sum(1 for i in open_issues if i["severity"] == "high")
+        med = sum(1 for i in open_issues if i["severity"] == "medium")
+        low = sum(1 for i in open_issues if i["severity"] == "low")
+
+        # Top technical debt hotspot files
+        hotspots = self.conn.execute(
+            """SELECT file, COUNT(*) as issue_count,
+                      SUM(CASE WHEN severity='high' THEN 1 ELSE 0 END) as high_issues
+               FROM issues WHERE status='open'
+               GROUP BY file ORDER BY high_issues DESC, issue_count DESC LIMIT 8"""
+        ).fetchall()
+
+        # Estimated debt resolution hours (high=2.5h, medium=1.0h, low=0.3h)
+        est_hours = round(high * 2.5 + med * 1.0 + low * 0.3, 1)
+
+        # Scans count
+        total_scans = self.conn.execute("SELECT COUNT(*) FROM scans").fetchone()[0]
+
+        return {
+            "total_open_debt": total_open,
+            "estimated_remediation_hours": est_hours,
+            "high_severity_debt": high,
+            "medium_severity_debt": med,
+            "low_severity_debt": low,
+            "total_scans_recorded": total_scans,
+            "hotspot_files": [dict(h) for h in hotspots],
+        }
+
+    def get_recurring_issues(self, limit: int = 15) -> list[dict]:
+        """Identify issues that persist or recur across multiple scans or files."""
+        rows = self.conn.execute(
+            """SELECT file, issue_type, description, severity,
+                      COUNT(DISTINCT scan_id) as scan_occurrences,
+                      MIN(created_at) as first_seen,
+                      MAX(created_at) as last_seen
+               FROM issues
+               GROUP BY file, description
+               ORDER BY scan_occurrences DESC, severity ASC
+               LIMIT ?""",
+            (limit,)
+        ).fetchall()
+        return [dict(r) for r in rows]
 
     # ── Terminal log ──────────────────────────────────────────────────────────
 

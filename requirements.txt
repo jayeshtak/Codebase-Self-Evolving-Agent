@@ -5,7 +5,7 @@ groq>=1.1.2
 # Code analysis
 radon>=6.0.1
 vulture>=2.16
-tree-sitter>=0.21.3
+tree-sitter==0.21.3
 tree-sitter-languages>=1.10.2
 libcst>=1.8.6
 pyflakes>=3.2.0
@@ -32,7 +32,10 @@ GitPython>=3.1.46
 # Scheduling
 APScheduler>=3.11.2
 
-# UI
+# UI & API Server
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.10.0
 streamlit>=1.55.0
 pandas>=2.2.0
 pyvis>=0.3.2

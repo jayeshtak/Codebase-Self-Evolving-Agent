@@ -56,6 +56,25 @@ class TestScannerInit:
         assert "bad.py" in names
         assert "good.py" in names
 
+    def test_path_exclusions(self, tmp_repo):
+        # Create a mock file inside an excluded folder
+        tests_dir = tmp_repo / "tests"
+        tests_dir.mkdir(exist_ok=True)
+        (tests_dir / "test_dummy.py").write_text("def test_x(): pass")
+        
+        s = _make_scanner(tmp_repo)
+        files = s._get_all_files()
+        names = [f.name for f in files]
+        assert "test_dummy.py" not in names
+
+    def test_is_path_excluded(self, tmp_repo):
+        s = _make_scanner(tmp_repo)
+        assert s.cfg.is_path_excluded("tests/test_file.py") is True
+        assert s.cfg.is_path_excluded("tests\\test_file.py") is True
+        assert s.cfg.is_path_excluded("my_tests/test_file.py") is False
+        assert s.cfg.is_path_excluded("src/tests/test_file.py") is True
+        assert s.cfg.is_path_excluded(".pytest_cache/v/cache/lastfailed") is True
+
 
 class TestSyntaxChecker:
     def test_valid_python_no_syntax_errors(self, tmp_repo):

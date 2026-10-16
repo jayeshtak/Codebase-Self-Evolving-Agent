@@ -7,6 +7,16 @@ from typing import Optional
 import git
 
 
+class GitError(Exception):
+    """Base exception for GitManager operations."""
+    pass
+
+
+class DirtyWorkingTreeError(GitError):
+    """Raised when an operation requires a clean working tree but dirty changes exist."""
+    pass
+
+
 # ── GitManager ────────────────────────────────────────────────────────────────
 
 class GitManager:
@@ -14,8 +24,9 @@ class GitManager:
         self.repo_path = Path(repo_path).resolve()
         try:
             self.repo = git.Repo(self.repo_path)
-        except git.InvalidGitRepositoryError:
-            raise ValueError(f"Not a git repository: {repo_path}")
+        except (git.InvalidGitRepositoryError, git.NoSuchPathError):
+            print(f"[Git] Path '{repo_path}' is not a git repository. Initializing new git repository...")
+            self.repo = git.Repo.init(self.repo_path, mkdir=True)
 
         # In-memory snapshot store: {filepath: original_content}
         self._snapshots: dict[str, str] = {}
@@ -60,13 +71,60 @@ class GitManager:
             except Exception as e:
                 print(f"[Git] Failed to create initial commit: {e}")
 
+        # Detect the default target branch
+        self.default_branch = "master"
+        try:
+            if not self.repo.head.is_detached:
+                self.default_branch = self.repo.active_branch.name
+            else:
+                head_names = [h.name for h in self.repo.heads]
+                if "main" in head_names:
+                    self.default_branch = "main"
+                elif "master" in head_names:
+                    self.default_branch = "master"
+                elif head_names:
+                    self.default_branch = head_names[0]
+        except Exception:
+            pass
+        print(f"[Git] Detected default branch: {self.default_branch}")
+
+    # ── Working tree safeguards ───────────────────────────────────────────────
+
+    def has_uncommitted_changes(self, include_untracked: bool = False) -> bool:
+        """Check if there are uncommitted modifications in the working tree."""
+        try:
+            return self.repo.is_dirty(untracked_files=include_untracked)
+        except Exception:
+            return False
+
+    def get_uncommitted_files(self) -> list[str]:
+        """Return list of modified or uncommitted files in working tree."""
+        try:
+            diff_index = [item.a_path for item in self.repo.index.diff("HEAD")]
+            diff_working = [item.a_path for item in self.repo.index.diff(None)]
+            return list(set(diff_index + diff_working))
+        except Exception:
+            return []
+
     # ── Branch management ─────────────────────────────────────────────────────
 
     def current_branch(self) -> str:
-        return self.repo.active_branch.name
+        try:
+            return self.repo.active_branch.name
+        except TypeError:
+            return "DETACHED"
 
-    def create_fix_branch(self, scan_id: str) -> str:
-        """Create and checkout a new branch for this fix cycle."""
+    def create_fix_branch(self, scan_id: str, allow_dirty: bool = False) -> str:
+        """
+        Create and checkout a new branch for this fix cycle.
+        Refuses to run if dirty uncommitted changes exist (protects user work).
+        """
+        if not allow_dirty and self.has_uncommitted_changes():
+            dirty_files = self.get_uncommitted_files()
+            raise DirtyWorkingTreeError(
+                f"Cannot create fix branch: uncommitted changes in {len(dirty_files)} file(s). "
+                "Commit or stash changes before applying fixes."
+            )
         branch_name = f"agent-fix-{scan_id}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
         branch = self.repo.create_head(branch_name)
         branch.checkout()
@@ -211,14 +269,19 @@ class GitManager:
             print(f"[Git] Rollback failed for {filepath}: {e}")
             return False
 
-    def rollback_branch(self, fix_branch: str, original_branch: str = "master"):
+    def rollback_branch(self, fix_branch: str, original_branch: Optional[str] = None):
         """
         Abandon the fix branch entirely and return to original branch.
-        Called when tests fail after max retries.
+        Called when tests fail after max retries or user rejects fix.
         """
+        if original_branch is None:
+            original_branch = self.default_branch
         try:
-            self.checkout_branch(original_branch)
-            self.delete_branch(fix_branch, force=True)
+            current = self.current_branch()
+            if current == fix_branch:
+                self.checkout_branch(original_branch)
+            if fix_branch in self.list_branches():
+                self.delete_branch(fix_branch, force=True)
             self.clear_snapshots()
             print(f"[Git] Rolled back to '{original_branch}', deleted '{fix_branch}'")
         except Exception as e:
@@ -226,10 +289,17 @@ class GitManager:
 
     # ── Merge ─────────────────────────────────────────────────────────────────
 
-    def merge_branch(self, fix_branch: str, target_branch: str = "master") -> bool:
+    def merge_branch(self, fix_branch: str, target_branch: Optional[str] = None) -> bool:
         """
         Merge fix branch into target and push to remote. Called after user approves.
         """
+        if target_branch is None:
+            target_branch = self.default_branch
+
+        if fix_branch not in self.list_branches():
+            print(f"[Git] Merge failed: branch '{fix_branch}' does not exist.")
+            return False
+
         try:
             self.checkout_branch(target_branch)
             self.repo.git.merge(fix_branch, "--no-ff",
@@ -299,8 +369,8 @@ if __name__ == "__main__":
     restored = gm.read_file(test_file)
     print(f"\n── Rollback successful: {restored == original}")
 
-    # Go back to master and clean up
-    gm.checkout_branch("master")
+    # Go back to default branch and clean up
+    gm.checkout_branch(gm.default_branch)
     gm.delete_branch(branch, force=True)
 
     print(f"\n── Final status: {gm.status()}")

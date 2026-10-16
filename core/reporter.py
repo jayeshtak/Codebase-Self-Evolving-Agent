@@ -5,13 +5,27 @@ from datetime import datetime
 from pathlib import Path
 
 
-def _severity_color(severity: str) -> str:
-    return {"high": "#e74c3c", "medium": "#f39c12", "low": "#27ae60"}.get(severity, "#95a5a6")
+def _severity_badge(severity: str) -> str:
+    styles = {
+        "high": "background: rgba(239, 68, 68, 0.08); color: #B91C1C; border: 1px solid rgba(239, 68, 68, 0.2);",
+        "medium": "background: rgba(245, 158, 11, 0.08); color: #B45309; border: 1px solid rgba(245, 158, 11, 0.2);",
+        "low": "background: rgba(16, 185, 129, 0.08); color: #047857; border: 1px solid rgba(16, 185, 129, 0.2);"
+    }
+    style = styles.get(severity, "background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB;")
+    return f'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; font-family: monospace; {style}">{severity}</span>'
 
 
-def _status_icon(status: str) -> str:
-    return {"applied": "✅", "ready_for_approval": "🔄", "tests_failed": "❌",
-            "failed": "❌", "rolled_back": "↩️", "open": "🔵"}.get(status, "⚪")
+def _status_badge(status: str) -> str:
+    colors = {
+        "applied": "background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0;",
+        "ready_for_approval": "background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;",
+        "tests_failed": "background: #FEF2F2; color: #B91C1C; border: 1px solid #FCA5A5;",
+        "failed": "background: #FEF2F2; color: #B91C1C; border: 1px solid #FCA5A5;",
+        "rolled_back": "background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB;",
+        "open": "background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A;",
+    }
+    style = colors.get(status, "background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB;")
+    return f'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; font-family: monospace; {style}">{status}</span>'
 
 
 def generate_html_report(
@@ -37,13 +51,13 @@ def generate_html_report(
     issue_rows = ""
     for issue in issues:
         sev = issue.get("severity", "low")
-        color = _severity_color(sev)
+        badge = _severity_badge(sev)
         issue_rows += f"""
         <tr>
-            <td><span style="color:{color};font-weight:bold">{sev.upper()}</span></td>
-            <td>{issue.get('issue_type','')}</td>
+            <td>{badge}</td>
+            <td><span style="font-family: monospace; font-size: 11px; background: #F3F4F6; padding: 2px 4px; border-radius: 3px; border: 1px solid #E5E7EB;">{issue.get('issue_type','')}</span></td>
             <td><code>{issue.get('file','')}:{issue.get('line','')}</code></td>
-            <td>{issue.get('description','')[:100]}</td>
+            <td style="font-weight: 500;">{issue.get('description','')}</td>
         </tr>"""
 
     # ── Runtime issue rows ────────────────────────────────────────────────────
@@ -51,24 +65,25 @@ def generate_html_report(
     for issue in runtime_issues:
         extra = issue.get("extra", {})
         ec = extra.get("error_class", issue.get("issue_type", ""))
+        badge = _severity_badge("high")
         rt_rows += f"""
         <tr>
-            <td><span style="color:#e74c3c;font-weight:bold">HIGH</span></td>
-            <td>{ec}</td>
+            <td>{badge}</td>
+            <td><span style="font-family: monospace; font-size: 11px; background: #F3F4F6; padding: 2px 4px; border-radius: 3px; border: 1px solid #E5E7EB;">{ec}</span></td>
             <td><code>{issue.get('file','')}:{issue.get('line','')}</code></td>
-            <td>{issue.get('description','')[:100]}</td>
+            <td style="font-weight: 500;">{issue.get('description','')}</td>
         </tr>"""
 
     # ── Fix history rows ──────────────────────────────────────────────────────
     fix_rows = ""
     for entry in fix_history:
-        icon = _status_icon(entry.get("status", ""))
+        badge = _status_badge(entry.get("status", ""))
         fix_rows += f"""
         <tr>
-            <td>{icon} {entry.get('status','')}</td>
+            <td>{badge}</td>
             <td><code>{entry.get('file','')}</code></td>
-            <td>{entry.get('description','')[:80]}</td>
-            <td>{entry.get('time','')}</td>
+            <td style="font-weight: 500;">{entry.get('description','')}</td>
+            <td style="font-family: monospace; color: #64748B; font-size: 11px;">{entry.get('time','')}</td>
         </tr>"""
 
     # ── Plan summary ──────────────────────────────────────────────────────────
@@ -77,11 +92,15 @@ def generate_html_report(
         summary_text = getattr(plan, "summary", "") or ""
         plan_section = f"""
         <h2>Fix Plan</h2>
-        <p>{summary_text}</p>
-        <ul>
-            <li>Actionable: <strong>{len(plan.actionable()) if hasattr(plan,'actionable') else 0}</strong></li>
-            <li>Skipped: <strong>{len(plan.skipped) if hasattr(plan,'skipped') else 0}</strong></li>
-        </ul>"""
+        <p style="font-size: 13px; color: #4B5563; margin-bottom: 12px; line-height: 1.5;">{summary_text}</p>
+        <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+            <div style="background: #F3F4F6; border: 1px solid #E5E7EB; border-radius: 6px; padding: 10px 16px; font-size: 12px;">
+                Actionable: <strong>{len(plan.actionable()) if hasattr(plan,'actionable') else 0}</strong>
+            </div>
+            <div style="background: #F3F4F6; border: 1px solid #E5E7EB; border-radius: 6px; padding: 10px 16px; font-size: 12px;">
+                Skipped: <strong>{len(plan.skipped) if hasattr(plan,'skipped') else 0}</strong>
+            </div>
+        </div>"""
 
     high = sum(1 for i in issues if i.get("severity") == "high")
     med  = sum(1 for i in issues if i.get("severity") == "medium")
@@ -92,41 +111,44 @@ def generate_html_report(
 <head>
 <meta charset="UTF-8">
 <title>Codebase Agent Report — {now}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          background: #f5f6fa; color: #2d3436; padding: 32px; }}
-  h1 {{ font-size: 28px; margin-bottom: 4px; }}
-  h2 {{ font-size: 18px; margin: 32px 0 12px; color: #636e72; border-bottom: 2px solid #dfe6e9; padding-bottom: 6px; }}
-  .meta {{ color: #636e72; font-size: 13px; margin-bottom: 32px; }}
+  body {{ font-family: 'Inter', sans-serif;
+          background: #F4F6F8; color: #1F2937; padding: 32px; }}
+  h1 {{ font-family: 'Fraunces', serif; font-size: 32px; font-weight: 800; margin-bottom: 4px; color: #111827; }}
+  h2 {{ font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; margin: 32px 0 12px; color: #111827; border-bottom: 1px solid #E5E7EB; padding-bottom: 6px; }}
+  .meta {{ color: #6B7280; font-size: 12px; margin-bottom: 32px; font-family: monospace; }}
   .cards {{ display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }}
-  .card {{ background: white; border-radius: 10px; padding: 20px 28px; min-width: 140px;
-           box-shadow: 0 2px 8px rgba(0,0,0,.07); }}
-  .card .num {{ font-size: 36px; font-weight: 700; }}
-  .card .lbl {{ font-size: 13px; color: #636e72; margin-top: 4px; }}
+  .card {{ background: white; border-radius: 8px; padding: 18px 24px; min-width: 140px;
+           flex: 1; border: 1px solid #E5E7EB; }}
+  .card .num {{ font-family: 'Fraunces', serif; font-size: 36px; font-weight: 700; color: #111827; }}
+  .card .lbl {{ font-size: 11px; color: #6B7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }}
   table {{ width: 100%; border-collapse: collapse; background: white;
-           border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.07); }}
-  th {{ background: #2d3436; color: white; padding: 10px 14px; text-align: left; font-size: 13px; }}
-  td {{ padding: 9px 14px; border-bottom: 1px solid #f0f0f0; font-size: 13px; }}
+           border-radius: 8px; overflow: hidden; border: 1px solid #E5E7EB; }}
+  th {{ background: #F9FAFB; color: #374151; padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #E5E7EB; }}
+  td {{ padding: 12px 16px; border-bottom: 1px solid #E5E7EB; font-size: 12px; color: #374151; }}
   tr:last-child td {{ border-bottom: none; }}
-  code {{ background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px; }}
-  .empty {{ background: white; border-radius: 10px; padding: 20px;
-            color: #636e72; font-style: italic;
-            box-shadow: 0 2px 8px rgba(0,0,0,.07); }}
-  .footer {{ margin-top: 48px; text-align: center; color: #b2bec3; font-size: 12px; }}
+  code {{ background: #F3F4F6; padding: 2px 6px; border-radius: 4px; font-size: 11px; border: 1px solid #E5E7EB; font-family: monospace; color: #111827; }}
+  .empty {{ background: white; border-radius: 8px; padding: 24px;
+            color: #6B7280; font-size: 12px;
+            border: 1px solid #E5E7EB; text-align: center; }}
+  .footer {{ margin-top: 48px; text-align: center; color: #9CA3AF; font-size: 11px; border-top: 1px solid #E5E7EB; padding-top: 24px; }}
 </style>
 </head>
 <body>
-<h1>🧬 Codebase Agent Report</h1>
+<h1>Codebase Agent Report</h1>
 <p class="meta">Generated: {now} &nbsp;|&nbsp; Repo: {repo_path} &nbsp;|&nbsp; Scan ID: {scan_id}</p>
 
 <div class="cards">
   <div class="card"><div class="num">{len(issues)}</div><div class="lbl">Static Issues</div></div>
-  <div class="card"><div class="num" style="color:#e74c3c">{high}</div><div class="lbl">High Severity</div></div>
-  <div class="card"><div class="num" style="color:#f39c12">{med}</div><div class="lbl">Medium Severity</div></div>
-  <div class="card"><div class="num" style="color:#27ae60">{low}</div><div class="lbl">Low Severity</div></div>
+  <div class="card"><div class="num" style="color:#DC2626">{high}</div><div class="lbl">High Severity</div></div>
+  <div class="card"><div class="num" style="color:#D97706">{med}</div><div class="lbl">Medium Severity</div></div>
+  <div class="card"><div class="num" style="color:#059669">{low}</div><div class="lbl">Low Severity</div></div>
   <div class="card"><div class="num">{len(runtime_issues)}</div><div class="lbl">Runtime Issues</div></div>
-  <div class="card"><div class="num" style="color:#27ae60">{stats.get('fixed',0)}</div><div class="lbl">Fixes Applied</div></div>
+  <div class="card"><div class="num" style="color:#059669">{stats.get('fixed',0)}</div><div class="lbl">Fixes Applied</div></div>
   <div class="card"><div class="num">{stats.get('total_scans',0)}</div><div class="lbl">Total Scans</div></div>
 </div>
 
@@ -144,7 +166,7 @@ def generate_html_report(
 {"<table><tr><th>Status</th><th>File</th><th>Description</th><th>Time</th></tr>" + fix_rows + "</table>"
   if fix_history else '<p class="empty">No fixes applied yet.</p>'}
 
-<div class="footer">Generated by Codebase Self-Evolving Agent &nbsp;·&nbsp; MCAP21 Mini Project 1B</div>
+<div class="footer">Generated by Codebase Agent &nbsp;·&nbsp; MCAP21 Mini Project 1B</div>
 </body>
 </html>"""
     return html
@@ -158,3 +180,4 @@ def save_report(repo_path: str, html: str) -> str:
     out_path = out_dir / f"report_{ts}.html"
     out_path.write_text(html, encoding="utf-8")
     return str(out_path)
+

@@ -30,19 +30,25 @@ COMPLEXITY_THRESHOLD = 10
 FUNCTION_LENGTH_THRESHOLD = 60
 NESTING_DEPTH_THRESHOLD = 4
 
+# ── Server & Deployment settings ──────────────────────────────────────────────
+
+PORT = int(os.getenv("PORT", "8000"))
+HOST = os.getenv("HOST", "0.0.0.0")
+DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() in ("true", "1", "yes")
+
 # ── Validate ──────────────────────────────────────────────────────────────────
 
-def validate():
+def has_gemini() -> bool:
+    return bool(GEMINI_API_KEY and GEMINI_API_KEY.strip())
+
+def has_groq() -> bool:
+    return bool(GROQ_API_KEY and GROQ_API_KEY.strip())
+
+def validate(require_keys: bool = False):
     """
-    Validates that required API keys are present, ensures the data directory exists,
-    and checks critical agent settings.
+    Validates agent settings and ensures data directory exists.
+    If require_keys is True, raises EnvironmentError if neither key is set.
     """
-    missing = []
-    if not GEMINI_API_KEY:
-        missing.append("GEMINI_API_KEY")
-    if not GROQ_API_KEY:
-        missing.append("GROQ_API_KEY")
-    
     # Ensure the data directory exists, as DB_PATH depends on it
     if not DATA_DIR.exists():
         DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -79,16 +85,27 @@ def validate():
             "Must be a positive integer."
         )
 
+    missing = []
+    if not has_gemini():
+        missing.append("GEMINI_API_KEY")
+    if not has_groq():
+        missing.append("GROQ_API_KEY")
+
     if missing:
-        raise EnvironmentError(
-            f"Missing API keys: {missing}. "
-            f"Add them to a .env file in the project root."
-        )
+        msg = f"[Config] Notice: Optional LLM keys missing ({', '.join(missing)}). Running in degraded/static analysis mode for missing providers."
+        if require_keys and len(missing) == 2:
+            raise EnvironmentError(
+                f"Missing all LLM API keys: {missing}. "
+                f"Add at least one to a .env file in the project root."
+            )
+        else:
+            print(msg)
 
 if __name__ == "__main__":
     try:
         validate()
-        print("[Config] All API keys and settings are valid.")
+        print("[Config] All settings are valid.")
+        print(f"[Config] Gemini available: {has_gemini()}, Groq available: {has_groq()}")
         print(f"[Config] Database path: {DB_PATH}")
     except (EnvironmentError, ValueError) as e:
         print(f"[Config] {e}")

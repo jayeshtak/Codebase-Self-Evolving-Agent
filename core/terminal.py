@@ -1,5 +1,6 @@
 import subprocess
 import shlex
+import sys
 import time
 from pathlib import Path
 from typing import Optional
@@ -109,6 +110,20 @@ class Terminal:
         self.repo_path = Path(repo_path).resolve()
         self.db = db
 
+    def _scrub_secrets(self, text: str) -> str:
+        if not text:
+            return ""
+        import os, re
+        redacted = text
+        for env_key in ("GEMINI_API_KEY", "GROQ_API_KEY", "GITHUB_TOKEN", "AWS_SECRET_ACCESS_KEY"):
+            val = os.getenv(env_key, "").strip()
+            if val and len(val) > 4:
+                redacted = redacted.replace(val, "[REDACTED_SECRET]")
+        # Generic API key regex patterns
+        redacted = re.sub(r'(?i)(AIzaSy[0-9A-Za-z_-]{33})', '[REDACTED_GEMINI_KEY]', redacted)
+        redacted = re.sub(r'(?i)(gsk_[a-zA-Z0-9]{48,})', '[REDACTED_GROQ_KEY]', redacted)
+        return redacted
+
     # ── Validation ────────────────────────────────────────────────────────────
 
     def _is_allowed(self, command: str) -> tuple[bool, str]:
@@ -148,20 +163,36 @@ class Terminal:
             return result
 
         working_dir = cwd or str(self.repo_path)
-        print(f"[Terminal] Running: {command}")
+        target_dir = Path(working_dir).resolve()
+        try:
+            target_dir.relative_to(self.repo_path)
+        except ValueError:
+            reason = "Path traversal outside repository boundary is forbidden"
+            result = TerminalResult(
+                command=command,
+                stdout="", stderr=reason,
+                exit_code=-1, duration=0.0,
+                blocked=True, block_reason=reason
+            )
+            print(f"[Terminal] BLOCKED: {reason}")
+            if self.db:
+                self.db.log_terminal(command, f"BLOCKED: {reason}", -1)
+            return result
+
+        print(f"[Terminal] Running: {self._scrub_secrets(command)}")
 
         start = time.time()
         try:
             proc = subprocess.run(
-                shlex.split(command),
+                shlex.split(command, posix=(sys.platform != "win32")),
                 capture_output=True,
                 text=True,
                 timeout=timeout,
-                cwd=working_dir,
+                cwd=str(target_dir),
             )
             duration = time.time() - start
-            stdout = proc.stdout[:MAX_OUTPUT_LENGTH]
-            stderr = proc.stderr[:MAX_OUTPUT_LENGTH]
+            stdout = self._scrub_secrets(proc.stdout[:MAX_OUTPUT_LENGTH])
+            stderr = self._scrub_secrets(proc.stderr[:MAX_OUTPUT_LENGTH])
             exit_code = proc.returncode
 
         except subprocess.TimeoutExpired:

@@ -2,10 +2,14 @@
 # All fields are optional. Missing keys use system defaults.
 
 exclude_paths:
+  - tests/
+  - .pytest_cache/
+  - .mypy_cache/
   - venv/
+  - __pycache__/
+  - data/
   - node_modules/
   - .git/
-  - __pycache__/
   - dist/
   - build/
   - migrations/

@@ -881,7 +881,7 @@ with tab_fix:
 
                 # ── Confirmation 2: Approve the fix ──────────────
                 st.subheader("Step 3 — Apply Fix to Codebase")
-                st.warning("⚠️ This will merge the fix branch into master. Cannot be undone.")
+                st.warning(f"⚠️ This will merge the fix branch into {st.session_state.agent.git.default_branch}. Cannot be undone.")
 
                 col1, col2 = st.columns(2)
                 with col1:
@@ -893,7 +893,7 @@ with tab_fix:
                                 issue_id=issue.get("id", 0),
                             )
                             if success:
-                                st.success("✅ Fix applied and merged to master!")
+                                st.success(f"✅ Fix applied and merged to {st.session_state.agent.git.default_branch}!")
                                 st.session_state.fix_result = None
                                 st.session_state.active_fix = None
                                 log(f"Fix applied: {issue.get('file')}")
