@@ -19,7 +19,7 @@ COPY . .
 ENV PYTHONUNBUFFERED=1 \
     PORT=8000 \
     HOST=0.0.0.0 \
-    DEMO_MODE=true \
+    DEMO_MODE=false \
     LOW_MEMORY=true \
     DISABLE_LOCAL_EMBEDDINGS=true \
     WEB_CONCURRENCY=1
