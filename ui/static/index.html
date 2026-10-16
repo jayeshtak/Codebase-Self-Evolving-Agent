@@ -1801,6 +1801,17 @@
           document.getElementById('cc-repo-name').innerText = activeRepoPath.split(/[/\\]/).pop();
           document.getElementById('cc-repo-path').innerText = activeRepoPath;
 
+          // Auto-load scan data on initial connection
+          if (!scanResults && activeRepoPath) {
+            api('/api/load', 'POST', { repo_path: activeRepoPath })
+              .then(lRes => {
+                if (lRes.scan_results && !scanResults) {
+                  scanResults = lRes.scan_results;
+                  renderScanData(scanResults);
+                }
+              }).catch(() => {});
+          }
+
           // Branch
           api(`/api/branches?repo_path=${encodeURIComponent(activeRepoPath)}`)
             .then(bRes => {
