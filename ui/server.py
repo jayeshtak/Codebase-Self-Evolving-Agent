@@ -135,6 +135,13 @@ def validate_safe_repo_path(repo_path: str) -> Path:
                 raise HTTPException(status_code=408, detail="Cloning repository timed out.")
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Error executing git clone: {str(e)}")
+        else:
+            # Sync remote changes so new commits are fetched immediately
+            try:
+                subprocess.run(["git", "fetch", "--depth", "1", "origin"], cwd=str(dest_dir), capture_output=True, text=True, timeout=30)
+                subprocess.run(["git", "reset", "--hard", "origin/main"], cwd=str(dest_dir), capture_output=True, text=True, timeout=30)
+            except Exception:
+                pass
 
         return dest_dir.resolve()
 
@@ -325,13 +332,15 @@ async def get_status():
 async def connect_repo(req: ConnectRequest):
     repo_p = validate_safe_repo_path(req.repo_path)
     try:
-        agent = get_agent(str(repo_p))
+        config.validate()
+        state.agent = CodebaseAgent(str(repo_p))
+        state.repo_path = str(repo_p)
         state.scan_results = load_last_scan(str(repo_p))
         return {
             "status": "success",
             "detail": "Repository connected successfully.",
             "repo_path": str(repo_p),
-            "branch": agent.git.current_branch(),
+            "branch": state.agent.git.current_branch(),
             "scan_results": state.scan_results
         }
     except Exception as e:
@@ -379,7 +388,7 @@ async def run_scan(req: ConnectRequest):
     t0 = datetime.now()
     try:
         agent = get_agent(str(repo_p))
-        results = agent.scan(full_scan=False)
+        results = agent.scan(full_scan=True)
         dur = (datetime.now() - t0).total_seconds()
         state.scan_results = results
         total = results.get("total_issues", len(results.get("issues", [])))
