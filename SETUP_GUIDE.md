@@ -138,41 +138,36 @@ git commit -m "Initial commit"
 
 ---
 
-## Step 5: Run the Streamlit Dashboard
+## Step 5: Launch Developer Command Center (Recommended)
 
-Launch the Streamlit app from the project root:
+Launch the production-hardened Minimal Black Developer Command Center (FastAPI + SPA):
 
-### 🍏 macOS
+### 🍏 macOS / Linux
 ```bash
-# Activate environment
 source venv/bin/activate
-
-# Start Streamlit
-streamlit run ui/app.py
+uvicorn ui.server:app --host 0.0.0.0 --port 8000
 ```
 
 ### 🪟 Windows (PowerShell)
 ```powershell
-# Activate environment
 .\venv\Scripts\Activate.ps1
-
-# Start Streamlit
-streamlit run ui/app.py
+uvicorn ui.server:app --host 0.0.0.0 --port 8000
 ```
 
-### 🪟 Windows (Command Prompt)
-```cmd
-:: Activate environment
-call venv\Scripts\activate.bat
+Open **[http://localhost:8000](http://localhost:8000)** in your browser to access the full-stack developer command center (real-time telemetry, AST diff viewer, interactive dependency graph, and auto-fix loop).
 
-:: Start Streamlit
-streamlit run ui/app.py
-```
+*(Alternative Legacy UI: `streamlit run ui/app.py` on port 8501).*
 
-### Accessing the Dashboard
-1. Open the URL in your browser: [http://localhost:8501](http://localhost:8501)
-2. The **Repository Path** field will automatically point to your project root.
-3. Click the **🔌 Connect** button, then click **🔍 Run Scan** to start scanning your codebase!
+---
+
+## Step 6: 1-Click Live Cloud Deployment (Render / Railway)
+
+The repository is fully configured for zero-configuration cloud deployment:
+
+- **GitHub Repository**: [https://github.com/jayeshtak/Codebase-Self-Evolving-Agent](https://github.com/jayeshtak/Codebase-Self-Evolving-Agent)
+- **1-Click Render Deploy**: Click the Deploy to Render button in the README or navigate to Render -> New -> Blueprint -> connect `Codebase-Self-Evolving-Agent`.
+- **Docker PaaS**: Uses [`Dockerfile`](Dockerfile) with automated port binding and `DEMO_MODE=true` sandbox security.
+
 
 ---
 
