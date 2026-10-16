@@ -1,8 +1,12 @@
 import sys
 import os
+import re
 import json
 import uuid
 import threading
+import tempfile
+import subprocess
+import urllib.parse
 import mimetypes
 from pathlib import Path
 from datetime import datetime
@@ -105,19 +109,61 @@ def validate_safe_repo_path(repo_path: str) -> Path:
         raise HTTPException(status_code=400, detail="Repository path is required.")
     if "\x00" in repo_path:
         raise HTTPException(status_code=400, detail="Invalid character in path.")
-    p = Path(repo_path.strip()).resolve()
+    
+    repo_str = repo_path.strip()
+
+    # Dynamic Git Clone support (e.g. https://github.com/owner/repo)
+    if repo_str.startswith("http://") or repo_str.startswith("https://"):
+        parsed = urllib.parse.urlparse(repo_str)
+        if not parsed.netloc:
+            raise HTTPException(status_code=400, detail="Invalid repository URL.")
+        url_path = parsed.path.rstrip("/")
+        if url_path.endswith(".git"):
+            url_path = url_path[:-4]
+        repo_name = re.sub(r"[^a-zA-Z0-9_\-]", "_", Path(url_path).name) or "cloned_repo"
+        sandbox_base = Path("/tmp/cloned_repos") if os.name != "nt" else Path(tempfile.gettempdir()) / "codebase_agent_repos"
+        sandbox_base.mkdir(parents=True, exist_ok=True)
+        dest_dir = sandbox_base / repo_name
+
+        if not dest_dir.exists():
+            cmd = ["git", "clone", "--depth", "1", repo_str, str(dest_dir)]
+            try:
+                proc = subprocess.run(cmd, capture_output=True, text=True, timeout=90)
+                if proc.returncode != 0:
+                    raise HTTPException(status_code=400, detail=f"Failed to clone repository: {proc.stderr[:200]}")
+            except subprocess.TimeoutExpired:
+                raise HTTPException(status_code=408, detail="Cloning repository timed out.")
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Error executing git clone: {str(e)}")
+
+        return dest_dir.resolve()
+
+    p = Path(repo_str).resolve()
     if not p.exists():
         raise HTTPException(status_code=400, detail=f"Repository path does not exist: {repo_path}")
     if not p.is_dir():
         raise HTTPException(status_code=400, detail=f"Repository path is a file, not a directory: {repo_path}")
     if getattr(config, "DEMO_MODE", False):
         app_root = Path(__file__).parent.parent.resolve()
+        sandbox_base = Path("/tmp/cloned_repos") if os.name != "nt" else Path(tempfile.gettempdir()) / "codebase_agent_repos"
+        in_app = False
+        in_sandbox = False
         try:
             p.relative_to(app_root)
+            in_app = True
         except ValueError:
+            pass
+
+        try:
+            p.relative_to(sandbox_base)
+            in_sandbox = True
+        except ValueError:
+            pass
+
+        if not in_app and not in_sandbox:
             raise HTTPException(
                 status_code=403,
-                detail="Public Demo Mode restriction: Only the demonstration repository boundary can be inspected."
+                detail="Public Demo Mode restriction: Only the demonstration repository boundary or cloned repositories can be inspected."
             )
     return p
 

@@ -154,8 +154,9 @@
         <span class="text-[9px] font-mono font-semibold text-muted uppercase tracking-wider">Workspace Path</span>
         <span id="git-branch-badge" class="text-[9px] font-mono text-muted bg-surface px-1.5 py-0.5 rounded border border-border hidden">main</span>
       </div>
-      <input type="text" id="repo-path-input" placeholder="c:\path\to\repository" 
+      <input type="text" id="repo-path-input" placeholder="Local path or Git URL (https://...)" 
              class="w-full bg-surface border border-border rounded px-2.5 py-1.5 text-xs text-default placeholder-muted font-mono focus:outline-none focus:border-accent">
+      <p class="text-[9px] text-muted font-mono">Tip: Local folder path or paste any public Git URL</p>
       <div class="grid grid-cols-3 gap-1">
         <button id="btn-browse" class="flex items-center justify-center bg-surface-2 hover:bg-surface text-default text-[10px] font-medium py-1 px-1.5 rounded border border-border" title="Browse Local Folder">
           <i data-lucide="folder" class="h-3 w-3 mr-1 text-muted"></i> Browse
