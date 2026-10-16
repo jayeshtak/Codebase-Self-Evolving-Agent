@@ -17,12 +17,6 @@ bandit>=1.8.3
 semgrep>=1.117.0
 safety>=3.5.0
 
-# Vector search / embeddings
-chromadb>=1.5.5
-sentence-transformers>=5.3.0
-torch>=2.11.0
-numpy>=2.4.4
-
 # Graph & dependency analysis
 networkx>=3.6.1
 
@@ -36,17 +30,15 @@ APScheduler>=3.11.2
 fastapi>=0.115.0
 uvicorn[standard]>=0.32.0
 pydantic>=2.10.0
-streamlit>=1.55.0
+streamlit>=1.40.0
 pandas>=2.2.0
 pyvis>=0.3.2
 plotly>=5.24.1
 
-# Testing
-pytest>=9.0.2
-playwright>=1.49.0
-
-# Env / utilities
-python-dotenv>=1.2.2
+# Testing & Utilities
+pytest>=8.0.0
+python-dotenv>=1.0.0
 PyYAML>=6.0.1
-requests>=2.33.0
-tqdm>=4.67.3
+requests>=2.31.0
+tqdm>=4.66.0
+numpy>=1.26.0

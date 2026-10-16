@@ -2,26 +2,29 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install git (required for GitPython and repository operations) and build utilities
+# Install git (required for GitPython and repository operations) and curl for healthchecks
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install python dependencies
+# Install python dependencies (memory-safe cloud profile)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application source
 COPY . .
 
-# Environment defaults for production container
+# Environment defaults for memory-constrained PaaS (Render 512MB free tier)
 ENV PYTHONUNBUFFERED=1 \
     PORT=8000 \
     HOST=0.0.0.0 \
-    DEMO_MODE=true
+    DEMO_MODE=true \
+    LOW_MEMORY=true \
+    DISABLE_LOCAL_EMBEDDINGS=true \
+    WEB_CONCURRENCY=1
 
 EXPOSE 8000
 
-# Start command binds dynamically to assigned PaaS PORT
-CMD ["sh", "-c", "uvicorn ui.server:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Start command binds dynamically to assigned PaaS PORT with a single worker
+CMD ["sh", "-c", "uvicorn ui.server:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"]
