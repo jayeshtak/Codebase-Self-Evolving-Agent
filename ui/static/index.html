@@ -1419,6 +1419,15 @@
 
     function renderDiffResult(res) {
       if (!res) return;
+      if (res.status === 'blocked' || res.status === 'failed') {
+        document.getElementById('fix-diff-container').innerHTML = `
+          <div class="p-4 bg-destructive/10 border border-destructive/30 rounded text-destructive text-xs font-mono">
+            <p class="font-bold mb-1">Fix Blocked: ${escapeHtml(res.error || 'Failed to synthesize fix')}</p>
+            <p class="text-muted text-[11px] mt-1">Branch was restored. Try selecting another finding or re-scanning.</p>
+          </div>
+        `;
+        return;
+      }
       document.getElementById('btn-apply-fix').removeAttribute('disabled');
       document.getElementById('btn-reject-modal-open').removeAttribute('disabled');
       document.getElementById('fix-confidence-badge').innerText = `Conf: ${(res.confidence || 0.85).toFixed(2)}`;

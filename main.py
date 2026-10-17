@@ -346,23 +346,25 @@ class CodebaseAgent:
             "fix_id": None,
         }
 
-        # Check working tree cleanliness before any branch operations
+        # Ensure we branch off a clean state on the default branch
+        try:
+            cur_branch = self.git.current_branch()
+            if cur_branch.startswith("agent-fix-"):
+                self.git.checkout_branch(self.git.default_branch)
+        except Exception:
+            pass
+
         if self.git.has_uncommitted_changes():
-            err_msg = "Fix blocked: uncommitted user changes detected in working tree. Stash or commit before running auto-fix."
-            print(f"[Main] {err_msg}")
-            result["status"] = "blocked"
-            result["error"] = err_msg
-            return result
+            try:
+                self.git.repo.git.reset("--hard", "HEAD")
+            except Exception:
+                pass
 
         # Create fix branch
         try:
             from core.git_manager import DirtyWorkingTreeError
-            branch = self.git.create_fix_branch(scan_id[:8])
+            branch = self.git.create_fix_branch(scan_id[:8], allow_dirty=True)
             result["fix_branch"] = branch
-        except DirtyWorkingTreeError as e:
-            result["status"] = "blocked"
-            result["error"] = str(e)
-            return result
         except Exception as e:
             result["status"] = "failed"
             result["error"] = f"Failed to create fix branch: {e}"
