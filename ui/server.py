@@ -31,7 +31,7 @@ from core.graph import DependencyGraph
 
 app = FastAPI(title="Codebase Self-Evolving Agent API")
 
-# Configure CORS - restricted to local origins only for security
+# Configure CORS - allows local development and onrender.com instances
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -42,11 +42,47 @@ app.add_middleware(
         "http://localhost:8501",
         "http://127.0.0.1:8501",
     ],
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|.*\.onrender\.com)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
+
+# Automated Background Keep-Alive to prevent Render free instances from sleeping
+def start_render_keep_alive():
+    """Background worker that periodically pings the public endpoint every 8 minutes to prevent sleep."""
+    def worker():
+        import time
+        import urllib.request
+        time.sleep(30)
+        while True:
+            render_url = (
+                os.environ.get("RENDER_EXTERNAL_URL")
+                or os.environ.get("KEEP_ALIVE_URL")
+                or "https://codebase-self-evolving-agent.onrender.com"
+            )
+            is_render = bool(
+                os.environ.get("RENDER")
+                or os.environ.get("RENDER_EXTERNAL_URL")
+                or os.environ.get("KEEP_ALIVE_URL")
+            )
+            if is_render and render_url:
+                ping_endpoint = f"{render_url.rstrip('/')}/api/status"
+                try:
+                    req = urllib.request.Request(
+                        ping_endpoint,
+                        headers={"User-Agent": "RenderKeepAlivePinger/1.0"}
+                    )
+                    with urllib.request.urlopen(req, timeout=15) as resp:
+                        pass
+                except Exception:
+                    pass
+            time.sleep(480)
+
+    t = threading.Thread(target=worker, daemon=True, name="render_keep_alive")
+    t.start()
+
+start_render_keep_alive()
 
 # Global State
 class AppState:

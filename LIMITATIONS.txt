@@ -81,8 +81,8 @@ CANNOT FIX:
   - Database migration bugs (needs schema + production data)
 
 
-NOTE FOR ACADEMIC SUBMISSION
-------------------------------
+ARCHITECTURAL & SYSTEM DESIGN NOTE
+-----------------------------------
 Understanding the limitations of automated tools is as important as
 building them. This agent is designed to handle structural and
 surface-level code quality issues automatically, while keeping a human

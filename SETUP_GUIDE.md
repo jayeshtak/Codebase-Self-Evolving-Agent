@@ -160,12 +160,11 @@ Open **[http://localhost:8000](http://localhost:8000)** in your browser to acces
 
 ---
 
-## Step 6: 1-Click Live Cloud Deployment (Render / Railway)
+## Step 6: Live Cloud Deployment (Render / Railway)
 
-The repository is fully configured for zero-configuration cloud deployment:
+The repository is fully configured for containerized cloud deployment:
 
-- **GitHub Repository**: [https://github.com/jayeshtak/Codebase-Self-Evolving-Agent](https://github.com/jayeshtak/Codebase-Self-Evolving-Agent)
-- **1-Click Render Deploy**: Click the Deploy to Render button in the README or navigate to Render -> New -> Blueprint -> connect `Codebase-Self-Evolving-Agent`.
+- **Deployment**: Connect the repository to your Render or Railway account as a Web Service.
 - **Docker PaaS**: Uses [`Dockerfile`](Dockerfile) with automated port binding and `DEMO_MODE=true` sandbox security.
 
 
