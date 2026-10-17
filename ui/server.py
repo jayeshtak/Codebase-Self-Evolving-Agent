@@ -544,6 +544,14 @@ async def get_last_plan(repo_path: str):
     plan_data = load_last_plan(str(repo_p))
     return {"status": "success", "plan": plan_data}
 
+@app.get("/api/fix/active")
+async def get_active_fix():
+    return {
+        "status": "success",
+        "active_fix": state.active_fix,
+        "fix_result": state.fix_result
+    }
+
 @app.post("/api/fix/generate")
 async def generate_fix(req: FixIssueRequest):
     if not state.agent:

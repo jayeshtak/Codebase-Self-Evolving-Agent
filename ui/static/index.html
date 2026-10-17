@@ -731,53 +731,119 @@
       </section>
 
       <!-- ==================== SCREEN 5: FIX REVIEW STUDIO ==================== -->
-      <section id="tab-fix-studio" class="screen-view hidden space-y-4">
-        <!-- Review Controls & Context Header -->
-        <div class="bg-surface border border-border rounded p-4 space-y-3 font-mono text-xs">
-          <div class="flex items-start justify-between">
-            <div class="space-y-1">
-              <div class="flex items-center space-x-2">
-                <span class="text-[9px] font-bold text-muted uppercase">Target:</span>
-                <span id="fix-target-file" class="font-semibold text-default">No active fix candidate</span>
-                <span id="fix-confidence-badge" class="px-1.5 py-0.2 rounded text-[10px] bg-surface-2 border border-border text-muted">Conf: --</span>
-              </div>
-              <p id="fix-summary-text" class="text-secondary text-[11px]">Select an issue in Issue Intelligence and click "Send to Fix Studio" to synthesize code.</p>
-            </div>
-            
-            <div class="flex items-center space-x-2">
-              <button id="btn-apply-fix" disabled class="bg-success text-black font-semibold hover:bg-emerald-400 px-3 py-1.5 rounded disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center space-x-1">
-                <i data-lucide="check" class="h-3.5 w-3.5"></i>
-                <span>Approve & Merge</span>
-              </button>
-              <button id="btn-reject-modal-open" disabled class="bg-destructive/20 text-destructive hover:bg-destructive/30 border border-destructive/40 px-3 py-1.5 rounded disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center space-x-1">
-                <i data-lucide="x" class="h-3.5 w-3.5"></i>
-                <span>Reject</span>
-              </button>
-            </div>
+      <section id="tab-fix-studio" class="screen-view hidden space-y-4 font-mono text-xs">
+        <!-- Top Status & Action Bar -->
+        <div class="bg-surface border border-border rounded p-4 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+          <div class="flex items-center space-x-3">
+            <span id="fix-status-badge" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-surface-2 border border-border text-muted">Ready for Review</span>
+            <span id="fix-confidence-badge" class="px-2 py-0.5 rounded text-[10px] bg-accent/10 border border-accent/40 text-accent font-semibold">Conf: --</span>
+            <span id="fix-branch-label" class="text-muted text-[11px] truncate max-w-xs">branch: none</span>
           </div>
 
-          <div id="fix-reasoning-panel" class="hidden bg-surface-2 border border-border rounded p-3 text-[11px] text-secondary space-y-1">
-            <span class="text-[9px] font-bold text-muted uppercase block">Agent Reasoning & Remediation</span>
-            <div id="fix-explanation-content"></div>
+          <div class="flex items-center space-x-2">
+            <button id="btn-apply-fix" disabled class="bg-success text-black font-semibold hover:bg-emerald-400 px-4 py-1.5 rounded disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center space-x-1.5 shadow-sm">
+              <i data-lucide="check" class="h-3.5 w-3.5"></i>
+              <span>Approve & Merge to Main</span>
+            </button>
+            <button id="btn-reject-modal-open" disabled class="bg-destructive/15 text-destructive hover:bg-destructive/25 border border-destructive/40 px-3.5 py-1.5 rounded disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center space-x-1.5">
+              <i data-lucide="x" class="h-3.5 w-3.5"></i>
+              <span>Reject Fix</span>
+            </button>
           </div>
         </div>
 
-        <!-- Git Diff Workspace -->
-        <div class="bg-surface border border-border rounded flex flex-col overflow-hidden">
-          <div class="px-4 py-2 border-b border-border bg-surface-2 flex items-center justify-between text-xs font-mono">
-            <div class="flex items-center space-x-2">
-              <i data-lucide="file-diff" class="h-4 w-4 text-accent"></i>
-              <span class="text-default font-semibold">Unified Patch Diff</span>
-              <span id="fix-branch-label" class="text-muted text-[10px]">branch: none</span>
+        <!-- Banner for status feedback (applied, rejected, blocked) -->
+        <div id="fix-alert-banner" class="hidden p-3 rounded border text-xs"></div>
+
+        <!-- 2-Column Metadata Grid: Original Finding & Affected Location / Test Validation -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Card 1: Original Finding & Affected Code Location -->
+          <div class="bg-surface border border-border rounded p-4 space-y-3">
+            <div class="flex items-center justify-between border-b border-border/60 pb-2">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="alert-circle" class="h-4 w-4 text-warning"></i>
+                <h3 class="text-xs font-semibold text-default uppercase tracking-wider">Original Finding & Code Location</h3>
+              </div>
+              <span id="fix-finding-severity" class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-surface-2 border border-border text-muted">Severity: --</span>
             </div>
-            <div class="flex items-center space-x-3 text-[10px] font-mono">
-              <span class="text-success">+ Added</span>
-              <span class="text-destructive">- Removed</span>
+
+            <div class="space-y-2.5">
+              <div>
+                <span class="text-[9px] text-muted uppercase block">Affected File & Target Line</span>
+                <div class="flex items-center space-x-2 mt-0.5">
+                  <span id="fix-target-file" class="font-semibold text-default text-xs break-all">No active candidate selected</span>
+                </div>
+                <div id="fix-conflict-warning" class="hidden mt-1 px-2 py-1 rounded bg-warning/10 border border-warning/30 text-warning text-[10px]">
+                  ⚠️ Proximate Conflict: adjacent lines are touched by another issue in this group.
+                </div>
+              </div>
+
+              <div>
+                <span class="text-[9px] text-muted uppercase block">Issue Rule / Category</span>
+                <span id="fix-finding-type" class="text-xs font-mono text-accent">--</span>
+              </div>
+
+              <div>
+                <span class="text-[9px] text-muted uppercase block">Why It Was Reported (Detector Rationale)</span>
+                <p id="fix-summary-text" class="text-secondary text-[11px] leading-relaxed mt-0.5">Select an issue from Issue Intelligence and click "Send to Fix Studio" to synthesize code.</p>
+              </div>
             </div>
           </div>
 
-          <div id="fix-diff-container" class="bg-bg p-3 overflow-x-auto font-mono text-xs leading-relaxed min-h-[350px]">
-            <div class="h-64 flex items-center justify-center text-muted text-xs">
+          <!-- Card 2: Validation & Test Results -->
+          <div class="bg-surface border border-border rounded p-4 space-y-3">
+            <div class="flex items-center justify-between border-b border-border/60 pb-2">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="shield-check" class="h-4 w-4 text-accent"></i>
+                <h3 class="text-xs font-semibold text-default uppercase tracking-wider">Validation & Test Results</h3>
+              </div>
+              <span id="fix-validation-overall-badge" class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-surface-2 border border-border text-muted">Pending</span>
+            </div>
+
+            <div class="space-y-2">
+              <!-- AST / Syntax Status -->
+              <div class="flex items-start justify-between p-2.5 rounded bg-surface-2 border border-border/60">
+                <div class="space-y-0.5 pr-2">
+                  <span class="text-[10px] font-semibold text-default block">1. Static AST Syntax & Integrity</span>
+                  <span id="fix-ast-detail" class="text-[10px] text-muted block leading-snug">Awaiting patch synthesis...</span>
+                </div>
+                <span id="fix-ast-badge" class="shrink-0 px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-surface border border-border text-muted">Pending</span>
+              </div>
+
+              <!-- Automated Test Suite Status -->
+              <div class="flex items-start justify-between p-2.5 rounded bg-surface-2 border border-border/60">
+                <div class="space-y-0.5 pr-2">
+                  <span class="text-[10px] font-semibold text-default block">2. Automated Unit Test Execution</span>
+                  <span id="fix-tests-detail" class="text-[10px] text-muted block leading-snug">Awaiting patch synthesis...</span>
+                </div>
+                <span id="fix-tests-badge" class="shrink-0 px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-surface border border-border text-muted">Pending</span>
+              </div>
+
+              <!-- Agent Reasoning & Reviewer Feedback -->
+              <div>
+                <span class="text-[9px] text-muted uppercase block">Dual-Agent Critique & Explanation</span>
+                <div id="fix-explanation-content" class="text-[11px] text-secondary mt-0.5 leading-relaxed bg-surface-2/60 p-2 rounded border border-border/40">Awaiting synthesis...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Git Diff Workspace with Unified & Before/After Stats -->
+        <div class="bg-surface border border-border rounded flex flex-col overflow-hidden">
+          <div class="px-4 py-2 border-b border-border bg-surface-2 flex items-center justify-between text-xs">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="file-diff" class="h-4 w-4 text-accent"></i>
+              <span class="text-default font-semibold">Patch Diff (Before vs After)</span>
+              <span id="fix-diff-stats" class="text-[10px] text-muted ml-2"></span>
+            </div>
+            <div class="flex items-center space-x-3 text-[10px]">
+              <span class="text-success font-semibold">+ Added</span>
+              <span class="text-destructive font-semibold">- Removed</span>
+            </div>
+          </div>
+
+          <div id="fix-diff-container" class="bg-bg p-3 overflow-x-auto font-mono text-xs leading-relaxed min-h-[300px]">
+            <div class="h-48 flex items-center justify-center text-muted text-xs">
               Diff will appear here once an issue fix is synthesized.
             </div>
           </div>
@@ -1668,8 +1734,48 @@
       const issue = scanResults.issues[idx];
       activeFixIssue = issue;
       switchTab('tab-fix-studio');
-      document.getElementById('fix-target-file').innerText = `${issue.file}:${issue.line} [${issue.issue_type}]`;
-      document.getElementById('fix-summary-text').innerText = issue.description;
+
+      // Populate finding metadata immediately
+      document.getElementById('fix-target-file').innerText = `${issue.file}:${issue.line}`;
+      document.getElementById('fix-finding-type').innerText = `[${issue.issue_type}]`;
+      const sevBadge = document.getElementById('fix-finding-severity');
+      if (sevBadge) {
+        sevBadge.innerText = `Severity: ${issue.severity || 'medium'}`;
+        sevBadge.className = `px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+          issue.severity === 'high' ? 'text-destructive border-destructive/30 bg-destructive-bg' :
+          issue.severity === 'medium' ? 'text-warning border-warning/30 bg-warning-bg' :
+          'text-muted border-border bg-surface-2'
+        }`;
+      }
+      document.getElementById('fix-summary-text').innerText = `${issue.description || ''}${issue.priority_explanation ? ' — Rationale: ' + issue.priority_explanation : ''}`;
+
+      const conflictWarn = document.getElementById('fix-conflict-warning');
+      if (conflictWarn) {
+        if (issue.conflicts_with && issue.conflicts_with.length) {
+          conflictWarn.classList.remove('hidden');
+          conflictWarn.innerText = `⚠️ Proximate Conflict: adjacent lines touched by findings #${issue.conflicts_with.join(', #')}`;
+        } else {
+          conflictWarn.classList.add('hidden');
+        }
+      }
+
+      const statusBadge = document.getElementById('fix-status-badge');
+      if (statusBadge) {
+        statusBadge.innerText = 'Synthesizing Fix...';
+        statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-accent/10 border border-accent/40 text-accent animate-pulse';
+      }
+      document.getElementById('fix-alert-banner').classList.add('hidden');
+      document.getElementById('btn-apply-fix').setAttribute('disabled', 'true');
+      document.getElementById('btn-reject-modal-open').setAttribute('disabled', 'true');
+
+      document.getElementById('fix-ast-detail').innerText = 'Synthesizing code and parsing AST...';
+      document.getElementById('fix-ast-badge').innerText = 'Pending';
+      document.getElementById('fix-ast-badge').className = 'shrink-0 px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-surface border border-border text-muted';
+      document.getElementById('fix-tests-detail').innerText = 'Detecting test suites...';
+      document.getElementById('fix-tests-badge').innerText = 'Pending';
+      document.getElementById('fix-tests-badge').className = 'shrink-0 px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-surface border border-border text-muted';
+      document.getElementById('fix-explanation-content').innerText = 'Executing Coder synthesis and Reviewer critique loop...';
+
       document.getElementById('fix-diff-container').innerHTML = `
         <div class="p-6 text-center text-muted">
           <i data-lucide="loader-2" class="h-6 w-6 animate-spin mx-auto mb-2 text-accent"></i>
@@ -1682,66 +1788,211 @@
       api('/api/fix/generate', 'POST', { issue: issue, scan_id: scanResults.scan_id || 'manual' })
         .then(res => {
           activeFixResult = res.fix_result;
-          renderDiffResult(res.fix_result);
+          renderDiffResult(res.fix_result, issue);
         })
         .catch(err => {
           showToast(err.message, 'error');
-          document.getElementById('fix-diff-container').innerHTML = `<div class="p-4 text-destructive">Fix generation failed: ${err.message}</div>`;
+          if (statusBadge) {
+            statusBadge.innerText = 'Generation Error';
+            statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-destructive/10 border border-destructive/40 text-destructive';
+          }
+          document.getElementById('fix-diff-container').innerHTML = `<div class="p-4 text-destructive">Fix generation failed: ${escapeHtml(err.message)}</div>`;
         });
     };
 
-    function renderDiffResult(res) {
+    function renderDiffResult(res, issue) {
       if (!res) return;
-      if (res.status === 'blocked' || res.status === 'failed') {
+      const targetIssue = issue || activeFixIssue || res.issue || res.original_finding || {};
+
+      // Update Finding Card
+      const sev = (targetIssue.severity || 'medium').toLowerCase();
+      const sevBadge = document.getElementById('fix-finding-severity');
+      if (sevBadge) {
+        sevBadge.innerText = `Severity: ${sev}`;
+        sevBadge.className = `px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+          sev === 'high' ? 'text-destructive border-destructive/30 bg-destructive-bg' :
+          sev === 'medium' ? 'text-warning border-warning/30 bg-warning-bg' :
+          'text-muted border-border bg-surface-2'
+        }`;
+      }
+
+      document.getElementById('fix-target-file').innerText = `${targetIssue.file || 'unknown'}:${targetIssue.line || 0}`;
+      document.getElementById('fix-finding-type').innerText = `[${targetIssue.issue_type || 'finding'}]`;
+      document.getElementById('fix-summary-text').innerText = `${targetIssue.description || ''}${targetIssue.priority_explanation ? ' — Detector Rationale: ' + targetIssue.priority_explanation : ''}`;
+
+      const conflictWarn = document.getElementById('fix-conflict-warning');
+      if (conflictWarn) {
+        if (targetIssue.conflicts_with && targetIssue.conflicts_with.length) {
+          conflictWarn.classList.remove('hidden');
+          conflictWarn.innerText = `⚠️ Proximate Conflict: adjacent lines touched by findings #${targetIssue.conflicts_with.join(', #')}`;
+        } else {
+          conflictWarn.classList.add('hidden');
+        }
+      }
+
+      // Check Status
+      const status = res.status || 'unknown';
+      const statusBadge = document.getElementById('fix-status-badge');
+      const alertBanner = document.getElementById('fix-alert-banner');
+      alertBanner.classList.add('hidden');
+
+      if (status === 'blocked' || status === 'failed' || status === 'tests_failed') {
+        if (statusBadge) {
+          statusBadge.innerText = status === 'blocked' ? 'Fix Blocked' : 'Validation Failed';
+          statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-destructive/10 border border-destructive/40 text-destructive';
+        }
+        alertBanner.classList.remove('hidden');
+        alertBanner.className = 'p-3 rounded border bg-destructive/10 border-destructive/30 text-destructive text-xs font-mono space-y-1';
+        alertBanner.innerHTML = `
+          <div class="font-bold flex items-center space-x-1.5">
+            <i data-lucide="alert-octagon" class="h-4 w-4"></i>
+            <span>Proposed Fix ${status === 'blocked' ? 'Blocked' : 'Failed Validation'}</span>
+          </div>
+          <p class="text-[11px]">${escapeHtml(res.error || 'The fix candidate could not satisfy syntax or test verification constraints.')}</p>
+          <p class="text-[10px] text-muted">The working tree was safely rolled back. No changes were merged into main.</p>
+        `;
+        document.getElementById('btn-apply-fix').setAttribute('disabled', 'true');
+        document.getElementById('btn-reject-modal-open').setAttribute('disabled', 'true');
+        document.getElementById('fix-validation-overall-badge').innerText = 'Failed';
+        document.getElementById('fix-validation-overall-badge').className = 'px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-destructive/10 text-destructive border border-destructive/30';
         document.getElementById('fix-diff-container').innerHTML = `
-          <div class="p-4 bg-destructive/10 border border-destructive/30 rounded text-destructive text-xs font-mono">
-            <p class="font-bold mb-1">Fix Blocked: ${escapeHtml(res.error || 'Failed to synthesize fix')}</p>
-            <p class="text-muted text-[11px] mt-1">Branch was restored. Try selecting another finding or re-scanning.</p>
+          <div class="p-6 text-center text-muted">
+            <p class="text-destructive font-semibold mb-1">Diff Unavailable</p>
+            <p class="text-[11px]">Fix failed verification. Review error diagnostics above.</p>
           </div>
         `;
+        lucide.createIcons();
         return;
       }
+
+      // Enable actions for valid candidate
       document.getElementById('btn-apply-fix').removeAttribute('disabled');
       document.getElementById('btn-reject-modal-open').removeAttribute('disabled');
-      document.getElementById('fix-confidence-badge').innerText = `Conf: ${(res.confidence || 0.85).toFixed(2)}`;
-      document.getElementById('fix-branch-label').innerText = `branch: ${res.fix_branch || 'none'}`;
 
-      if (res.explanation) {
-        document.getElementById('fix-reasoning-panel').classList.remove('hidden');
-        document.getElementById('fix-explanation-content').innerText = res.explanation;
+      const conf = res.confidence || 0.85;
+      const confBadge = document.getElementById('fix-confidence-badge');
+      confBadge.innerText = `Conf: ${(conf * 100).toFixed(0)}%`;
+      confBadge.className = `px-2 py-0.5 rounded text-[10px] font-semibold border ${
+        conf >= 0.85 ? 'bg-success/10 border-success/30 text-success' :
+        conf >= 0.70 ? 'bg-warning/10 border-warning/30 text-warning' :
+        'bg-destructive/10 border-destructive/30 text-destructive'
+      }`;
+
+      if (statusBadge) {
+        statusBadge.innerText = 'Ready for Approval';
+        statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-success/10 border border-success/30 text-success';
       }
 
+      document.getElementById('fix-branch-label').innerText = `branch: ${res.fix_branch || 'agent-fix-preview'}`;
+
+      // Reviewer Feedback
+      const explanation = res.explanation || 'Static AST patch synthesized with zero regressions.';
+      document.getElementById('fix-explanation-content').innerText = explanation;
+
+      // Validation Card Details - Explicit tests run vs not run
+      const val = res.validation || res.test_result || {};
+      const testsRun = val.tests_run === true;
+      const testPassed = val.test_passed === true;
+
+      // AST verification badge
+      const astBadge = document.getElementById('fix-ast-badge');
+      const astDetail = document.getElementById('fix-ast-detail');
+      if (val.ast_syntax_passed !== false) {
+        astBadge.innerText = 'Passed';
+        astBadge.className = 'shrink-0 px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-success/10 border border-success/30 text-success';
+        astDetail.innerText = 'Syntax & AST parse passed: 0 syntax regressions detected.';
+      } else {
+        astBadge.innerText = 'Failed';
+        astBadge.className = 'shrink-0 px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-destructive/10 border border-destructive/30 text-destructive';
+        astDetail.innerText = `Syntax error: ${escapeHtml(val.validation_error || 'AST compilation failed')}`;
+      }
+
+      // Automated Tests badge - CRITICAL REQUIREMENT
+      const testsBadge = document.getElementById('fix-tests-badge');
+      const testsDetail = document.getElementById('fix-tests-detail');
+      if (testsRun) {
+        if (testPassed) {
+          testsBadge.innerText = 'Passed';
+          testsBadge.className = 'shrink-0 px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-success/10 border border-success/30 text-success';
+          testsDetail.innerText = `Automated test suite passed (${val.test_total || 0} tests verified via ${val.test_framework || 'pytest'}).`;
+        } else {
+          testsBadge.innerText = 'Failed';
+          testsBadge.className = 'shrink-0 px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-destructive/10 border border-destructive/30 text-destructive';
+          testsDetail.innerText = `Test failures detected (${val.test_failed || 0} failed). Check test outputs.`;
+        }
+      } else {
+        // Explicitly indicate that tests were NOT run
+        testsBadge.innerText = 'Not Run';
+        testsBadge.className = 'shrink-0 px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-warning/10 border border-warning/40 text-warning';
+        testsDetail.innerHTML = '<span class="text-warning font-semibold">⚠️ Tests not run:</span> No matching test suite found for this file (e.g. tests/test_*.py). Patch verified via static AST syntax analysis.';
+      }
+
+      const overallBadge = document.getElementById('fix-validation-overall-badge');
+      if (val.ast_syntax_passed !== false && (testPassed || !testsRun)) {
+        overallBadge.innerText = testsRun ? 'Tests Passed' : 'AST Verified';
+        overallBadge.className = 'px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-success/10 border border-success/30 text-success';
+      } else {
+        overallBadge.innerText = 'Issues Detected';
+        overallBadge.className = 'px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-destructive/10 border border-destructive/30 text-destructive';
+      }
+
+      // Diff Viewer
       const diff = res.diff || '';
       if (!diff) {
-        document.getElementById('fix-diff-container').innerHTML = '<div class="p-4 text-muted">No diff generated or patch matches original.</div>';
+        document.getElementById('fix-diff-stats').innerText = '0 line changes';
+        document.getElementById('fix-diff-container').innerHTML = '<div class="p-6 text-center text-muted">No line modifications detected in patch.</div>';
         return;
       }
 
-      // Syntax highlight diff lines
       const lines = diff.split('\n');
+      let added = 0;
+      let removed = 0;
       const formatted = lines.map(l => {
-        if (l.startsWith('+')) return `<div class="diff-add px-2 py-0.5">${escapeHtml(l)}</div>`;
-        if (l.startsWith('-')) return `<div class="diff-del px-2 py-0.5">${escapeHtml(l)}</div>`;
-        if (l.startsWith('@@')) return `<div class="diff-hunk px-2 py-0.5">${escapeHtml(l)}</div>`;
+        if (l.startsWith('+') && !l.startsWith('+++')) {
+          added++;
+          return `<div class="diff-add px-2 py-0.5">${escapeHtml(l)}</div>`;
+        }
+        if (l.startsWith('-') && !l.startsWith('---')) {
+          removed++;
+          return `<div class="diff-del px-2 py-0.5">${escapeHtml(l)}</div>`;
+        }
+        if (l.startsWith('@@')) return `<div class="diff-hunk px-2 py-0.5 text-accent">${escapeHtml(l)}</div>`;
         return `<div class="diff-ctx px-2 py-0.5">${escapeHtml(l)}</div>`;
       }).join('');
 
+      document.getElementById('fix-diff-stats').innerText = `+${added} added, -${removed} removed (${lines.length} lines)`;
       document.getElementById('fix-diff-container').innerHTML = formatted;
+      lucide.createIcons();
     }
 
     // Approve & Merge
     document.getElementById('btn-apply-fix').addEventListener('click', async () => {
       if (!activeFixResult) return;
-      showToast('Merging patch branch into default branch...', 'info');
+      showToast('Merging patch branch into main branch...', 'info');
       try {
         await api('/api/fix/apply', 'POST', {
           fix_branch: activeFixResult.fix_branch,
           fix_id: activeFixResult.fix_id || 0,
           issue_id: activeFixResult.issue?.id || 0
         });
-        showToast('Fix merged successfully!', 'success');
+        showToast('Fix approved and merged cleanly into main!', 'success');
         document.getElementById('btn-apply-fix').setAttribute('disabled', 'true');
         document.getElementById('btn-reject-modal-open').setAttribute('disabled', 'true');
+
+        const statusBadge = document.getElementById('fix-status-badge');
+        if (statusBadge) {
+          statusBadge.innerText = 'Merged into Main';
+          statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-success/20 border border-success/40 text-success';
+        }
+
+        const alertBanner = document.getElementById('fix-alert-banner');
+        alertBanner.classList.remove('hidden');
+        alertBanner.className = 'p-3 rounded border bg-success/10 border-success/30 text-success text-xs font-mono flex items-center space-x-2';
+        alertBanner.innerHTML = `
+          <i data-lucide="check-circle" class="h-4 w-4"></i>
+          <span><strong>Patch Approved & Merged:</strong> Clean merge commit created on main branch. Fix branch has been deleted.</span>
+        `;
+        lucide.createIcons();
         loadTimeline();
       } catch (err) {
         showToast(err.message, 'error');
@@ -1760,14 +2011,29 @@
       showToast('Rejecting fix and updating rejection memory...', 'info');
       try {
         await api('/api/fix/reject', 'POST', {
-          issue: activeFixResult.issue,
+          issue: activeFixResult.issue || activeFixIssue,
           fix_branch: activeFixResult.fix_branch,
           fix_id: activeFixResult.fix_id || 0,
-          reason: reason
+          reason: reason || 'Rejected by developer in review studio'
         });
         showToast('Fix rejected and recorded as false positive.', 'info');
         document.getElementById('btn-apply-fix').setAttribute('disabled', 'true');
         document.getElementById('btn-reject-modal-open').setAttribute('disabled', 'true');
+
+        const statusBadge = document.getElementById('fix-status-badge');
+        if (statusBadge) {
+          statusBadge.innerText = 'Rejected';
+          statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-surface-2 border border-border text-muted';
+        }
+
+        const alertBanner = document.getElementById('fix-alert-banner');
+        alertBanner.classList.remove('hidden');
+        alertBanner.className = 'p-3 rounded border bg-surface-2 border-border text-secondary text-xs font-mono flex items-center space-x-2';
+        alertBanner.innerHTML = `
+          <i data-lucide="slash" class="h-4 w-4 text-muted"></i>
+          <span><strong>Fix Rejected:</strong> Saved to persistent memory (${escapeHtml(reason || 'No reason specified')}). The agent will not recommend this suggestion again.</span>
+        `;
+        lucide.createIcons();
         loadTimeline();
       } catch (err) {
         showToast(err.message, 'error');

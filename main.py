@@ -563,12 +563,40 @@ class CodebaseAgent:
                 else:
                     break
 
-            result["test_file"] = ""
+            tests_actually_run = bool(existing_test_path)
+            test_passed = pre_result.passed if (tests_actually_run and 'pre_result' in locals() and pre_result) else None
+            test_total = pre_result.total if (tests_actually_run and 'pre_result' in locals() and pre_result) else 0
+            test_failed = pre_result.failed if (tests_actually_run and 'pre_result' in locals() and pre_result) else 0
+
+            result["test_file"] = existing_test_path or ""
             result["failure_category"] = failure_category if not validation_passed else ""
-            result["test_result"] = {
-                "passed": validation_passed,
-                "category": failure_category,
-                "summary": "In-memory validation passed" if validation_passed else f"Validation failed ({failure_category}): {validation_error}"
+            result["validation"] = {
+                "ast_syntax_passed": validation_passed if failure_category != "syntax" else False,
+                "tests_run": tests_actually_run,
+                "test_file": existing_test_path or "",
+                "test_framework": test_framework if tests_actually_run else "",
+                "test_passed": test_passed,
+                "test_total": test_total,
+                "test_failed": test_failed,
+                "failure_category": failure_category if not validation_passed else "",
+                "validation_error": validation_error if not validation_passed else "",
+                "summary": (
+                    f"Automated test suite passed ({test_total} tests via {test_framework})" if (tests_actually_run and validation_passed)
+                    else "AST syntax verification passed (0 syntax regressions). Automated test suite: Not run (no matching test suite found for this file)." if validation_passed
+                    else f"Validation failed ({failure_category}): {validation_error}"
+                )
+            }
+            result["test_result"] = result["validation"]
+            result["original_finding"] = {
+                "file": issue.get("file", ""),
+                "line": issue.get("line", 0),
+                "issue_type": issue.get("issue_type", "unknown"),
+                "severity": issue.get("severity", "medium"),
+                "description": issue.get("description", ""),
+                "priority_score": issue.get("priority_score"),
+                "priority_explanation": issue.get("priority_explanation", ""),
+                "conflicts_with": issue.get("conflicts_with", []),
+                "estimated_difficulty": issue.get("estimated_difficulty", ""),
             }
 
             if validation_passed:
