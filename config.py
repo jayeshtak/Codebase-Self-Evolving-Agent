@@ -14,6 +14,7 @@ DB_PATH = DATA_DIR / "memory.db"
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
 
 # ── Models ────────────────────────────────────────────────────────────────────
 

@@ -141,6 +141,18 @@ def validate_safe_repo_path(repo_path: str) -> Path:
                 subprocess.run(["git", "fetch", "--depth", "1", "origin"], cwd=str(dest_dir), capture_output=True, text=True, timeout=30)
                 subprocess.run(["git", "reset", "--hard", "origin/main"], cwd=str(dest_dir), capture_output=True, text=True, timeout=30)
             except Exception:
+        # Configure authenticated origin remote URL for git push if GITHUB_TOKEN is available
+        token = getattr(config, "GITHUB_TOKEN", None) or os.environ.get("GITHUB_TOKEN", "")
+        if token and "github.com" in repo_str:
+            clean_url = repo_str.split("@")[-1]
+            if clean_url.startswith("https://"):
+                clean_url = clean_url[8:]
+            elif clean_url.startswith("http://"):
+                clean_url = clean_url[7:]
+            auth_url = f"https://x-access-token:{token}@{clean_url}"
+            try:
+                subprocess.run(["git", "remote", "set-url", "origin", auth_url], cwd=str(dest_dir), capture_output=True, timeout=10)
+            except Exception:
                 pass
 
         return dest_dir.resolve()
@@ -271,6 +283,7 @@ class SettingsUpdateRequest(BaseModel):
     nesting_depth_threshold: Optional[int] = None
     gemini_api_key: Optional[str] = None
     groq_api_key: Optional[str] = None
+    github_token: Optional[str] = None
 
 class DecisionRequest(BaseModel):
     file: str
@@ -1259,6 +1272,9 @@ async def update_settings(req: SettingsUpdateRequest):
         config.GEMINI_API_KEY = req.gemini_api_key.strip()
     if req.groq_api_key:
         config.GROQ_API_KEY = req.groq_api_key.strip()
+    if req.github_token:
+        config.GITHUB_TOKEN = req.github_token.strip()
+        os.environ["GITHUB_TOKEN"] = req.github_token.strip()
     return {"status": "success", "detail": "Settings updated successfully."}
 
 # Serve static dashboard files

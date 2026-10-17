@@ -946,10 +946,10 @@
                 <span>Gemini API Key:</span>
                 <span id="setting-gemini-status" class="text-muted">Checking...</span>
               </div>
-              <div class="flex items-center justify-between text-[11px]">
-                <span>Groq API Key:</span>
-                <span id="setting-groq-status" class="text-muted">Checking...</span>
-              </div>
+            <div class="space-y-1 pt-2 border-t border-border">
+              <label class="text-[10px] text-muted uppercase">GitHub Personal Access Token (for remote push)</label>
+              <input type="password" id="setting-github-token" placeholder="ghp_... or gho_..." class="w-full bg-surface-2 border border-border rounded px-2.5 py-1.5 text-xs text-default placeholder-muted font-mono">
+              <p class="text-[9px] text-muted">When provided, approved fixes are pushed automatically to origin/main on GitHub.</p>
             </div>
           </div>
 
@@ -1782,6 +1782,7 @@
           function_length_threshold: parseInt(document.getElementById('setting-fn-length').value),
           max_review_iterations: parseInt(document.getElementById('setting-max-review').value),
           max_heal_attempts: parseInt(document.getElementById('setting-max-heal').value),
+          github_token: document.getElementById('setting-github-token').value.trim(),
         });
         showToast('Settings saved successfully', 'success');
       } catch (err) {
