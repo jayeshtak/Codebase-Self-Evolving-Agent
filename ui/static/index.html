@@ -8,8 +8,6 @@
   <script src="/static/tailwind.js"></script>
   <!-- Local Lucide Icons -->
   <script src="/static/lucide.min.js"></script>
-  <!-- Local Chart.js -->
-  <script src="/static/chart.js"></script>
   <!-- Local vis.js Network -->
   <script src="/static/vis-network.min.js"></script>
   
@@ -402,15 +400,34 @@
           </div>
         </div>
 
-        <!-- Health Trends Chart & Recent Runs -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Real Codebase Remediation Feeds & Real Distribution -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 font-mono">
+          <!-- Recent Remediation & Fix Activity Feed -->
           <div class="bg-surface border border-border rounded p-4 space-y-3">
-            <h3 class="text-xs font-mono font-semibold text-default uppercase tracking-wider">Historical Health Trend</h3>
-            <div class="h-56"><canvas id="chart-cc-health"></canvas></div>
+            <div class="flex items-center justify-between border-b border-border pb-2.5">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="git-merge" class="h-4 w-4 text-success"></i>
+                <h3 class="text-xs font-semibold text-default uppercase tracking-wider">Recent Remediation Activity</h3>
+              </div>
+              <span id="cc-fixes-count-badge" class="text-[10px] text-muted bg-surface-2 px-1.5 py-0.5 rounded border border-border">0 fixes applied</span>
+            </div>
+            <div id="cc-recent-fixes-list" class="space-y-2 max-h-64 overflow-y-auto text-xs pr-1">
+              <div class="text-muted text-xs p-3 text-center bg-bg rounded border border-border">Loading remediation history...</div>
+            </div>
           </div>
+
+          <!-- Active Codebase Health & Category Breakdown (Real Data) -->
           <div class="bg-surface border border-border rounded p-4 space-y-3">
-            <h3 class="text-xs font-mono font-semibold text-default uppercase tracking-wider">Severity Trend Across Scans</h3>
-            <div class="h-56"><canvas id="chart-cc-severity"></canvas></div>
+            <div class="flex items-center justify-between border-b border-border pb-2.5">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="activity" class="h-4 w-4 text-accent"></i>
+                <h3 class="text-xs font-semibold text-default uppercase tracking-wider">Active Finding Distribution</h3>
+              </div>
+              <span id="cc-cat-summary-badge" class="text-[10px] text-muted bg-surface-2 px-1.5 py-0.5 rounded border border-border">0 issues</span>
+            </div>
+            <div id="cc-real-categories-container" class="space-y-2.5 text-xs">
+              <div class="text-muted text-xs p-3 text-center bg-bg rounded border border-border">Connect a repository to inspect issue distribution.</div>
+            </div>
           </div>
         </div>
 
@@ -1463,6 +1480,8 @@
 
       renderIssuesList(issues);
       fetchInsightsDebt();
+      renderRealCategoryDistribution(issues);
+      loadRecentRemediationFeed();
     }
 
     // Batch selection & auto-fix state
@@ -2381,59 +2400,99 @@
       }
     }
 
-    // Charts Initialization
-    function initCharts() {
-      const ctxHealth = document.getElementById('chart-cc-health');
-      if (ctxHealth) {
-        charts.health = new Chart(ctxHealth, {
-          type: 'line',
-          data: {
-            labels: ['Run 1', 'Run 2', 'Run 3', 'Run 4', 'Current'],
-            datasets: [{
-              label: 'Health Score',
-              data: [65, 70, 72, 80, 85],
-              borderColor: '#10B981',
-              backgroundColor: 'rgba(16, 185, 129, 0.05)',
-              borderWidth: 2,
-              tension: 0.2,
-              fill: true
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { grid: { color: '#1A1A1A' }, ticks: { color: '#666666', font: { family: 'JetBrains Mono' } } },
-              y: { min: 0, max: 100, grid: { color: '#1A1A1A' }, ticks: { color: '#666666', font: { family: 'JetBrains Mono' } } }
-            }
-          }
-        });
+    // Real Remediation Activity Feed
+    async function loadRecentRemediationFeed() {
+      const container = document.getElementById('cc-recent-fixes-list');
+      const countBadge = document.getElementById('cc-fixes-count-badge');
+      const topAppliedBadge = document.getElementById('cc-fixes-applied');
+      if (!container) return;
+
+      try {
+        const res = await api('/api/history/fixes');
+        if (res && res.fixes && res.fixes.length > 0) {
+          const fixes = res.fixes;
+          if (countBadge) countBadge.innerText = `${fixes.length} fixes applied`;
+          if (topAppliedBadge) topAppliedBadge.innerText = fixes.length;
+
+          container.innerHTML = fixes.slice(0, 15).map(f => {
+            const timeStr = f.created_at ? f.created_at.split('T')[1]?.substring(0, 5) || '' : '';
+            const statusColor = f.status === 'applied' ? 'text-success bg-success/10 border-success/30' :
+                                f.status === 'rejected' ? 'text-destructive bg-destructive/10 border-destructive/30' :
+                                'text-warning bg-warning/10 border-warning/30';
+            const testColor = f.test_result === 'passed' ? 'text-success border-success/30' :
+                              f.test_result === 'failed' ? 'text-destructive border-destructive/30' :
+                              'text-muted border-border';
+            return `
+              <div class="bg-surface-2 border border-border rounded p-2.5 space-y-1">
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="font-semibold text-default truncate max-w-[200px]" title="${escapeHtml(f.file)}">${escapeHtml(f.file)}</span>
+                  <div class="flex items-center space-x-1.5">
+                    <span class="text-[9px] px-1.5 py-0.5 rounded border uppercase font-bold ${statusColor}">${escapeHtml(f.status || 'applied')}</span>
+                    ${f.test_result ? `<span class="text-[9px] px-1 py-0.2 rounded border font-mono ${testColor}">test: ${escapeHtml(f.test_result)}</span>` : ''}
+                    <span class="text-[10px] text-muted">${timeStr}</span>
+                  </div>
+                </div>
+                <p class="text-[10px] text-muted truncate">${escapeHtml(f.fix_description || 'Synthesized fix candidate')}</p>
+              </div>
+            `;
+          }).join('');
+        } else {
+          if (countBadge) countBadge.innerText = '0 fixes applied';
+          container.innerHTML = '<div class="text-muted text-xs p-3 text-center bg-bg rounded border border-border">No remediation history recorded yet. Connect a repository and run a scan to auto-fix code debt.</div>';
+        }
+      } catch (err) {
+        container.innerHTML = `<div class="text-muted text-xs p-2 text-center">Unable to load fix history: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    // Real Issue Category Distribution
+    function renderRealCategoryDistribution(issues) {
+      const container = document.getElementById('cc-real-categories-container');
+      const countBadge = document.getElementById('cc-cat-summary-badge');
+      if (!container) return;
+
+      const total = issues ? issues.length : 0;
+      if (countBadge) countBadge.innerText = `${total} findings`;
+
+      if (!total) {
+        container.innerHTML = '<div class="text-success text-xs p-3 text-center bg-bg rounded border border-border">Zero issues active. Codebase is clean!</div>';
+        return;
       }
 
-      const ctxSev = document.getElementById('chart-cc-severity');
-      if (ctxSev) {
-        charts.severity = new Chart(ctxSev, {
-          type: 'bar',
-          data: {
-            labels: ['Security', 'Complexity', 'Dead Code', 'Style', 'Docs'],
-            datasets: [{
-              data: [3, 8, 12, 15, 6],
-              backgroundColor: ['#EF4444', '#F59E0B', '#666666', '#333333', '#10B981'],
-              borderRadius: 3
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { grid: { display: false }, ticks: { color: '#666666', font: { family: 'JetBrains Mono' } } },
-              y: { grid: { color: '#1A1A1A' }, ticks: { color: '#666666', font: { family: 'JetBrains Mono' } } }
-            }
-          }
-        });
-      }
+      // Group by issue type
+      const counts = {};
+      issues.forEach(i => {
+        const t = i.issue_type || 'other';
+        counts[t] = (counts[t] || 0) + 1;
+      });
+
+      const colorMap = {
+        'security': { bar: 'bg-destructive', text: 'text-destructive', label: 'Security Vulnerability' },
+        'dead_code': { bar: 'bg-muted', text: 'text-secondary', label: 'Dead Code / Unused' },
+        'undefined_name': { bar: 'bg-accent', text: 'text-accent', label: 'Undefined Name / Import' },
+        'complexity': { bar: 'bg-warning', text: 'text-warning', label: 'Cyclomatic Complexity' },
+        'style': { bar: 'bg-muted', text: 'text-muted', label: 'Code Style / Lint' },
+        'missing_docs': { bar: 'bg-success', text: 'text-success', label: 'Missing Documentation' },
+        'syntax_error': { bar: 'bg-destructive', text: 'text-destructive', label: 'Syntax Error' }
+      };
+
+      const sortedTypes = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+
+      container.innerHTML = sortedTypes.map(([type, count]) => {
+        const info = colorMap[type] || { bar: 'bg-secondary', text: 'text-secondary', label: type };
+        const pct = ((count / total) * 100).toFixed(0);
+        return `
+          <div class="space-y-1">
+            <div class="flex justify-between items-center text-[11px]">
+              <span class="${info.text} font-semibold">${escapeHtml(info.label)}</span>
+              <span class="text-muted font-mono">${count} (${pct}%)</span>
+            </div>
+            <div class="w-full bg-surface-2 h-1.5 rounded overflow-hidden border border-border/40">
+              <div class="${info.bar} h-full" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     // Escape HTML helper
@@ -2471,7 +2530,7 @@
       switchTab('tab-command-center');
       updateStatus();
       fetchInsightsDebt();
-      initCharts();
+      loadRecentRemediationFeed();
       lucide.createIcons();
       setInterval(updateStatus, 6000);
       setInterval(loadOrchestratorStatus, 5000);
