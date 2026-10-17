@@ -347,6 +347,18 @@ CODE:
                     fixed_code = fallback.group(1).strip()
 
             if not fixed_code:
+                print(f"[Coder] LLM returned no code block. Attempting AST deterministic fix synthesizer...")
+                fn, exp, code = self._generate_deterministic_fix(file_content, issue)
+                if code and code != file_content:
+                    print(f"[Coder] Deterministic AST fix synthesized successfully: {exp}")
+                    return CoderResult(
+                        success=True,
+                        file=filepath,
+                        function_name=fn,
+                        original_code=file_content,
+                        generated_code=code,
+                        explanation=exp,
+                    )
                 return CoderResult(
                     success=False,
                     file=filepath,
@@ -395,83 +407,341 @@ CODE:
 
     def _generate_deterministic_fix(self, file_content: str, issue: dict):
         """
-        Rule-based AST patch synthesizer for common technical debt issues.
-        Ensures high-quality code remediation even when LLM keys are absent.
+        Rule-based AST patch synthesizer for common technical debt and syntax issues.
+        Remediates unused imports, undefined names, dead variables, dead functions,
+        and security issues with 100% AST syntax guarantees even when LLM keys are absent.
         Returns: (function_name, explanation, fixed_code)
         """
-        desc = issue.get("description", "").lower()
+        import ast
+        raw_desc = issue.get("description", "")
+        desc = raw_desc.lower()
         itype = issue.get("issue_type", "").lower()
         lines = file_content.splitlines()
         target_line = issue.get("line", 1) - 1
 
-        # 1. Unused import: 'X' imported but unused
-        if "imported but unused" in desc or (itype == "dead_code" and "unused import" in desc):
-            match = re.search(r"'([^']+)'\s+imported but unused", desc) or re.search(r"unused import:\s*'([^']+)'", desc)
-            symbol = match.group(1) if match else ""
+        # ── 1. Unused import: Pyflakes and Vulture dead code ───────────────────
+        if ("imported but unused" in desc or 
+            (itype in ("dead_code", "undefined_name") and "unused" in desc and "import" in desc) or
+            ("unused import" in desc)):
+            match = (
+                re.search(r"'([^']+)'\s+imported but unused", raw_desc, re.IGNORECASE) or 
+                re.search(r"unused import:\s*'([^']+)'", raw_desc, re.IGNORECASE) or
+                re.search(r"'([^']+)'", raw_desc)
+            )
+            raw_symbol = match.group(1).strip() if match else ""
+            bare_symbol = raw_symbol.split(".")[-1] if raw_symbol else ""
+            candidates = {c for c in [raw_symbol, bare_symbol, raw_symbol.split(".")[0]] if c}
+
             new_lines = []
+            removed = False
+
             for i, line in enumerate(lines):
-                if symbol and (f"import {symbol}" in line or f", {symbol}" in line or f"{symbol}," in line):
-                    if line.strip().startswith(f"import {symbol}") and "," not in line:
-                        continue
-                    elif f", {symbol}" in line:
-                        new_lines.append(line.replace(f", {symbol}", ""))
-                    elif f"{symbol}, " in line:
-                        new_lines.append(line.replace(f"{symbol}, ", ""))
-                    else:
-                        continue
-                elif i == target_line and line.strip().startswith("import "):
+                stripped = line.strip()
+                # Direct match: import X or import X as Y
+                is_direct_import = any(
+                    stripped == f"import {c}" or 
+                    stripped.startswith(f"import {c} as ") or
+                    re.match(rf"^import\s+{re.escape(c)}\b", stripped)
+                    for c in candidates
+                )
+                if is_direct_import:
+                    removed = True
                     continue
-                else:
-                    new_lines.append(line)
-            return None, f"Removed redundant unused import '{symbol or 'module'}'.", "\n".join(new_lines) + "\n"
 
-        # 2. Unused variable: local variable 'conn' is assigned to but never used
-        if "assigned to but never used" in desc or "unused variable" in desc:
-            match = re.search(r"variable\s*'([^']+)'\s+is assigned", desc) or re.search(r"unused variable:\s*'([^']+)'", desc)
-            var_name = match.group(1) if match else "conn"
-            new_lines = []
-            for i, line in enumerate(lines):
-                if i == target_line and f"{var_name} =" in line:
-                    rhs = line.split("=", 1)[1].strip()
-                    indent = len(line) - len(line.lstrip())
-                    spaces = " " * indent
-                    if "(" in rhs and ")" in rhs:
-                        new_lines.append(f"{spaces}# Executed without unused variable assignment\n{spaces}{rhs}")
-                    else:
+                # from M import X
+                is_from_single = any(
+                    re.match(rf"^from\s+[\w\.]+\s+import\s+{re.escape(c)}(?:\s+as\s+\w+)?$", stripped)
+                    for c in candidates
+                )
+                if is_from_single:
+                    removed = True
+                    continue
+
+                # from M import A, X, B (multi-import cleanup)
+                multi_match = None
+                for c in candidates:
+                    if re.search(rf"\b{re.escape(c)}\b", line) and ("import " in line or "from " in line):
+                        multi_match = c
+                        break
+
+                if multi_match and ("," in line):
+                    cleaned = re.sub(rf",\s*{re.escape(multi_match)}\b", "", line)
+                    if cleaned == line:
+                        cleaned = re.sub(rf"\b{re.escape(multi_match)}\s*,\s*", "", line)
+                    if cleaned != line:
+                        new_lines.append(cleaned)
+                        removed = True
                         continue
-                else:
-                    new_lines.append(line)
-            return None, f"Cleaned up unused local variable '{var_name}'.", "\n".join(new_lines) + "\n"
 
-        # 3. Security: eval()
+                # Target line fallback if it's an import statement
+                if not removed and i == target_line and (stripped.startswith("import ") or stripped.startswith("from ")):
+                    removed = True
+                    continue
+
+                new_lines.append(line)
+
+            if removed:
+                fixed_code = "\n".join(new_lines) + "\n"
+                try:
+                    ast.parse(fixed_code)
+                    return None, f"Removed redundant unused import '{bare_symbol or raw_symbol or 'module'}'.", fixed_code
+                except Exception:
+                    pass
+
+        # ── 2. Undefined name: Pyflakes / syntax checker missing imports ───────
+        if "undefined name" in desc or itype == "undefined_name":
+            match = re.search(r"undefined name\s*'([^']+)'", raw_desc, re.IGNORECASE)
+            if match:
+                sym = match.group(1).strip()
+                # Don't add if already imported
+                if not re.search(rf"\b(import\s+{re.escape(sym)}|from\s+[\w\.]+\s+import\s+.*?\b{re.escape(sym)}\b)", file_content):
+                    std_modules = {
+                        "os", "sys", "json", "re", "math", "time", "datetime", "sqlite3",
+                        "hashlib", "random", "uuid", "logging", "shutil", "tempfile",
+                        "subprocess", "urllib", "traceback", "copy", "collections",
+                        "functools", "itertools", "threading", "asyncio"
+                    }
+                    typing_symbols = {
+                        "Optional", "List", "Dict", "Set", "Tuple", "Union", "Any",
+                        "Callable", "Iterable", "Sequence", "Mapping"
+                    }
+
+                    if sym in std_modules:
+                        import_stmt = f"import {sym}\n"
+                    elif sym in typing_symbols:
+                        import_stmt = f"from typing import {sym}\n"
+                    elif sym == "Path":
+                        import_stmt = "from pathlib import Path\n"
+                    elif sym in ("get_connection", "connection", "execute_query", "db_session"):
+                        import_stmt = f"from database import {sym}\n"
+                    else:
+                        import_stmt = f"import {sym}\n"
+
+                    # Prepend import statement at the beginning, preserving docstrings / comments
+                    c_lines = file_content.splitlines(keepends=True)
+                    insert_idx = 0
+                    in_docstring = False
+                    doc_char = None
+
+                    for i, line in enumerate(c_lines):
+                        stripped = line.strip()
+                        if not in_docstring:
+                            if stripped.startswith('"""') or stripped.startswith("'''"):
+                                doc_char = stripped[:3]
+                                if stripped.count(doc_char) == 1:
+                                    in_docstring = True
+                                else:
+                                    insert_idx = i + 1
+                            elif stripped.startswith("#") or stripped.startswith("from __future__"):
+                                insert_idx = i + 1
+                            else:
+                                break
+                        else:
+                            if doc_char in stripped:
+                                in_docstring = False
+                                insert_idx = i + 1
+
+                    c_lines.insert(insert_idx, import_stmt)
+                    fixed_code = "".join(c_lines)
+                    try:
+                        ast.parse(fixed_code)
+                        return None, f"Added missing import statement for undefined symbol '{sym}'.", fixed_code
+                    except Exception:
+                        pass
+
+        # ── 3. Unused variable: Vulture or Pyflakes dead assignments ───────────
+        if ("assigned to but never used" in desc or 
+            "unused variable" in desc or 
+            (itype == "dead_code" and "variable" in desc)):
+            match = (
+                re.search(r"variable\s*'([^']+)'", raw_desc, re.IGNORECASE) or 
+                re.search(r"'([^']+)'\s+is assigned", raw_desc, re.IGNORECASE) or
+                re.search(r"'([^']+)'", raw_desc)
+            )
+            var_name = match.group(1).strip() if match else ""
+            if var_name:
+                pattern = re.compile(rf"^(\s*){re.escape(var_name)}\s*(?::\s*[^=]+)?\s*=\s*(.+)$")
+                indices_to_check = []
+                if 0 <= target_line < len(lines):
+                    indices_to_check.append(target_line)
+                    for offset in [-1, 1, -2, 2, -3, 3]:
+                        cand = target_line + offset
+                        if 0 <= cand < len(lines):
+                            indices_to_check.append(cand)
+                for i in range(len(lines)):
+                    if i not in indices_to_check:
+                        indices_to_check.append(i)
+
+                target_idx = -1
+                for idx in indices_to_check:
+                    if pattern.match(lines[idx]):
+                        target_idx = idx
+                        break
+
+                if target_idx != -1:
+                    new_lines = []
+                    for i, line in enumerate(lines):
+                        if i == target_idx:
+                            m = pattern.match(line)
+                            indent = m.group(1)
+                            rhs = m.group(2).strip()
+                            # If rhs has function/method call, preserve expression to protect side effects
+                            if "(" in rhs and ")" in rhs:
+                                new_lines.append(f"{indent}# Retained expression without unused variable assignment\n{indent}{rhs}")
+                            else:
+                                prev_line = lines[i-1].strip() if i > 0 else ""
+                                next_line = lines[i+1].strip() if i+1 < len(lines) else ""
+                                next_indent = len(lines[i+1]) - len(lines[i+1].lstrip()) if i+1 < len(lines) else 0
+                                curr_indent = len(indent)
+                                if prev_line.endswith(":") and (not next_line or next_indent <= curr_indent - 4):
+                                    new_lines.append(f"{indent}pass")
+                        else:
+                            new_lines.append(line)
+
+                    fixed_code = "\n".join(new_lines) + "\n"
+                    try:
+                        ast.parse(fixed_code)
+                        return None, f"Cleaned up unused local variable '{var_name}'.", fixed_code
+                    except Exception:
+                        pass
+
+        # ── 4. Unused function / method: Vulture dead code ─────────────────────
+        if itype == "dead_code" and ("function" in desc or "method" in desc):
+            match = re.search(r"(?:function|method):\s*'([^']+)'", raw_desc, re.IGNORECASE) or re.search(r"'([^']+)'", raw_desc)
+            fn_name = match.group(1).strip() if match else ""
+            if fn_name:
+                pattern = re.compile(rf"^(\s*)def\s+{re.escape(fn_name)}\s*\(")
+                fn_start = -1
+                def_indent = 0
+                decorator_start = -1
+
+                for i, line in enumerate(lines):
+                    m = pattern.match(line)
+                    if m:
+                        fn_start = i
+                        def_indent = len(m.group(1))
+                        j = i - 1
+                        decorator_start = i
+                        while j >= 0 and lines[j].strip().startswith("@"):
+                            decorator_start = j
+                            j -= 1
+                        break
+
+                if fn_start != -1:
+                    fn_end = fn_start
+                    in_signature = True
+                    for k in range(fn_start, len(lines)):
+                        line = lines[k]
+                        if in_signature:
+                            if line.strip().endswith(":") or "):" in line:
+                                in_signature = False
+                            fn_end = k
+                            continue
+                        if not line.strip():
+                            fn_end = k
+                            continue
+                        line_indent = len(line) - len(line.lstrip())
+                        if line_indent > def_indent:
+                            fn_end = k
+                        else:
+                            break
+
+                    indent_str = " " * def_indent
+                    new_lines = (
+                        lines[:decorator_start] + 
+                        [f"{indent_str}# [DEPRECATED] Removed unused function '{fn_name}'"] + 
+                        lines[fn_end + 1:]
+                    )
+                    fixed_code = "\n".join(new_lines) + "\n"
+                    try:
+                        ast.parse(fixed_code)
+                        return None, f"Safely removed unreachable dead function '{fn_name}'.", fixed_code
+                    except Exception:
+                        pass
+
+        # ── 5. Unused class: Vulture dead code ────────────────────────────────
+        if itype == "dead_code" and "class" in desc:
+            match = re.search(r"class:\s*'([^']+)'", raw_desc, re.IGNORECASE) or re.search(r"'([^']+)'", raw_desc)
+            cls_name = match.group(1).strip() if match else ""
+            if cls_name:
+                pattern = re.compile(rf"^(\s*)class\s+{re.escape(cls_name)}\b")
+                cls_start = -1
+                cls_indent = 0
+                decorator_start = -1
+
+                for i, line in enumerate(lines):
+                    m = pattern.match(line)
+                    if m:
+                        cls_start = i
+                        cls_indent = len(m.group(1))
+                        j = i - 1
+                        decorator_start = i
+                        while j >= 0 and lines[j].strip().startswith("@"):
+                            decorator_start = j
+                            j -= 1
+                        break
+
+                if cls_start != -1:
+                    cls_end = cls_start
+                    for k in range(cls_start + 1, len(lines)):
+                        line = lines[k]
+                        if not line.strip():
+                            cls_end = k
+                            continue
+                        line_indent = len(line) - len(line.lstrip())
+                        if line_indent > cls_indent:
+                            cls_end = k
+                        else:
+                            break
+
+                    indent_str = " " * cls_indent
+                    new_lines = (
+                        lines[:decorator_start] + 
+                        [f"{indent_str}# [DEPRECATED] Removed unused class '{cls_name}'"] + 
+                        lines[cls_end + 1:]
+                    )
+                    fixed_code = "\n".join(new_lines) + "\n"
+                    try:
+                        ast.parse(fixed_code)
+                        return None, f"Safely removed unreachable dead class '{cls_name}'.", fixed_code
+                    except Exception:
+                        pass
+
+        # ── 6. Security: eval() ───────────────────────────────────────────────
         if "eval" in desc or "[b307]" in desc:
             new_content = file_content
             if "import ast" not in new_content:
                 new_content = "import ast\n" + new_content
             new_content = re.sub(r"\beval\(", "ast.literal_eval(", new_content)
-            return None, "Replaced unsafe dynamic eval() with safe ast.literal_eval().", new_content
+            try:
+                ast.parse(new_content)
+                return None, "Replaced unsafe dynamic eval() with safe ast.literal_eval().", new_content
+            except Exception:
+                pass
 
-        # 4. Security: Hardcoded password
+        # ── 7. Security: Hardcoded password ───────────────────────────────────
         if "hardcoded password" in desc or "[b105]" in desc:
             new_content = re.sub(
                 r'([A-Za-z0-9_]*PASSWORD[A-Za-z0-9_]*)\s*=\s*["\'][^"\']+["\']',
                 r'\1 = os.environ.get("\1", "")',
                 file_content
             )
-            return None, "Moved hardcoded credential into environment variable os.environ.get().", new_content
+            if "import os" not in new_content:
+                new_content = "import os\n" + new_content
+            try:
+                ast.parse(new_content)
+                return None, "Moved hardcoded credential into environment variable os.environ.get().", new_content
+            except Exception:
+                pass
 
-        # 5. Security: Weak MD5
+        # ── 8. Security: Weak MD5 ─────────────────────────────────────────────
         if "md5" in desc or "[b324]" in desc:
             new_content = re.sub(r"hashlib\.md5\(", "hashlib.sha256(", file_content)
-            return None, "Upgraded legacy weak MD5 hashing to industry-standard SHA-256.", new_content
-
-        # 6. Dead function
-        if itype == "dead_code" and "function" in desc:
-            match = re.search(r"function:\s*'([^']+)'", desc)
-            fn = match.group(1) if match else ""
-            if fn:
-                new_content = re.sub(rf"def\s+{fn}\s*\(.*?\):(?:\n(?:[ \t]+.*|\s*))*", f"# [DEPRECATED] {fn} was removed as dead code\n", file_content)
-                return None, f"Removed dead unreachable function '{fn}'.", new_content
+            try:
+                ast.parse(new_content)
+                return None, "Upgraded legacy weak MD5 hashing to industry-standard SHA-256.", new_content
+            except Exception:
+                pass
 
         return None, "", ""
 
