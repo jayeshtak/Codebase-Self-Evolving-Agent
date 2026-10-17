@@ -1,0 +1,17 @@
+name: Keep Alive Render Instance
+
+on:
+  schedule:
+    # Ping every 10 minutes to prevent Render free instance from spinning down
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping-keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Service
+        run: |
+          echo "Pinging Codebase Agent on Render..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://codebase-self-evolving-agent.onrender.com/api/status)
+          echo "Response HTTP Status: $HTTP_STATUS"
