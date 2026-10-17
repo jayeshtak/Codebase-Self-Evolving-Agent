@@ -141,6 +141,7 @@ def validate_safe_repo_path(repo_path: str) -> Path:
                 subprocess.run(["git", "fetch", "--depth", "1", "origin"], cwd=str(dest_dir), capture_output=True, text=True, timeout=30)
                 subprocess.run(["git", "reset", "--hard", "origin/main"], cwd=str(dest_dir), capture_output=True, text=True, timeout=30)
             except Exception:
+                pass
         # Configure authenticated origin remote URL for git push if GITHUB_TOKEN is available
         token = getattr(config, "GITHUB_TOKEN", None) or os.environ.get("GITHUB_TOKEN", "")
         if token and "github.com" in repo_str:
@@ -229,8 +230,8 @@ class AutoFixRequest(BaseModel):
     repo_path: str
     scan_id: str
     issues: List[dict]
-    confidence: float
-    max_auto_fix: int
+    confidence: Optional[float] = 0.85
+    max_auto_fix: Optional[int] = 100
 
 class FixIssueRequest(BaseModel):
     issue: dict
@@ -655,9 +656,8 @@ async def reject_fix(req: RejectFixRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to reject fix: {str(e)}")
 
-# Background thread parallel auto fix worker logic
+# Background auto fix worker logic with deterministic sequential Git safety
 def auto_fix_worker(issues: List[dict], scan_id: str, threshold: float, cap: int, repo_path: str):
-    from concurrent.futures import ThreadPoolExecutor, as_completed
     from agents.coder import QuotaExhaustedException
     
     agent = get_agent(repo_path)
@@ -665,102 +665,132 @@ def auto_fix_worker(issues: List[dict], scan_id: str, threshold: float, cap: int
     with state.auto_fix_lock:
         state.auto_fix_running = True
         state.auto_fix_progress = []
-        state.auto_fix_logs = [f"[{datetime.now().strftime('%H:%M:%S')}] Starting background parallel auto-fix for {len(issues)} issues (capped at {cap})."]
+        state.auto_fix_logs = [f"[{datetime.now().strftime('%H:%M:%S')}] Starting batch auto-fix for {len(issues)} issue(s) (target threshold: {threshold:.2f})."]
         state.auto_fix_completed = 0
         state.auto_fix_total = len(issues)
         state.auto_fix_quota_exhausted = False
         state.auto_fix_applied_count = 0
         state.auto_fix_review_count = 0
 
-    results_lock = threading.Lock()
-    file_locks = {}
-    file_locks_lock = threading.Lock()
-    quota_exhausted_flag = threading.Event()
+    quota_exhausted = False
 
-    def get_file_lock(filepath: str):
-        with file_locks_lock:
-            if filepath not in file_locks:
-                file_locks[filepath] = threading.Lock()
-            return file_locks[filepath]
-
-    def fix_one(issue):
+    for idx, issue in enumerate(issues):
         label = f"{issue.get('file')}:{issue.get('line')} [{issue.get('issue_type')}]"
         
-        if quota_exhausted_flag.is_set():
-            return {"label": label, "status": "skipped", "explanation": "Quota exhausted", "confidence": 0.0, "issue": issue}
-
-        filepath = issue.get("file", "")
-        with get_file_lock(filepath):
-            try:
-                with state.auto_fix_lock:
-                    state.auto_fix_logs.append(f"[{datetime.now().strftime('%H:%M:%S')}] Processing: {label}")
-                
-                fix_result = agent.fix_issue(issue, scan_id)
-                status = fix_result.get("status")
-                confidence = fix_result.get("confidence", 0.0)
-
-                if status == "ready_for_approval":
-                    if confidence >= threshold:
-                        with state.auto_fix_lock:
-                            state.auto_fix_logs.append(f"[{datetime.now().strftime('%H:%M:%S')}] Confidence ({confidence:.2f}) >= threshold ({threshold:.2f}). Applying fix: {label}")
-                        success = agent.apply_fix(
-                            fix_branch=fix_result.get("fix_branch"),
-                            fix_id=fix_result.get("fix_id", 0),
-                            issue_id=issue.get("id", 0),
-                        )
-                        return {
-                            "label": label,
-                            "status": "applied" if success else "merge_failed",
-                            "explanation": fix_result.get("explanation", ""),
-                            "confidence": confidence,
-                            "auto_applied": True,
-                            "issue": issue
-                        }
-                    else:
-                        with state.auto_fix_lock:
-                            state.auto_fix_logs.append(f"[{datetime.now().strftime('%H:%M:%S')}] Confidence ({confidence:.2f}) < threshold ({threshold:.2f}). Kept for manual review: {label}")
-                        return {
-                            "label": label,
-                            "status": "pending_review",
-                            "explanation": fix_result.get("explanation", ""),
-                            "confidence": confidence,
-                            "fix_result": fix_result,
-                            "auto_applied": False,
-                            "issue": issue
-                        }
-                else:
-                    err = fix_result.get("error", "")
-                    if "QuotaExhausted" in err or ("Both Gemini" in err and "Groq" in err):
-                        quota_exhausted_flag.set()
-                        return {"label": label, "status": "quota_exhausted", "explanation": err, "confidence": confidence, "issue": issue}
-                    return {"label": label, "status": status, "explanation": err, "confidence": confidence, "issue": issue}
-
-            except QuotaExhaustedException as e:
-                quota_exhausted_flag.set()
-                return {"label": label, "status": "quota_exhausted", "explanation": str(e), "confidence": 0.0, "issue": issue}
-            except Exception as e:
-                return {"label": label, "status": "error", "explanation": str(e), "confidence": 0.0, "issue": issue}
-
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        futures = {executor.submit(fix_one, item): item for item in issues}
-        for future in as_completed(futures):
-            entry = future.result()
+        if quota_exhausted:
+            entry = {
+                "label": label,
+                "status": "skipped",
+                "explanation": "Quota exhausted",
+                "confidence": 0.0,
+                "issue": issue,
+                "diff": ""
+            }
             with state.auto_fix_lock:
                 state.auto_fix_completed += 1
                 state.auto_fix_progress.append(entry)
-                if entry["status"] == "applied":
-                    state.auto_fix_applied_count += 1
-                elif entry["status"] == "pending_review":
-                    state.auto_fix_review_count += 1
-                state.auto_fix_logs.append(f"[{datetime.now().strftime('%H:%M:%S')}] Progress: {state.auto_fix_completed}/{state.auto_fix_total} | {entry['label']} -> {entry['status']}")
+            continue
+
+        try:
+            with state.auto_fix_lock:
+                state.auto_fix_logs.append(f"[{datetime.now().strftime('%H:%M:%S')}] ({idx + 1}/{len(issues)}) Synthesizing fix for {label}...")
+            state.log("coder", f"Batch fix synthesizing for {label}", "info")
+            state.agent_statuses["coder"]["status"] = "running"
+            state.agent_statuses["coder"]["task"] = f"Batch fix: {label}"
+            
+            fix_result = agent.fix_issue(issue, scan_id)
+            status = fix_result.get("status")
+            confidence = fix_result.get("confidence", 0.0)
+            diff_text = fix_result.get("diff", "")
+            fix_id = fix_result.get("fix_id", 0)
+            fix_branch = fix_result.get("fix_branch", "")
+
+            state.agent_statuses["coder"]["generated"] += 1
+            state.agent_statuses["reviewer"]["reviewed"] += 1
+
+            if status == "ready_for_approval":
+                if confidence >= threshold:
+                    with state.auto_fix_lock:
+                        state.auto_fix_logs.append(f"[{datetime.now().strftime('%H:%M:%S')}] Confidence ({confidence:.2f} >= {threshold:.2f}) verified. Merging into main: {label}")
+                    state.log("approval", f"Auto-merging verified fix for {label}", "info")
+                    
+                    success = agent.apply_fix(
+                        fix_branch=fix_branch,
+                        fix_id=fix_id,
+                        issue_id=issue.get("id", 0),
+                    )
+                    
+                    if success:
+                        state.agent_statuses["approval"]["applied"] += 1
+                        entry = {
+                            "label": label,
+                            "status": "applied",
+                            "explanation": fix_result.get("explanation", ""),
+                            "confidence": confidence,
+                            "auto_applied": True,
+                            "issue": issue,
+                            "diff": diff_text,
+                            "fix_id": fix_id
+                        }
+                    else:
+                        entry = {
+                            "label": label,
+                            "status": "merge_failed",
+                            "explanation": "AST patch created but merge failed",
+                            "confidence": confidence,
+                            "auto_applied": False,
+                            "issue": issue,
+                            "diff": diff_text,
+                            "fix_id": fix_id
+                        }
+                else:
+                    with state.auto_fix_lock:
+                        state.auto_fix_logs.append(f"[{datetime.now().strftime('%H:%M:%S')}] Confidence ({confidence:.2f} < {threshold:.2f}). Queued for manual review: {label}")
+                    entry = {
+                        "label": label,
+                        "status": "pending_review",
+                        "explanation": fix_result.get("explanation", ""),
+                        "confidence": confidence,
+                        "fix_result": fix_result,
+                        "auto_applied": False,
+                        "issue": issue,
+                        "diff": diff_text,
+                        "fix_id": fix_id,
+                        "fix_branch": fix_branch
+                    }
+            else:
+                err = fix_result.get("error", "")
+                if "QuotaExhausted" in err or ("Both Gemini" in err and "Groq" in err):
+                    quota_exhausted = True
+                    entry = {"label": label, "status": "quota_exhausted", "explanation": err, "confidence": confidence, "issue": issue, "diff": ""}
+                else:
+                    entry = {"label": label, "status": status or "failed", "explanation": err, "confidence": confidence, "issue": issue, "diff": ""}
+
+        except QuotaExhaustedException as e:
+            quota_exhausted = True
+            entry = {"label": label, "status": "quota_exhausted", "explanation": str(e), "confidence": 0.0, "issue": issue, "diff": ""}
+        except Exception as e:
+            entry = {"label": label, "status": "error", "explanation": str(e), "confidence": 0.0, "issue": issue, "diff": ""}
+
+        with state.auto_fix_lock:
+            state.auto_fix_completed += 1
+            state.auto_fix_progress.append(entry)
+            if entry["status"] == "applied":
+                state.auto_fix_applied_count += 1
+            elif entry["status"] == "pending_review":
+                state.auto_fix_review_count += 1
+            state.auto_fix_logs.append(f"[{datetime.now().strftime('%H:%M:%S')}] Completed {state.auto_fix_completed}/{state.auto_fix_total}: {entry['label']} -> {entry['status']}")
+
+    state.agent_statuses["coder"]["status"] = "idle"
+    state.agent_statuses["reviewer"]["status"] = "idle"
 
     with state.auto_fix_lock:
         state.auto_fix_running = False
-        if quota_exhausted_flag.is_set():
+        if quota_exhausted:
             state.auto_fix_quota_exhausted = True
-            state.auto_fix_logs.append(f"[{datetime.now().strftime('%H:%M:%S')}] ⚠️ Stopped — API quotas exhausted.")
+            state.auto_fix_logs.append(f"[{datetime.now().strftime('%H:%M:%S')}] Stopped — API quotas exhausted.")
         else:
-            state.auto_fix_logs.append(f"[{datetime.now().strftime('%H:%M:%S')}] Parallel auto-fix complete. Applied: {state.auto_fix_applied_count}, Review needed: {state.auto_fix_review_count}")
+            state.auto_fix_logs.append(f"[{datetime.now().strftime('%H:%M:%S')}] Batch fix complete! Merged: {state.auto_fix_applied_count}, Manual Review: {state.auto_fix_review_count}")
 
 @app.post("/api/fix/auto")
 async def start_auto_fix(req: AutoFixRequest, background_tasks: BackgroundTasks):
@@ -768,18 +798,19 @@ async def start_auto_fix(req: AutoFixRequest, background_tasks: BackgroundTasks)
     if state.auto_fix_running:
         raise HTTPException(status_code=409, detail="Auto-fix run is already in progress.")
     
-    cap = req.max_auto_fix
+    cap = req.max_auto_fix or 100
+    threshold = req.confidence if req.confidence is not None else 0.85
     issues = req.issues[:cap]
     
     background_tasks.add_task(
         auto_fix_worker,
         issues=issues,
-        scan_id=req.scan_id,
-        threshold=req.confidence,
+        scan_id=req.scan_id or "manual",
+        threshold=threshold,
         cap=cap,
         repo_path=req.repo_path
     )
-    return {"status": "success", "detail": "Auto-fix started in background."}
+    return {"status": "success", "detail": "Batch auto-fix started in background."}
 
 @app.get("/api/fix/auto/status")
 async def get_auto_fix_status():

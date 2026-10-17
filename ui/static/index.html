@@ -703,9 +703,26 @@
 
         <!-- Issue Table / List -->
         <div class="bg-surface border border-border rounded overflow-hidden">
-          <div class="px-4 py-2 bg-surface-2 border-b border-border flex justify-between items-center font-mono text-[10px] text-muted uppercase tracking-wider">
-            <span>Issue Diagnostics</span>
-            <span id="issues-count-label">0 findings</span>
+          <div class="px-4 py-2 bg-surface-2 border-b border-border flex flex-wrap justify-between items-center gap-2 font-mono text-[10px] text-muted uppercase tracking-wider">
+            <div class="flex items-center space-x-3">
+              <label class="flex items-center space-x-2 cursor-pointer select-none text-default hover:text-accent">
+                <input type="checkbox" id="issues-select-all" class="rounded bg-surface-2 border-border text-accent focus:ring-0 cursor-pointer" onchange="toggleSelectAllIssues(this.checked)">
+                <span class="font-semibold">Select All</span>
+              </label>
+              <span id="issues-selected-badge" class="hidden px-2 py-0.5 rounded text-[10px] bg-accent/10 border border-accent/30 text-accent font-bold">0 selected</span>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+              <button id="btn-fix-selected" onclick="startBatchFix(false)" class="hidden bg-accent hover:bg-accent-hover text-surface px-2.5 py-1 rounded text-xs font-semibold flex items-center space-x-1.5 transition shadow-sm">
+                <i data-lucide="check-square" class="h-3 w-3"></i>
+                <span id="btn-fix-selected-label">Fix Selected (0)</span>
+              </button>
+              <button id="btn-fix-all" onclick="startBatchFix(true)" class="bg-surface hover:border-accent border border-border text-default px-2.5 py-1 rounded text-xs flex items-center space-x-1.5 transition">
+                <i data-lucide="wrench" class="h-3 w-3 text-accent"></i>
+                <span>Fix All Issues</span>
+              </button>
+              <span id="issues-count-label" class="text-muted ml-2">0 findings</span>
+            </div>
           </div>
           <div id="issues-list-container" class="divide-y divide-border font-mono text-xs">
             <div class="p-8 text-center text-muted">No scan executed yet. Run a scan from the top bar or Command Center.</div>
@@ -998,6 +1015,71 @@
       <div class="flex justify-end space-x-2">
         <button onclick="document.getElementById('reject-modal').classList.add('hidden')" class="px-3 py-1 rounded bg-surface-2 border border-border text-muted hover:text-default text-xs">Cancel</button>
         <button id="btn-confirm-reject" class="px-3 py-1 rounded bg-destructive text-white font-semibold text-xs">Confirm Rejection</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== BATCH FIX STUDIO MODAL ==================== -->
+  <div id="batch-fix-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden font-mono">
+    <div class="bg-surface border border-border rounded p-5 w-full max-w-3xl space-y-4 max-h-[90vh] flex flex-col shadow-2xl">
+      <div class="flex items-center justify-between border-b border-border pb-3">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="wrench" class="h-4 w-4 text-accent"></i>
+          <h3 class="text-xs font-semibold text-default uppercase tracking-wider">Batch Auto-Fix & Merge Studio</h3>
+          <span id="batch-status-pill" class="px-1.5 py-0.5 rounded text-[10px] bg-accent/10 border border-accent/40 text-accent font-bold uppercase">Ready</span>
+        </div>
+        <button onclick="closeBatchFixModal()" class="text-muted hover:text-default">
+          <i data-lucide="x" class="h-4 w-4"></i>
+        </button>
+      </div>
+
+      <!-- Progress bar & metrics -->
+      <div class="space-y-2">
+        <div class="flex justify-between items-center text-[11px]">
+          <span id="batch-progress-label" class="text-default font-medium">Processing 0 of 0...</span>
+          <span id="batch-progress-pct" class="text-accent font-bold">0%</span>
+        </div>
+        <div class="w-full bg-surface-2 rounded-full h-2 overflow-hidden border border-border">
+          <div id="batch-progress-bar" class="bg-accent h-2 transition-all duration-300" style="width: 0%"></div>
+        </div>
+        <div class="grid grid-cols-3 gap-2 pt-1">
+          <div class="bg-surface-2 border border-border rounded p-2 text-center">
+            <span class="text-[9px] text-muted uppercase block">Merged into main</span>
+            <span id="batch-stat-applied" class="text-sm font-bold text-success">0</span>
+          </div>
+          <div class="bg-surface-2 border border-border rounded p-2 text-center">
+            <span class="text-[9px] text-muted uppercase block">Review Needed</span>
+            <span id="batch-stat-review" class="text-sm font-bold text-warning">0</span>
+          </div>
+          <div class="bg-surface-2 border border-border rounded p-2 text-center">
+            <span class="text-[9px] text-muted uppercase block">Skipped / Failed</span>
+            <span id="batch-stat-skipped" class="text-sm font-bold text-muted">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Real-time issues stream list -->
+      <div class="flex-1 overflow-y-auto space-y-1.5 border border-border rounded p-2 bg-surface-2/40 min-h-[180px] max-h-[280px]">
+        <div id="batch-items-container" class="space-y-1.5 font-mono text-xs">
+          <!-- Items injected here -->
+        </div>
+      </div>
+
+      <!-- Live logs stream -->
+      <div class="h-24 bg-surface-2 border border-border rounded p-2 overflow-y-auto font-mono text-[10px] text-muted space-y-0.5" id="batch-logs-container">
+        <!-- Live logs injected here -->
+      </div>
+
+      <!-- Footer controls -->
+      <div class="flex justify-between items-center border-t border-border pt-3">
+        <span id="batch-footer-note" class="text-[10px] text-muted">AST syntax verification active &bull; Clean git merges into main branch</span>
+        <div class="flex items-center space-x-2">
+          <button id="batch-btn-close" onclick="closeBatchFixModal()" class="px-3 py-1 rounded bg-surface-2 border border-border text-muted hover:text-default text-xs">Close</button>
+          <button id="batch-btn-rescan" onclick="batchRescanCodebase()" class="hidden px-3 py-1 rounded bg-accent hover:bg-accent-hover text-surface font-semibold text-xs flex items-center space-x-1.5 transition">
+            <i data-lucide="refresh-cw" class="h-3 w-3"></i>
+            <span>Re-Scan Codebase</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1317,22 +1399,75 @@
       fetchInsightsDebt();
     }
 
+    // Batch selection & auto-fix state
+    let selectedIssueIndices = new Set();
+    let currentFilteredIssues = [];
+    let batchPollInterval = null;
+
+    window.toggleIssueSelection = function(idx, checked) {
+      if (checked) {
+        selectedIssueIndices.add(idx);
+      } else {
+        selectedIssueIndices.delete(idx);
+      }
+      updateBatchButtons();
+    };
+
+    window.toggleSelectAllIssues = function(checked) {
+      if (checked) {
+        currentFilteredIssues.forEach((_, idx) => selectedIssueIndices.add(idx));
+      } else {
+        selectedIssueIndices.clear();
+      }
+      document.querySelectorAll('.issue-checkbox').forEach(cb => {
+        cb.checked = checked;
+      });
+      updateBatchButtons();
+    };
+
+    function updateBatchButtons() {
+      const badge = document.getElementById('issues-selected-badge');
+      const btnSelected = document.getElementById('btn-fix-selected');
+      const btnLabel = document.getElementById('btn-fix-selected-label');
+      const selectAllCb = document.getElementById('issues-select-all');
+
+      const count = selectedIssueIndices.size;
+      if (count > 0) {
+        badge.classList.remove('hidden');
+        badge.innerText = `${count} selected`;
+        btnSelected.classList.remove('hidden');
+        btnLabel.innerText = `Fix Selected (${count})`;
+      } else {
+        badge.classList.add('hidden');
+        btnSelected.classList.add('hidden');
+      }
+
+      if (selectAllCb) {
+        selectAllCb.checked = currentFilteredIssues.length > 0 && count === currentFilteredIssues.length;
+      }
+    }
+
     // Render Issue Intelligence List
     function renderIssuesList(issues) {
+      currentFilteredIssues = issues;
       const container = document.getElementById('issues-list-container');
       document.getElementById('issues-count-label').innerText = `${issues.length} findings`;
       if (!issues.length) {
         container.innerHTML = '<div class="p-8 text-center text-muted">No issues found matching criteria. Codebase clean!</div>';
+        selectedIssueIndices.clear();
+        updateBatchButtons();
         return;
       }
 
       // Populate filter dropdown
       const types = new Set(issues.map(i => i.issue_type));
       const typeSelect = document.getElementById('issues-type');
-      typeSelect.innerHTML = '<option value="all">All Issue Types</option>';
-      types.forEach(t => {
-        typeSelect.innerHTML += `<option value="${t}">${t}</option>`;
-      });
+      if (typeSelect) {
+        typeSelect.innerHTML = '<option value="all">All Issue Types</option>';
+        types.forEach(t => {
+          typeSelect.innerHTML += `<option value="${t}">${t}</option>`;
+        });
+      }
 
       container.innerHTML = issues.map((iss, idx) => {
         const sevClass = iss.severity === 'high' ? 'text-destructive border-destructive/30 bg-destructive-bg' :
@@ -1343,21 +1478,25 @@
         const diffBadge = iss.estimated_difficulty ? `<span class="px-1.5 py-0.2 rounded text-[9px] border font-mono text-muted border-border">${iss.estimated_difficulty}</span>` : '';
         const testBadge = iss.has_test_coverage ? `<span class="px-1.5 py-0.2 rounded text-[9px] border font-mono text-success border-success/30 bg-success/5" title="Covered by automated tests">tests &#10003;</span>` : '';
         const conflictBadge = (iss.conflicts_with && iss.conflicts_with.length) ? `<span class="px-1.5 py-0.2 rounded text-[9px] border font-mono text-warning border-warning/30" title="Adjacent lines touched in other issues">proximate conflict</span>` : '';
+        const isChecked = selectedIssueIndices.has(idx) ? 'checked' : '';
 
         return `
-          <div class="p-3.5 hover:bg-surface-2/60 transition flex items-center justify-between gap-4 border-b border-border/40 last:border-0">
-            <div class="space-y-1.5 min-w-0">
-              <div class="flex items-center space-x-2 flex-wrap gap-y-1">
-                <span class="px-1.5 py-0.2 rounded text-[9px] border font-bold uppercase ${sevClass}">${iss.severity}</span>
-                <span class="text-xs font-semibold text-default truncate">${escapeHtml(iss.file)}:${iss.line}</span>
-                <span class="text-[10px] text-muted">[${escapeHtml(iss.issue_type)}]</span>
-                ${priorityBadge}
-                ${diffBadge}
-                ${testBadge}
-                ${conflictBadge}
+          <div class="p-3.5 hover:bg-surface-2/60 transition flex items-center justify-between gap-4 border-b border-border/40 last:border-0 ${selectedIssueIndices.has(idx) ? 'bg-surface-2/40' : ''}">
+            <div class="flex items-start space-x-3 min-w-0">
+              <input type="checkbox" class="issue-checkbox rounded bg-surface-2 border-border text-accent focus:ring-0 cursor-pointer mt-0.5" data-idx="${idx}" ${isChecked} onchange="toggleIssueSelection(${idx}, this.checked)">
+              <div class="space-y-1.5 min-w-0">
+                <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                  <span class="px-1.5 py-0.2 rounded text-[9px] border font-bold uppercase ${sevClass}">${iss.severity}</span>
+                  <span class="text-xs font-semibold text-default truncate">${escapeHtml(iss.file)}:${iss.line}</span>
+                  <span class="text-[10px] text-muted">[${escapeHtml(iss.issue_type)}]</span>
+                  ${priorityBadge}
+                  ${diffBadge}
+                  ${testBadge}
+                  ${conflictBadge}
+                </div>
+                <p class="text-[11px] text-secondary truncate">${escapeHtml(iss.description)}</p>
+                ${iss.priority_explanation ? `<p class="text-[10px] text-muted font-mono truncate">${escapeHtml(iss.priority_explanation)}</p>` : ''}
               </div>
-              <p class="text-[11px] text-secondary truncate">${escapeHtml(iss.description)}</p>
-              ${iss.priority_explanation ? `<p class="text-[10px] text-muted font-mono truncate">${escapeHtml(iss.priority_explanation)}</p>` : ''}
             </div>
             <button onclick="sendToFixStudio(${idx})" class="shrink-0 bg-surface border border-border hover:border-accent text-default px-2.5 py-1 rounded text-[11px] flex items-center space-x-1 transition">
               <i data-lucide="wrench" class="h-3 w-3 text-accent"></i>
@@ -1366,6 +1505,7 @@
           </div>
         `;
       }).join('');
+      updateBatchButtons();
       lucide.createIcons();
     }
 
@@ -1382,8 +1522,141 @@
         const matchesType = type === 'all' || i.issue_type === type;
         return matchesQ && matchesSev && matchesType;
       });
+      selectedIssueIndices.clear();
       renderIssuesList(filtered);
     }
+
+    // Batch Auto-Fix Handlers
+    window.startBatchFix = function(all = false) {
+      let issuesToFix = [];
+      if (all) {
+        issuesToFix = (scanResults && scanResults.issues && scanResults.issues.length) ? scanResults.issues : currentFilteredIssues;
+      } else {
+        issuesToFix = Array.from(selectedIssueIndices).map(idx => currentFilteredIssues[idx]).filter(Boolean);
+      }
+
+      if (!issuesToFix || !issuesToFix.length) {
+        showToast("No issues selected to fix.", "warning");
+        return;
+      }
+
+      document.getElementById('batch-fix-modal').classList.remove('hidden');
+      document.getElementById('batch-status-pill').innerText = "Running";
+      document.getElementById('batch-status-pill').className = "px-1.5 py-0.5 rounded text-[10px] bg-accent/10 border border-accent/40 text-accent font-bold uppercase animate-pulse";
+      document.getElementById('batch-progress-bar').style.width = '0%';
+      document.getElementById('batch-progress-pct').innerText = '0%';
+      document.getElementById('batch-progress-label').innerText = `Starting batch fix for ${issuesToFix.length} issue(s)...`;
+      document.getElementById('batch-stat-applied').innerText = '0';
+      document.getElementById('batch-stat-review').innerText = '0';
+      document.getElementById('batch-stat-skipped').innerText = '0';
+      document.getElementById('batch-items-container').innerHTML = '<div class="p-4 text-center text-muted text-xs">Initializing batch fix pipeline...</div>';
+      document.getElementById('batch-logs-container').innerHTML = '';
+      document.getElementById('batch-btn-rescan').classList.add('hidden');
+
+      api('/api/fix/auto', 'POST', {
+        repo_path: activeRepoPath,
+        scan_id: (scanResults && scanResults.scan_id) ? scanResults.scan_id : 'batch',
+        issues: issuesToFix,
+        confidence: 0.85,
+        max_auto_fix: issuesToFix.length
+      })
+      .then(res => {
+        showToast(`Batch auto-fix initiated for ${issuesToFix.length} issues.`, 'info');
+        if (batchPollInterval) clearInterval(batchPollInterval);
+        batchPollInterval = setInterval(pollBatchFixStatus, 1000);
+        pollBatchFixStatus();
+      })
+      .catch(err => {
+        showToast(err.message, 'error');
+        document.getElementById('batch-status-pill').innerText = "Failed";
+        document.getElementById('batch-status-pill').className = "px-1.5 py-0.5 rounded text-[10px] bg-destructive/10 border border-destructive/40 text-destructive font-bold uppercase";
+        document.getElementById('batch-progress-label').innerText = `Error: ${err.message}`;
+      });
+    };
+
+    window.pollBatchFixStatus = function() {
+      api('/api/fix/auto/status')
+        .then(data => {
+          const completed = data.completed || 0;
+          const total = data.total || 1;
+          const pct = Math.min(100, Math.round((completed / total) * 100));
+
+          document.getElementById('batch-progress-bar').style.width = `${pct}%`;
+          document.getElementById('batch-progress-pct').innerText = `${pct}%`;
+          document.getElementById('batch-progress-label').innerText = data.running ?
+            `Processing ${completed} of ${total} issues (${pct}%)...` :
+            `Batch processing complete (${completed}/${total} issues finished).`;
+
+          document.getElementById('batch-stat-applied').innerText = data.applied_count || 0;
+          document.getElementById('batch-stat-review').innerText = data.review_count || 0;
+          const skipped = (data.progress || []).filter(p => p.status === 'skipped' || p.status === 'failed' || p.status === 'error' || p.status === 'quota_exhausted').length;
+          document.getElementById('batch-stat-skipped').innerText = skipped;
+
+          // Update progress items list
+          if (data.progress && data.progress.length) {
+            document.getElementById('batch-items-container').innerHTML = data.progress.map(item => {
+              let badge = '';
+              if (item.status === 'applied') {
+                badge = '<span class="px-1.5 py-0.2 rounded text-[9px] bg-success/10 border border-success/30 text-success font-bold uppercase">MERGED (main)</span>';
+              } else if (item.status === 'pending_review') {
+                badge = '<span class="px-1.5 py-0.2 rounded text-[9px] bg-warning/10 border border-warning/30 text-warning font-bold uppercase">REVIEW NEEDED</span>';
+              } else if (item.status === 'skipped' || item.status === 'quota_exhausted') {
+                badge = '<span class="px-1.5 py-0.2 rounded text-[9px] bg-surface-2 border border-border text-muted font-bold uppercase">SKIPPED</span>';
+              } else {
+                badge = `<span class="px-1.5 py-0.2 rounded text-[9px] bg-destructive/10 border border-destructive/30 text-destructive font-bold uppercase">${escapeHtml(item.status)}</span>`;
+              }
+
+              const conf = item.confidence ? `<span class="text-[10px] text-accent font-semibold">${(item.confidence * 100).toFixed(0)}% conf</span>` : '';
+
+              return `
+                <div class="p-2 bg-surface rounded border border-border/60 flex items-center justify-between text-xs font-mono">
+                  <div class="space-y-0.5 min-w-0 pr-2">
+                    <div class="flex items-center space-x-2">
+                      ${badge}
+                      <span class="text-default font-semibold truncate">${escapeHtml(item.label || '')}</span>
+                      ${conf}
+                    </div>
+                    ${item.explanation ? `<p class="text-[10px] text-muted truncate">${escapeHtml(item.explanation)}</p>` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('');
+          }
+
+          // Update logs container
+          if (data.logs && data.logs.length) {
+            const logsBox = document.getElementById('batch-logs-container');
+            logsBox.innerHTML = data.logs.map(l => `<div class="truncate">${escapeHtml(l)}</div>`).join('');
+            logsBox.scrollTop = logsBox.scrollHeight;
+          }
+
+          if (!data.running) {
+            if (batchPollInterval) {
+              clearInterval(batchPollInterval);
+              batchPollInterval = null;
+            }
+            document.getElementById('batch-status-pill').innerText = "Complete";
+            document.getElementById('batch-status-pill').className = "px-1.5 py-0.5 rounded text-[10px] bg-success/10 border border-success/40 text-success font-bold uppercase";
+            document.getElementById('batch-btn-rescan').classList.remove('hidden');
+          }
+        })
+        .catch(err => {
+          console.error('Batch status poll error:', err);
+        });
+    };
+
+    window.closeBatchFixModal = function() {
+      if (batchPollInterval) {
+        clearInterval(batchPollInterval);
+        batchPollInterval = null;
+      }
+      document.getElementById('batch-fix-modal').classList.add('hidden');
+    };
+
+    window.batchRescanCodebase = function() {
+      closeBatchFixModal();
+      triggerScan(true);
+    };
 
     document.getElementById('issues-search').addEventListener('input', filterIssues);
     document.getElementById('issues-severity').addEventListener('change', filterIssues);
