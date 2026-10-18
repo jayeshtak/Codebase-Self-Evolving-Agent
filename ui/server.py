@@ -13,7 +13,7 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 
 from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -31,7 +31,7 @@ from core.graph import DependencyGraph
 
 app = FastAPI(title="Codebase Self-Evolving Agent API")
 
-# Configure CORS - allows local development and onrender.com instances
+# Configure CORS - allows local development only
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -42,47 +42,52 @@ app.add_middleware(
         "http://localhost:8501",
         "http://127.0.0.1:8501",
     ],
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|.*\.onrender\.com)(:\d+)?$",
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
-# Automated Background Keep-Alive to prevent Render free instances from sleeping
-def start_render_keep_alive():
-    """Background worker that periodically pings the public endpoint every 8 minutes to prevent sleep."""
-    def worker():
-        import time
-        import urllib.request
-        time.sleep(30)
-        while True:
-            render_url = (
-                os.environ.get("RENDER_EXTERNAL_URL")
-                or os.environ.get("KEEP_ALIVE_URL")
-                or "https://codebase-self-evolving-agent.onrender.com"
-            )
-            is_render = bool(
-                os.environ.get("RENDER")
-                or os.environ.get("RENDER_EXTERNAL_URL")
-                or os.environ.get("KEEP_ALIVE_URL")
-            )
-            if is_render and render_url:
-                ping_endpoint = f"{render_url.rstrip('/')}/api/status"
-                try:
-                    req = urllib.request.Request(
-                        ping_endpoint,
-                        headers={"User-Agent": "RenderKeepAlivePinger/1.0"}
-                    )
-                    with urllib.request.urlopen(req, timeout=15) as resp:
-                        pass
-                except Exception:
-                    pass
-            time.sleep(480)
+# Lockdown: Prevent cloud execution on Render to protect user API credentials and billing
+IS_CLOUD_DEPLOYMENT = bool(os.environ.get("RENDER") or os.environ.get("RENDER_EXTERNAL_URL"))
 
-    t = threading.Thread(target=worker, daemon=True, name="render_keep_alive")
-    t.start()
-
-start_render_keep_alive()
+@app.middleware("http")
+async def cloud_lockdown_middleware(request: Request, call_next):
+    if IS_CLOUD_DEPLOYMENT:
+        if request.url.path.startswith("/api/"):
+            return JSONResponse(
+                status_code=403,
+                content={
+                    "error": "Live cloud deployment decommissioned",
+                    "detail": "Live cloud access has been disabled to protect API credentials. Please run Codebase Agent locally on localhost."
+                }
+            )
+        return HTMLResponse(
+            status_code=403,
+            content="""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Service Decommissioned</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #09090b; color: #f4f4f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+    .card { max-width: 500px; width: 100%; background: #18181b; border: 1px solid #27272a; border-radius: 16px; padding: 32px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
+    h1 { font-size: 20px; font-weight: 600; margin: 0 0 12px 0; color: #f87171; }
+    p { font-size: 14px; line-height: 1.6; color: #a1a1aa; margin: 0 0 16px 0; }
+    code { background: #27272a; color: #38bdf8; padding: 2px 6px; border-radius: 6px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Live Deployment Offline</h1>
+    <p>This public cloud deployment has been permanently disabled to prevent unauthorized API usage and protect owner credentials.</p>
+    <p>Codebase Agent is strictly designed for private, local execution. Run it locally using:</p>
+    <p><code>uvicorn ui.server:app --port 8000</code></p>
+  </div>
+</body>
+</html>"""
+        )
+    return await call_next(request)
 
 # Global State
 class AppState:

@@ -16,6 +16,14 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
 
+# ── Cloud Lockdown (Safety) ──────────────────────────────────────────────────
+# If running in a public cloud environment like Render, immediately zero out all
+# credentials to prevent unauthorized remote API access or quota drain.
+if os.getenv("RENDER") or os.getenv("RENDER_EXTERNAL_URL"):
+    GEMINI_API_KEY = ""
+    GROQ_API_KEY = ""
+    GITHUB_TOKEN = ""
+
 # ── Models ────────────────────────────────────────────────────────────────────
 
 GEMINI_FLASH = "gemini-2.5-flash"       # bulk scanning, planning, test writing
