@@ -83,13 +83,27 @@
       background: #27272A;
     }
 
-    /* Stacking card styles with 3D depth */
+    /* Hide scrollbar utility */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Stacking card styles with natural vertical scale & elevation */
     .stack-card {
       position: sticky;
-      top: 6.5rem;
+      top: 5rem;
       transform-origin: center top;
-      will-change: transform, opacity, filter;
-      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, filter 0.25s ease;
+      will-change: transform, filter;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s ease;
+    }
+    @media (min-width: 640px) {
+      .stack-card {
+        top: 6.5rem;
+      }
     }
 
     /* Active tracker pill */
@@ -106,11 +120,6 @@
       box-shadow: 0 2px 10px rgba(59, 130, 246, 0.35);
     }
 
-    /* Subtle 3D perspective wrapper */
-    .perspective-container {
-      perspective: 1200px;
-    }
-
     /* Diff coloring */
     .diff-del {
       background-color: rgba(239, 68, 68, 0.12);
@@ -125,45 +134,46 @@
 <body class="min-h-screen flex flex-col selection:bg-brand-blue selection:text-white transition-colors">
 
   <!-- ==================== RIXEL-STYLE FLOATING NAV ==================== -->
-  <header class="sticky top-0 z-50 pt-3 px-4 sm:px-6 transition-all">
-    <div class="max-w-4xl mx-auto h-14 px-4 sm:px-5 rounded-full border border-zinc-200/90 dark:border-zinc-800/90 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md shadow-xs flex items-center justify-between transition-colors">
+  <header class="sticky top-0 z-50 pt-3 px-3 sm:px-6 transition-all">
+    <div class="max-w-4xl mx-auto h-14 px-3 sm:px-5 rounded-full border border-zinc-200/90 dark:border-zinc-800/90 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md shadow-xs flex items-center justify-between transition-colors">
       
       <!-- Brand Wordmark -->
-      <a href="/" class="flex items-center space-x-2.5 group">
-        <div class="w-7 h-7 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center transition-transform group-hover:scale-105 shadow-xs">
+      <a href="/" class="flex items-center space-x-2 sm:space-x-2.5 group shrink-0">
+        <div class="w-7 h-7 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center transition-transform group-hover:scale-105 shadow-xs shrink-0">
           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
             <path d="m18 16 4-4-4-4"/>
             <path d="m6 8-4 4 4 4"/>
             <path d="m14.5 4-5 16"/>
           </svg>
         </div>
-        <span class="font-heading font-semibold text-sm tracking-tight text-zinc-900 dark:text-zinc-50">
+        <span class="font-heading font-semibold text-xs sm:text-sm tracking-tight text-zinc-900 dark:text-zinc-50 whitespace-nowrap">
           Codebase Agent
         </span>
       </a>
 
-      <!-- Center Links -->
+      <!-- Center Links (Desktop only) -->
       <nav class="hidden md:flex items-center space-x-6 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-        <a href="#what-is-this" class="hover:text-zinc-900 dark:hover:text-white transition">What is this?</a>
-        <a href="#how-it-works" class="hover:text-zinc-900 dark:hover:text-white transition">How it works</a>
-        <a href="#get-started" class="hover:text-zinc-900 dark:hover:text-white transition">Get Started</a>
+        <a href="#what-is-this" class="hover:text-zinc-900 dark:hover:text-white transition whitespace-nowrap">What is this?</a>
+        <a href="#how-it-works" class="hover:text-zinc-900 dark:hover:text-white transition whitespace-nowrap">How it works</a>
+        <a href="#get-started" class="hover:text-zinc-900 dark:hover:text-white transition whitespace-nowrap">Get Started</a>
       </nav>
 
       <!-- Right Actions: Theme Toggle + Launch Console Button -->
-      <div class="flex items-center space-x-2.5">
+      <div class="flex items-center space-x-2 sm:space-x-2.5 shrink-0">
         <!-- Theme Toggle -->
-        <button onclick="toggleTheme()" class="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-100/70 dark:bg-zinc-900/70 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition flex items-center justify-center" aria-label="Toggle Theme" title="Toggle Light/Dark Theme">
+        <button onclick="toggleTheme()" class="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-100/70 dark:bg-zinc-900/70 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition flex items-center justify-center shrink-0" aria-label="Toggle Theme" title="Toggle Light/Dark Theme">
           <i data-lucide="sun" class="w-3.5 h-3.5 hidden dark:block text-amber-400"></i>
           <i data-lucide="moon" class="w-3.5 h-3.5 block dark:hidden text-zinc-700"></i>
         </button>
 
-        <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="hidden sm:inline-flex text-xs font-mono font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white px-2.5 py-1.5 transition">
+        <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="hidden sm:inline-flex text-xs font-mono font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white px-2.5 py-1.5 transition whitespace-nowrap">
           GitHub
         </a>
 
-        <!-- Launch Console CTA (Rixel Pill) -->
-        <a href="/app" class="h-8 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 px-4 text-xs font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition shadow-xs flex items-center space-x-1.5">
-          <span>Launch Console</span>
+        <!-- Launch Console CTA -->
+        <a href="/app" class="h-8 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 px-3 sm:px-4 text-xs font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition shadow-xs flex items-center space-x-1.5 shrink-0 whitespace-nowrap">
+          <span class="hidden sm:inline">Launch </span>
+          <span>Console</span>
           <i data-lucide="arrow-right" class="w-3 h-3"></i>
         </a>
       </div>
@@ -172,45 +182,45 @@
   </header>
 
   <!-- ==================== MAIN CONTENT ==================== -->
-  <main class="flex-grow max-w-4xl mx-auto px-4 sm:px-6 py-12 md:py-16 space-y-24">
+  <main class="flex-grow max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-16 space-y-16 sm:space-y-24 w-full">
 
     <!-- ==================== WHAT IS THIS? (HERO) ==================== -->
-    <section id="what-is-this" class="text-center max-w-2xl mx-auto space-y-6 pt-4">
+    <section id="what-is-this" class="text-center max-w-2xl mx-auto space-y-5 sm:space-y-6 pt-2 sm:pt-4">
       
       <!-- Status Badge -->
-      <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1 text-xs font-medium text-zinc-700 dark:text-zinc-300 shadow-xs">
-        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+      <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1 text-xs font-medium text-zinc-700 dark:text-zinc-300 shadow-xs whitespace-nowrap">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
         <span class="font-mono text-[11px]">Developer Guide · 100% Offline Core</span>
       </div>
 
       <!-- Headline: "Your Codebase. Understood. Improved. Evolving." -->
-      <h1 class="font-heading text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tighter text-zinc-950 dark:text-zinc-50 leading-[1.08] text-balance">
+      <h1 class="font-heading text-3xl sm:text-5xl md:text-6xl font-semibold tracking-tighter text-zinc-950 dark:text-zinc-50 leading-[1.1] text-balance">
         Your Codebase.<br/>
         <span class="text-brand-blue dark:text-blue-400">Understood. Improved. Evolving.</span>
       </h1>
 
       <!-- Plain English Explanation: What is this? -->
-      <p class="text-zinc-600 dark:text-zinc-400 text-base sm:text-lg leading-relaxed text-balance">
+      <p class="text-zinc-600 dark:text-zinc-400 text-sm sm:text-base md:text-lg leading-relaxed text-balance">
         <strong class="text-zinc-900 dark:text-zinc-100 font-medium">What is this?</strong> An open-source tool that scans your codebase for technical debt and security oversights, maps dependency impact, generates verified fixes on isolated Git branches, and asks for your review before anything merges.
       </p>
 
       <!-- Action Buttons -->
-      <div class="flex flex-wrap justify-center items-center gap-3 pt-2">
-        <a href="/app" class="h-11 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 px-6 font-medium text-sm hover:bg-zinc-800 dark:hover:bg-zinc-200 transition shadow-sm flex items-center space-x-2">
+      <div class="flex flex-wrap justify-center items-center gap-2.5 sm:gap-3 pt-2">
+        <a href="/app" class="h-10 sm:h-11 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 px-5 sm:px-6 font-medium text-xs sm:text-sm hover:bg-zinc-800 dark:hover:bg-zinc-200 transition shadow-sm flex items-center space-x-2 whitespace-nowrap">
           <span>Open Developer Console</span>
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </a>
-        <a href="#how-it-works" class="h-11 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 text-zinc-800 dark:text-zinc-200 px-5 font-medium text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition flex items-center space-x-2">
+        <a href="#how-it-works" class="h-10 sm:h-11 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 text-zinc-800 dark:text-zinc-200 px-4 sm:px-5 font-medium text-xs sm:text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition flex items-center space-x-2 whitespace-nowrap">
           <i data-lucide="layers" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
           <span>Scroll Stacking Guide</span>
         </a>
       </div>
 
       <!-- 3 Real Technical Guarantees -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-6 text-left">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 sm:pt-6 text-left">
         <div class="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 shadow-xs space-y-1">
-          <div class="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center space-x-1.5">
-            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-brand-blue dark:text-blue-400"></i>
+          <div class="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center space-x-1.5 whitespace-nowrap">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-brand-blue dark:text-blue-400 shrink-0"></i>
             <span>Local & Offline</span>
           </div>
           <p class="text-xs text-zinc-500 dark:text-zinc-400 leading-normal">
@@ -219,8 +229,8 @@
         </div>
 
         <div class="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 shadow-xs space-y-1">
-          <div class="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center space-x-1.5">
-            <i data-lucide="git-branch" class="w-3.5 h-3.5 text-brand-blue dark:text-blue-400"></i>
+          <div class="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center space-x-1.5 whitespace-nowrap">
+            <i data-lucide="git-branch" class="w-3.5 h-3.5 text-brand-blue dark:text-blue-400 shrink-0"></i>
             <span>Isolated Branches</span>
           </div>
           <p class="text-xs text-zinc-500 dark:text-zinc-400 leading-normal">
@@ -229,8 +239,8 @@
         </div>
 
         <div class="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 shadow-xs space-y-1">
-          <div class="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center space-x-1.5">
-            <i data-lucide="user-check" class="w-3.5 h-3.5 text-brand-blue dark:text-blue-400"></i>
+          <div class="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center space-x-1.5 whitespace-nowrap">
+            <i data-lucide="user-check" class="w-3.5 h-3.5 text-brand-blue dark:text-blue-400 shrink-0"></i>
             <span>You're in Control</span>
           </div>
           <p class="text-xs text-zinc-500 dark:text-zinc-400 leading-normal">
@@ -241,13 +251,13 @@
 
     </section>
 
-    <!-- ==================== CRAZY STACKING CARDS ON SCROLL ==================== -->
-    <section id="how-it-works" class="space-y-6 scroll-mt-20">
+    <!-- ==================== STACKING CARDS ON SCROLL ==================== -->
+    <section id="how-it-works" class="space-y-6 scroll-mt-20 w-full">
       
       <!-- Section Headline -->
       <div class="text-center max-w-xl mx-auto space-y-1.5">
         <span class="font-mono text-xs text-brand-blue dark:text-blue-400 font-semibold uppercase tracking-wider">How It Works</span>
-        <h2 class="font-heading text-3xl sm:text-4xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+        <h2 class="font-heading text-2xl sm:text-4xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
           From first scan to clean code.
         </h2>
         <p class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
@@ -255,81 +265,81 @@
         </p>
       </div>
 
-      <!-- Sticky Floating Step Tracker (Highlights as you scroll) -->
-      <div class="sticky top-20 z-40 flex justify-center py-2 pointer-events-none">
-        <div class="pointer-events-auto inline-flex items-center gap-1 sm:gap-1.5 p-1 rounded-full border border-zinc-200/90 dark:border-zinc-800/90 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md shadow-md text-xs font-mono">
-          <button onclick="scrollToStep(1)" class="tracker-pill active px-3 py-1 rounded-full transition border border-transparent font-medium" data-target="1">
+      <!-- Sticky Floating Step Tracker (Horizontal scroll on mobile, zero overflow) -->
+      <div class="sticky top-16 sm:top-20 z-40 flex justify-center py-2 pointer-events-none px-2 w-full">
+        <div class="pointer-events-auto flex items-center gap-1 sm:gap-1.5 p-1 rounded-full border border-zinc-200/90 dark:border-zinc-800/90 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md shadow-md text-xs font-mono overflow-x-auto max-w-full no-scrollbar">
+          <button onclick="scrollToStep(1)" class="tracker-pill active whitespace-nowrap shrink-0 px-2.5 sm:px-3 py-1 rounded-full transition border border-transparent font-medium text-[11px] sm:text-xs" data-target="1">
             01 Repo
           </button>
-          <button onclick="scrollToStep(2)" class="tracker-pill px-3 py-1 rounded-full transition border border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white" data-target="2">
+          <button onclick="scrollToStep(2)" class="tracker-pill whitespace-nowrap shrink-0 px-2.5 sm:px-3 py-1 rounded-full transition border border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-[11px] sm:text-xs" data-target="2">
             02 Scan
           </button>
-          <button onclick="scrollToStep(3)" class="tracker-pill px-3 py-1 rounded-full transition border border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white" data-target="3">
+          <button onclick="scrollToStep(3)" class="tracker-pill whitespace-nowrap shrink-0 px-2.5 sm:px-3 py-1 rounded-full transition border border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-[11px] sm:text-xs" data-target="3">
             03 Plan
           </button>
-          <button onclick="scrollToStep(4)" class="tracker-pill px-3 py-1 rounded-full transition border border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white" data-target="4">
+          <button onclick="scrollToStep(4)" class="tracker-pill whitespace-nowrap shrink-0 px-2.5 sm:px-3 py-1 rounded-full transition border border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-[11px] sm:text-xs" data-target="4">
             04 Code
           </button>
-          <button onclick="scrollToStep(5)" class="tracker-pill px-3 py-1 rounded-full transition border border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white" data-target="5">
+          <button onclick="scrollToStep(5)" class="tracker-pill whitespace-nowrap shrink-0 px-2.5 sm:px-3 py-1 rounded-full transition border border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-[11px] sm:text-xs" data-target="5">
             05 Review
           </button>
-          <button onclick="scrollToStep(6)" class="tracker-pill px-3 py-1 rounded-full transition border border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white" data-target="6">
+          <button onclick="scrollToStep(6)" class="tracker-pill whitespace-nowrap shrink-0 px-2.5 sm:px-3 py-1 rounded-full transition border border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-[11px] sm:text-xs" data-target="6">
             06 Approve
           </button>
         </div>
       </div>
 
       <!-- ==================== STACKING CARDS DECK ==================== -->
-      <div class="perspective-container relative space-y-24 sm:space-y-36 pb-20">
+      <div class="relative space-y-20 sm:space-y-36 pb-20 w-full">
 
         <!-- ===== CARD 01: REPOSITORY ===== -->
-        <div id="step-card-1" class="stack-card rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-xl shadow-zinc-950/5 dark:shadow-black/50" data-step="1">
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div id="step-card-1" class="stack-card rounded-2xl sm:rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 sm:p-8 shadow-xl shadow-zinc-950/5 dark:shadow-black/50" data-step="1">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
             
-            <div class="lg:col-span-6 space-y-4">
-              <div class="flex items-center space-x-2">
-                <span class="font-mono text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
+            <div class="lg:col-span-6 space-y-3 sm:space-y-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center whitespace-nowrap shrink-0 font-mono text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
                   01 · REPOSITORY
                 </span>
-                <span class="font-mono text-xs text-zinc-400">
+                <span class="font-mono text-xs text-zinc-400 whitespace-nowrap shrink-0">
                   core/git_manager.py
                 </span>
               </div>
 
-              <h3 class="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+              <h3 class="font-heading text-xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
                 Point to Your Codebase
               </h3>
 
-              <p class="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+              <p class="text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
                 Enter your local folder path or any public GitHub URL into the console. The agent indexes your project files without touching existing branches.
               </p>
 
-              <div class="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs">
-                <div class="flex items-center space-x-1.5 font-mono text-zinc-700 dark:text-zinc-300 font-medium">
-                  <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i>
+              <div class="p-3 sm:p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs">
+                <div class="flex items-center space-x-1.5 font-mono text-zinc-700 dark:text-zinc-300 font-medium whitespace-nowrap">
+                  <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500 shrink-0"></i>
                   <span>Safety Guarantee</span>
                 </div>
-                <p class="text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                <p class="text-zinc-500 dark:text-zinc-400 leading-relaxed text-[11px] sm:text-xs">
                   Repository is opened in read-only sandbox mode. No accidental file modifications occur during initialization.
                 </p>
               </div>
             </div>
 
-            <div class="lg:col-span-6">
-              <div class="rounded-2xl border border-zinc-800 bg-[#09090B] p-4 font-mono text-xs shadow-inner space-y-3">
+            <div class="lg:col-span-6 w-full overflow-hidden">
+              <div class="rounded-xl sm:rounded-2xl border border-zinc-800 bg-[#09090B] p-3 sm:p-4 font-mono text-xs shadow-inner space-y-2.5 w-full">
                 <div class="flex items-center justify-between pb-2 border-b border-zinc-800/80 text-[11px] text-zinc-400">
                   <div class="flex items-center space-x-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
                     <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
-                    <span class="ml-1 text-zinc-300 font-medium">01_workspace_init.json</span>
+                    <span class="ml-1 text-zinc-300 font-medium truncate">01_workspace_init.json</span>
                   </div>
-                  <div class="flex items-center space-x-1.5 text-emerald-400 text-[10px]">
+                  <div class="flex items-center space-x-1.5 text-emerald-400 text-[10px] shrink-0">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                     <span>READY</span>
                   </div>
                 </div>
-                <pre class="text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[160px] p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900">{
+                <pre class="text-[10px] sm:text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[140px] p-2.5 sm:p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono whitespace-pre w-full">{
   "action": "initialize_workspace",
   "target_path": "./my-project",
   "git_branch": "main",
@@ -345,53 +355,53 @@
         </div>
 
         <!-- ===== CARD 02: SCANNER ===== -->
-        <div id="step-card-2" class="stack-card rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-xl shadow-zinc-950/5 dark:shadow-black/50" data-step="2">
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div id="step-card-2" class="stack-card rounded-2xl sm:rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 sm:p-8 shadow-xl shadow-zinc-950/5 dark:shadow-black/50" data-step="2">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
             
-            <div class="lg:col-span-6 space-y-4">
-              <div class="flex items-center space-x-2">
-                <span class="font-mono text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
+            <div class="lg:col-span-6 space-y-3 sm:space-y-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center whitespace-nowrap shrink-0 font-mono text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
                   02 · SCANNER
                 </span>
-                <span class="font-mono text-xs text-zinc-400">
+                <span class="font-mono text-xs text-zinc-400 whitespace-nowrap shrink-0">
                   agents/scanner.py
                 </span>
               </div>
 
-              <h3 class="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+              <h3 class="font-heading text-xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
                 Scan with Multi-Engine AST Tools
               </h3>
 
-              <p class="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+              <p class="text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
                 The agent parses code using Tree-sitter for syntax analysis, Radon for cyclomatic complexity, Vulture for dead code, and Bandit for Python security vulnerabilities.
               </p>
 
-              <div class="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs">
-                <div class="flex items-center space-x-1.5 font-mono text-zinc-700 dark:text-zinc-300 font-medium">
-                  <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i>
+              <div class="p-3 sm:p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs">
+                <div class="flex items-center space-x-1.5 font-mono text-zinc-700 dark:text-zinc-300 font-medium whitespace-nowrap">
+                  <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500 shrink-0"></i>
                   <span>Safety Guarantee</span>
                 </div>
-                <p class="text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                <p class="text-zinc-500 dark:text-zinc-400 leading-relaxed text-[11px] sm:text-xs">
                   Runs 100% locally on your machine. Zero code or tokens are ever sent to any cloud server.
                 </p>
               </div>
             </div>
 
-            <div class="lg:col-span-6">
-              <div class="rounded-2xl border border-zinc-800 bg-[#09090B] p-4 font-mono text-xs shadow-inner space-y-3">
+            <div class="lg:col-span-6 w-full overflow-hidden">
+              <div class="rounded-xl sm:rounded-2xl border border-zinc-800 bg-[#09090B] p-3 sm:p-4 font-mono text-xs shadow-inner space-y-2.5 w-full">
                 <div class="flex items-center justify-between pb-2 border-b border-zinc-800/80 text-[11px] text-zinc-400">
                   <div class="flex items-center space-x-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
                     <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
-                    <span class="ml-1 text-zinc-300 font-medium">02_ast_scanner.log</span>
+                    <span class="ml-1 text-zinc-300 font-medium truncate">02_ast_scanner.log</span>
                   </div>
-                  <div class="flex items-center space-x-1.5 text-emerald-400 text-[10px]">
+                  <div class="flex items-center space-x-1.5 text-emerald-400 text-[10px] shrink-0">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                     <span>COMPLETED</span>
                   </div>
                 </div>
-                <pre class="text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[160px] p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900">$ python -m agents.scanner --target .
+                <pre class="text-[10px] sm:text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[140px] p-2.5 sm:p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono whitespace-pre w-full">$ python -m agents.scanner --target .
 [Scanner] Indexing AST nodes via Tree-sitter... (84 modules)
 [Scanner] Radon: 3 functions exceeded complexity threshold
 [Scanner] Bandit: 1 insecure MD5 token hash (auth/hasher.py:14)
@@ -404,53 +414,53 @@
         </div>
 
         <!-- ===== CARD 03: PLANNER ===== -->
-        <div id="step-card-3" class="stack-card rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-xl shadow-zinc-950/5 dark:shadow-black/50" data-step="3">
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div id="step-card-3" class="stack-card rounded-2xl sm:rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 sm:p-8 shadow-xl shadow-zinc-950/5 dark:shadow-black/50" data-step="3">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
             
-            <div class="lg:col-span-6 space-y-4">
-              <div class="flex items-center space-x-2">
-                <span class="font-mono text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
+            <div class="lg:col-span-6 space-y-3 sm:space-y-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center whitespace-nowrap shrink-0 font-mono text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
                   03 · PLANNER
                 </span>
-                <span class="font-mono text-xs text-zinc-400">
+                <span class="font-mono text-xs text-zinc-400 whitespace-nowrap shrink-0">
                   core/graph.py + NetworkX
                 </span>
               </div>
 
-              <h3 class="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+              <h3 class="font-heading text-xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
                 Map Call Graphs & Blast Radius
               </h3>
 
-              <p class="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+              <p class="text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
                 Before proposing a change, the agent builds an import and caller graph with NetworkX. It calculates the blast radius of any modification so downstream functions never break.
               </p>
 
-              <div class="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs">
-                <div class="flex items-center space-x-1.5 font-mono text-zinc-700 dark:text-zinc-300 font-medium">
-                  <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i>
+              <div class="p-3 sm:p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs">
+                <div class="flex items-center space-x-1.5 font-mono text-zinc-700 dark:text-zinc-300 font-medium whitespace-nowrap">
+                  <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500 shrink-0"></i>
                   <span>Safety Guarantee</span>
                 </div>
-                <p class="text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                <p class="text-zinc-500 dark:text-zinc-400 leading-relaxed text-[11px] sm:text-xs">
                   High-risk changes with multiple callers are automatically flagged with warning scores and isolated.
                 </p>
               </div>
             </div>
 
-            <div class="lg:col-span-6">
-              <div class="rounded-2xl border border-zinc-800 bg-[#09090B] p-4 font-mono text-xs shadow-inner space-y-3">
+            <div class="lg:col-span-6 w-full overflow-hidden">
+              <div class="rounded-xl sm:rounded-2xl border border-zinc-800 bg-[#09090B] p-3 sm:p-4 font-mono text-xs shadow-inner space-y-2.5 w-full">
                 <div class="flex items-center justify-between pb-2 border-b border-zinc-800/80 text-[11px] text-zinc-400">
                   <div class="flex items-center space-x-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
                     <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
-                    <span class="ml-1 text-zinc-300 font-medium">03_blast_radius.json</span>
+                    <span class="ml-1 text-zinc-300 font-medium truncate">03_blast_radius.json</span>
                   </div>
-                  <div class="flex items-center space-x-1.5 text-blue-400 text-[10px]">
+                  <div class="flex items-center space-x-1.5 text-blue-400 text-[10px] shrink-0">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
                     <span>GRAPH_RESOLVED</span>
                   </div>
                 </div>
-                <pre class="text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[160px] p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900">{
+                <pre class="text-[10px] sm:text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[140px] p-2.5 sm:p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono whitespace-pre w-full">{
   "target_function": "hash_user_token",
   "file": "auth/hasher.py",
   "direct_callers": ["api/routes.py", "auth/tokens.py"],
@@ -466,53 +476,53 @@
         </div>
 
         <!-- ===== CARD 04: CODER ===== -->
-        <div id="step-card-4" class="stack-card rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-xl shadow-zinc-950/5 dark:shadow-black/50" data-step="4">
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div id="step-card-4" class="stack-card rounded-2xl sm:rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 sm:p-8 shadow-xl shadow-zinc-950/5 dark:shadow-black/50" data-step="4">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
             
-            <div class="lg:col-span-6 space-y-4">
-              <div class="flex items-center space-x-2">
-                <span class="font-mono text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
+            <div class="lg:col-span-6 space-y-3 sm:space-y-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center whitespace-nowrap shrink-0 font-mono text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
                   04 · CODER
                 </span>
-                <span class="font-mono text-xs text-zinc-400">
+                <span class="font-mono text-xs text-zinc-400 whitespace-nowrap shrink-0">
                   core/patcher.py (LibCST)
                 </span>
               </div>
 
-              <h3 class="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+              <h3 class="font-heading text-xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
                 Generate Precise AST Patches
               </h3>
 
-              <p class="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+              <p class="text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
                 The Coder agent generates targeted fixes. Instead of guessing text replacements, it uses LibCST to replace specific AST syntax nodes on an isolated <code class="text-brand-blue dark:text-blue-400 font-mono">agent-fix-*</code> candidate branch.
               </p>
 
-              <div class="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs">
-                <div class="flex items-center space-x-1.5 font-mono text-zinc-700 dark:text-zinc-300 font-medium">
-                  <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i>
+              <div class="p-3 sm:p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs">
+                <div class="flex items-center space-x-1.5 font-mono text-zinc-700 dark:text-zinc-300 font-medium whitespace-nowrap">
+                  <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500 shrink-0"></i>
                   <span>Safety Guarantee</span>
                 </div>
-                <p class="text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                <p class="text-zinc-500 dark:text-zinc-400 leading-relaxed text-[11px] sm:text-xs">
                   Modifications happen on temporary candidate branches. Your primary branch is completely untouched.
                 </p>
               </div>
             </div>
 
-            <div class="lg:col-span-6">
-              <div class="rounded-2xl border border-zinc-800 bg-[#09090B] p-4 font-mono text-xs shadow-inner space-y-3">
+            <div class="lg:col-span-6 w-full overflow-hidden">
+              <div class="rounded-xl sm:rounded-2xl border border-zinc-800 bg-[#09090B] p-3 sm:p-4 font-mono text-xs shadow-inner space-y-2.5 w-full">
                 <div class="flex items-center justify-between pb-2 border-b border-zinc-800/80 text-[11px] text-zinc-400">
                   <div class="flex items-center space-x-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
                     <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
-                    <span class="ml-1 text-zinc-300 font-medium">04_ast_patch.diff</span>
+                    <span class="ml-1 text-zinc-300 font-medium truncate">04_ast_patch.diff</span>
                   </div>
-                  <div class="flex items-center space-x-1.5 text-emerald-400 text-[10px]">
+                  <div class="flex items-center space-x-1.5 text-emerald-400 text-[10px] shrink-0">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                     <span>CANDIDATE_READY</span>
                   </div>
                 </div>
-                <pre class="text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[160px] p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono">--- a/auth/hasher.py
+                <pre class="text-[10px] sm:text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[140px] p-2.5 sm:p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono whitespace-pre w-full">--- a/auth/hasher.py
 +++ b/auth/hasher.py
 @@ -12,4 +12,4 @@
  def hash_user_token(raw_token: str) -> str:
@@ -527,53 +537,53 @@
         </div>
 
         <!-- ===== CARD 05: REVIEWER ===== -->
-        <div id="step-card-5" class="stack-card rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-xl shadow-zinc-950/5 dark:shadow-black/50" data-step="5">
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div id="step-card-5" class="stack-card rounded-2xl sm:rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 sm:p-8 shadow-xl shadow-zinc-950/5 dark:shadow-black/50" data-step="5">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
             
-            <div class="lg:col-span-6 space-y-4">
-              <div class="flex items-center space-x-2">
-                <span class="font-mono text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
+            <div class="lg:col-span-6 space-y-3 sm:space-y-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center whitespace-nowrap shrink-0 font-mono text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
                   05 · REVIEWER
                 </span>
-                <span class="font-mono text-xs text-zinc-400">
+                <span class="font-mono text-xs text-zinc-400 whitespace-nowrap shrink-0">
                   agents/reviewer.py + Pytest
                 </span>
               </div>
 
-              <h3 class="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+              <h3 class="font-heading text-xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
                 Automated Review & Test Verification
               </h3>
 
-              <p class="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+              <p class="text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
                 The agent executes your test suite with pytest on the candidate branch. A secondary reviewer model verifies the diff to ensure original caller signatures and types are preserved.
               </p>
 
-              <div class="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs">
-                <div class="flex items-center space-x-1.5 font-mono text-zinc-700 dark:text-zinc-300 font-medium">
-                  <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i>
+              <div class="p-3 sm:p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs">
+                <div class="flex items-center space-x-1.5 font-mono text-zinc-700 dark:text-zinc-300 font-medium whitespace-nowrap">
+                  <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500 shrink-0"></i>
                   <span>Safety Guarantee</span>
                 </div>
-                <p class="text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                <p class="text-zinc-500 dark:text-zinc-400 leading-relaxed text-[11px] sm:text-xs">
                   If any tests fail or syntax errors are detected, the candidate branch is automatically rolled back.
                 </p>
               </div>
             </div>
 
-            <div class="lg:col-span-6">
-              <div class="rounded-2xl border border-zinc-800 bg-[#09090B] p-4 font-mono text-xs shadow-inner space-y-3">
+            <div class="lg:col-span-6 w-full overflow-hidden">
+              <div class="rounded-xl sm:rounded-2xl border border-zinc-800 bg-[#09090B] p-3 sm:p-4 font-mono text-xs shadow-inner space-y-2.5 w-full">
                 <div class="flex items-center justify-between pb-2 border-b border-zinc-800/80 text-[11px] text-zinc-400">
                   <div class="flex items-center space-x-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
                     <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
-                    <span class="ml-1 text-zinc-300 font-medium">05_test_verification.log</span>
+                    <span class="ml-1 text-zinc-300 font-medium truncate">05_test_verification.log</span>
                   </div>
-                  <div class="flex items-center space-x-1.5 text-emerald-400 text-[10px]">
+                  <div class="flex items-center space-x-1.5 text-emerald-400 text-[10px] shrink-0">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                     <span>TESTS_PASSED</span>
                   </div>
                 </div>
-                <pre class="text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[160px] p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900">$ pytest tests/test_hasher.py -v
+                <pre class="text-[10px] sm:text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[140px] p-2.5 sm:p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono whitespace-pre w-full">$ pytest tests/test_hasher.py -v
 tests/test_hasher.py::test_hash_user_token PASSED        [ 50%]
 tests/test_hasher.py::test_token_entropy PASSED          [100%]
 ====================== 2 passed in 0.08s =======================
@@ -588,53 +598,53 @@ Reviewer Critique (Groq Llama 3.3):
         </div>
 
         <!-- ===== CARD 06: APPROVAL ===== -->
-        <div id="step-card-6" class="stack-card rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-xl shadow-zinc-950/5 dark:shadow-black/50" data-step="6">
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div id="step-card-6" class="stack-card rounded-2xl sm:rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 sm:p-8 shadow-xl shadow-zinc-950/5 dark:shadow-black/50" data-step="6">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
             
-            <div class="lg:col-span-6 space-y-4">
-              <div class="flex items-center space-x-2">
-                <span class="font-mono text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-400 font-semibold border border-emerald-200 dark:border-emerald-900">
+            <div class="lg:col-span-6 space-y-3 sm:space-y-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center whitespace-nowrap shrink-0 font-mono text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-400 font-semibold border border-emerald-200 dark:border-emerald-900">
                   06 · APPROVAL
                 </span>
-                <span class="font-mono text-xs text-zinc-400">
+                <span class="font-mono text-xs text-zinc-400 whitespace-nowrap shrink-0">
                   ui/static/index.html + memory/sqlite.py
                 </span>
               </div>
 
-              <h3 class="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+              <h3 class="font-heading text-xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
                 You Inspect and Decide
               </h3>
 
-              <p class="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+              <p class="text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
                 The candidate fix is presented in your browser console. You inspect the before-and-after diff and click Approve or Reject. Your decision is recorded in SQLite memory to guide future runs.
               </p>
 
-              <div class="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs">
-                <div class="flex items-center space-x-1.5 font-mono text-zinc-700 dark:text-zinc-300 font-medium">
-                  <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i>
+              <div class="p-3 sm:p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs">
+                <div class="flex items-center space-x-1.5 font-mono text-zinc-700 dark:text-zinc-300 font-medium whitespace-nowrap">
+                  <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500 shrink-0"></i>
                   <span>Safety Guarantee</span>
                 </div>
-                <p class="text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                <p class="text-zinc-500 dark:text-zinc-400 leading-relaxed text-[11px] sm:text-xs">
                   Zero silent merges. Nothing is merged into your project without your direct approval click.
                 </p>
               </div>
             </div>
 
-            <div class="lg:col-span-6">
-              <div class="rounded-2xl border border-zinc-800 bg-[#09090B] p-4 font-mono text-xs shadow-inner space-y-3">
+            <div class="lg:col-span-6 w-full overflow-hidden">
+              <div class="rounded-xl sm:rounded-2xl border border-zinc-800 bg-[#09090B] p-3 sm:p-4 font-mono text-xs shadow-inner space-y-2.5 w-full">
                 <div class="flex items-center justify-between pb-2 border-b border-zinc-800/80 text-[11px] text-zinc-400">
                   <div class="flex items-center space-x-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
                     <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
-                    <span class="ml-1 text-zinc-300 font-medium">06_decision_recorded.json</span>
+                    <span class="ml-1 text-zinc-300 font-medium truncate">06_decision_recorded.json</span>
                   </div>
-                  <div class="flex items-center space-x-1.5 text-emerald-400 text-[10px]">
+                  <div class="flex items-center space-x-1.5 text-emerald-400 text-[10px] shrink-0">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                     <span>MERGED</span>
                   </div>
                 </div>
-                <pre class="text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[160px] p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900">{
+                <pre class="text-[10px] sm:text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[140px] p-2.5 sm:p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono whitespace-pre w-full">{
   "developer_decision": "APPROVED",
   "target_branch": "agent-fix-token-hash",
   "merge_status": "MERGE_COMPLETED",
@@ -653,12 +663,12 @@ Reviewer Critique (Groq Llama 3.3):
     </section>
 
     <!-- ==================== GET STARTED SECTION ==================== -->
-    <section id="get-started" class="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-6 sm:p-8 space-y-6">
+    <section id="get-started" class="rounded-2xl sm:rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-5 sm:p-8 space-y-5 sm:space-y-6 w-full">
       
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <span class="font-mono text-xs text-brand-blue dark:text-blue-400 uppercase tracking-wider font-semibold">Start In Seconds</span>
-          <h2 class="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50 mt-1">
+          <h2 class="font-heading text-xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50 mt-1">
             Ready to inspect your code?
           </h2>
           <p class="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mt-1">
@@ -666,16 +676,16 @@ Reviewer Critique (Groq Llama 3.3):
           </p>
         </div>
 
-        <a href="/app" class="h-11 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 px-6 font-medium text-sm hover:bg-zinc-800 dark:hover:bg-zinc-200 transition shadow-sm flex items-center justify-center space-x-2 flex-shrink-0">
+        <a href="/app" class="h-10 sm:h-11 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 px-5 sm:px-6 font-medium text-xs sm:text-sm hover:bg-zinc-800 dark:hover:bg-zinc-200 transition shadow-sm flex items-center justify-center space-x-2 shrink-0 whitespace-nowrap">
           <span>Launch Console (/app)</span>
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </a>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
         <div class="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950 space-y-1">
-          <div class="text-xs font-mono font-semibold text-zinc-900 dark:text-zinc-100 flex items-center space-x-2">
-            <span class="w-5 h-5 rounded-full bg-brand-blue-light dark:bg-blue-950 text-brand-blue dark:text-blue-400 flex items-center justify-center text-[10px] font-bold">1</span>
+          <div class="text-xs font-mono font-semibold text-zinc-900 dark:text-zinc-100 flex items-center space-x-2 whitespace-nowrap">
+            <span class="w-5 h-5 rounded-full bg-brand-blue-light dark:bg-blue-950 text-brand-blue dark:text-blue-400 flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
             <span>Interactive Web Console</span>
           </div>
           <p class="text-xs text-zinc-500 dark:text-zinc-400 pl-7 leading-normal">
@@ -684,8 +694,8 @@ Reviewer Critique (Groq Llama 3.3):
         </div>
 
         <div class="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950 space-y-1">
-          <div class="text-xs font-mono font-semibold text-zinc-900 dark:text-zinc-100 flex items-center space-x-2">
-            <span class="w-5 h-5 rounded-full bg-brand-blue-light dark:bg-blue-950 text-brand-blue dark:text-blue-400 flex items-center justify-center text-[10px] font-bold">2</span>
+          <div class="text-xs font-mono font-semibold text-zinc-900 dark:text-zinc-100 flex items-center space-x-2 whitespace-nowrap">
+            <span class="w-5 h-5 rounded-full bg-brand-blue-light dark:bg-blue-950 text-brand-blue dark:text-blue-400 flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
             <span>Terminal CLI</span>
           </div>
           <p class="text-xs text-zinc-500 dark:text-zinc-400 pl-7 font-mono leading-normal">
@@ -699,27 +709,28 @@ Reviewer Critique (Groq Llama 3.3):
   </main>
 
   <!-- ==================== RIXEL-STYLE MINIMAL FOOTER ==================== -->
-  <footer class="mt-auto border-t border-zinc-200 dark:border-zinc-800/80 py-8 text-xs text-zinc-500 font-mono transition-colors">
+  <footer class="mt-auto border-t border-zinc-200 dark:border-zinc-800/80 py-6 sm:py-8 text-xs text-zinc-500 font-mono transition-colors">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="flex items-center space-x-2">
-        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
         <span class="font-medium text-zinc-800 dark:text-zinc-200">Codebase Agent</span>
-        <span>— Human-governed, offline-capable code intelligence.</span>
+        <span class="hidden sm:inline">— Human-governed, offline-capable code intelligence.</span>
       </div>
-      <div class="flex items-center space-x-5">
+      <div class="flex items-center space-x-5 shrink-0">
         <a href="/app" class="text-brand-blue dark:text-blue-400 hover:underline">Launch Console</a>
         <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="hover:text-zinc-900 dark:hover:text-white transition">GitHub Repository</a>
       </div>
     </div>
   </footer>
 
-  <!-- ==================== JAVASCRIPT: CRAZY STACKING SCROLL & TILT ==================== -->
+  <!-- ==================== JAVASCRIPT: STACKING SCROLL DYNAMICS ==================== -->
   <script>
     // Smooth scroll to a specific step
     function scrollToStep(stepNumber) {
       const card = document.getElementById(`step-card-${stepNumber}`);
       if (card) {
-        const yOffset = -120;
+        const isMobile = window.innerWidth < 640;
+        const yOffset = isMobile ? -90 : -110;
         const y = card.getBoundingClientRect().top + window.pageYOffset + yOffset;
         window.scrollTo({ top: y, behavior: 'smooth' });
       }
@@ -729,14 +740,15 @@ Reviewer Critique (Groq Llama 3.3):
     function updateCardStack() {
       const cards = document.querySelectorAll('.stack-card');
       const pills = document.querySelectorAll('.tracker-pill');
-      const stickyThreshold = 140; // pixel distance to sticky point
+      const isMobile = window.innerWidth < 640;
+      const stickyThreshold = isMobile ? 95 : 120;
       let activeIndex = 0;
 
       cards.forEach((card, index) => {
         const rect = card.getBoundingClientRect();
         
         // If this card is reaching or has reached the sticky header
-        if (rect.top <= stickyThreshold) {
+        if (rect.top <= stickyThreshold + 20) {
           activeIndex = index;
         }
 
@@ -745,10 +757,10 @@ Reviewer Critique (Groq Llama 3.3):
           const nextCard = cards[index + 1];
           const nextRect = nextCard.getBoundingClientRect();
           
-          if (nextRect.top <= stickyThreshold + 100) {
+          if (nextRect.top <= stickyThreshold + 120) {
             // As next card scrolls up over this card, scale this card down smoothly
-            const progress = Math.min(1, Math.max(0, (stickyThreshold + 100 - nextRect.top) / 100));
-            const scale = 1 - progress * 0.05; // scales down to 0.95
+            const progress = Math.min(1, Math.max(0, (stickyThreshold + 120 - nextRect.top) / 120));
+            const scale = 1 - progress * 0.04; // smooth subtle scale to 0.96
             const brightness = 1 - progress * 0.15; // slightly dims covered card
             card.style.transform = `scale(${scale})`;
             card.style.filter = `brightness(${brightness})`;
@@ -763,33 +775,11 @@ Reviewer Critique (Groq Llama 3.3):
       pills.forEach((pill, idx) => {
         if (idx === activeIndex) {
           pill.classList.add('active');
+          // Smoothly scroll active pill into view on mobile
+          pill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         } else {
           pill.classList.remove('active');
         }
-      });
-    }
-
-    // 3D Card Mouse Tilt Effect for crazy interactivity
-    function setup3DTilt() {
-      const cards = document.querySelectorAll('.stack-card');
-      cards.forEach(card => {
-        card.addEventListener('mousemove', (e) => {
-          const rect = card.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          
-          const centerX = rect.width / 2;
-          const centerY = rect.height / 2;
-          
-          const rotateX = ((y - centerY) / centerY) * -3; // max 3deg tilt
-          const rotateY = ((x - centerX) / centerX) * 3;
-          
-          card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-        });
-
-        card.addEventListener('mouseleave', () => {
-          updateCardStack(); // restore natural stacking scale
-        });
       });
     }
 
@@ -811,7 +801,6 @@ Reviewer Critique (Groq Llama 3.3):
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
-      setup3DTilt();
       window.addEventListener('scroll', updateCardStack, { passive: true });
       updateCardStack();
     });
