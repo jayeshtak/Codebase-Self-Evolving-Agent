@@ -1358,12 +1358,23 @@ if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 @app.get("/")
-async def get_index():
+async def get_home():
+    home_path = static_dir / "home.html"
+    if home_path.exists():
+        return FileResponse(str(home_path))
     index_path = static_dir / "index.html"
     if index_path.exists():
         return FileResponse(str(index_path))
-    else:
-        raise HTTPException(status_code=404, detail="Frontend dashboard index.html not found.")
+    raise HTTPException(status_code=404, detail="Homepage not found.")
+
+@app.get("/app")
+@app.get("/console")
+@app.get("/dashboard")
+async def get_console():
+    index_path = static_dir / "index.html"
+    if index_path.exists():
+        return FileResponse(str(index_path))
+    raise HTTPException(status_code=404, detail="Developer console index.html not found.")
 
 if __name__ == "__main__":
     import uvicorn

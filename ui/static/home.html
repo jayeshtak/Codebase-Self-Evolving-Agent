@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Codebase Self-Evolving Agent | Autonomous Code Intelligence & Evolution</title>
+  <meta name="description" content="An autonomous multi-agent AI system for continuous codebase evolution, automated vulnerability remediation, AST refactoring, and test-driven self-healing.">
+
+  <!-- Local Tailwind CSS & Lucide Icons -->
+  <script src="/static/tailwind.js"></script>
+  <script src="/static/lucide.min.js"></script>
+
+  <!-- Typography: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            bg: '#080808',
+            surface: '#0F0F0F',
+            'surface-2': '#141414',
+            'surface-3': '#1A1A1A',
+            border: '#232323',
+            'border-subtle': '#181818',
+            'brand-blue': '#3B82F6',
+            'brand-blue-hover': '#60A5FA',
+            'brand-blue-glow': 'rgba(59, 130, 246, 0.12)',
+            default: '#F5F5F5',
+            secondary: '#9CA3AF',
+            muted: '#6B7280',
+            success: '#10B981',
+            warning: '#F59E0B',
+            destructive: '#EF4444'
+          },
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Menlo', 'Consolas', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #080808;
+      color: #F5F5F5;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Custom thin scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #080808;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #222222;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #333333;
+    }
+
+    /* Code diff styling */
+    .diff-line-del {
+      background-color: rgba(239, 68, 68, 0.12);
+      color: #FCA5A5;
+      border-left: 2px solid #EF4444;
+    }
+    .diff-line-add {
+      background-color: rgba(16, 185, 129, 0.12);
+      color: #6EE7B7;
+      border-left: 2px solid #10B981;
+    }
+    .diff-line-ctx {
+      color: #9CA3AF;
+    }
+
+    /* Subtle active indicator */
+    .stage-card.active {
+      border-color: #3B82F6;
+      background-color: #121824;
+      box-shadow: 0 0 0 1px #3B82F6;
+    }
+    .stage-card.active .stage-num {
+      background-color: #3B82F6;
+      color: #FFFFFF;
+    }
+
+    /* Focus visible */
+    a:focus-visible, button:focus-visible {
+      outline: 2px solid #3B82F6;
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-brand-blue selection:text-white">
+
+  <!-- ==================== SECTION A: NAVIGATION ==================== -->
+  <header class="sticky top-0 z-50 bg-bg/90 backdrop-blur-md border-b border-border transition-all">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <!-- Product Mark & Title -->
+      <a href="/" class="flex items-center space-x-3 group">
+        <div class="w-8 h-8 rounded bg-surface-2 border border-border flex items-center justify-center text-brand-blue group-hover:border-brand-blue transition">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="8" height="8" x="2" y="2" rx="1.5"/>
+            <path d="M14 2c1.1 0 2 .9 2 2v4a2 2 0 0 1-2 2h-4"/>
+            <path d="M4 14v4a2 2 0 0 0 2 2h4"/>
+            <rect width="8" height="8" x="14" y="14" rx="1.5"/>
+          </svg>
+        </div>
+        <div class="flex flex-col">
+          <span class="font-mono text-sm font-semibold tracking-tight text-white group-hover:text-brand-blue-hover transition">Codebase Agent</span>
+          <span class="font-mono text-[9px] uppercase tracking-wider text-muted">Self-Evolving AI</span>
+        </div>
+      </a>
+
+      <!-- Desktop Navigation Links -->
+      <nav class="hidden md:flex items-center space-x-8 text-xs font-mono text-secondary">
+        <a href="#how-it-works" class="hover:text-white transition">How It Works</a>
+        <a href="#pipeline" class="hover:text-white transition">Pipeline</a>
+        <a href="#features" class="hover:text-white transition">Features</a>
+        <a href="#example" class="hover:text-white transition">Live Example</a>
+        <a href="#architecture" class="hover:text-white transition">Architecture</a>
+        <a href="#quickstart" class="hover:text-white transition">Quick Start</a>
+        <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="hover:text-white flex items-center space-x-1.5 transition">
+          <i data-lucide="github" class="w-3.5 h-3.5"></i>
+          <span>GitHub</span>
+        </a>
+      </nav>
+
+      <!-- Primary CTA Actions -->
+      <div class="hidden sm:flex items-center space-x-3">
+        <a href="/app" class="bg-brand-blue hover:bg-brand-blue-hover text-white text-xs font-medium px-3.5 py-1.5 rounded transition flex items-center space-x-1.5 shadow-sm">
+          <span>Launch Console</span>
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+        </a>
+      </div>
+
+      <!-- Mobile Hamburger Button -->
+      <button id="mobile-menu-btn" class="md:hidden text-secondary hover:text-white p-1.5 focus:outline-none" aria-label="Toggle navigation menu">
+        <i data-lucide="menu" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Navigation Drawer -->
+    <div id="mobile-menu" class="hidden md:hidden border-b border-border bg-surface px-4 py-4 space-y-3 font-mono text-xs">
+      <a href="#how-it-works" class="block text-secondary hover:text-white py-1">How It Works</a>
+      <a href="#pipeline" class="block text-secondary hover:text-white py-1">Pipeline</a>
+      <a href="#features" class="block text-secondary hover:text-white py-1">Features</a>
+      <a href="#example" class="block text-secondary hover:text-white py-1">Live Example</a>
+      <a href="#architecture" class="block text-secondary hover:text-white py-1">Architecture</a>
+      <a href="#quickstart" class="block text-secondary hover:text-white py-1">Quick Start</a>
+      <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="block text-secondary hover:text-white py-1 flex items-center space-x-2">
+        <i data-lucide="github" class="w-4 h-4"></i>
+        <span>GitHub Repository</span>
+      </a>
+      <div class="pt-2 border-t border-border">
+        <a href="/app" class="block w-full text-center bg-brand-blue hover:bg-brand-blue-hover text-white font-medium py-2 rounded">
+          Launch Developer Console
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow">
+    <!-- ==================== SECTION B: HERO ==================== -->
+    <section class="relative pt-20 pb-16 md:pt-28 md:pb-24 border-b border-border overflow-hidden">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Status Indicator Pill -->
+        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-surface-2 border border-border text-xs font-mono text-secondary mb-6">
+          <span class="w-1.5 h-1.5 rounded-full bg-success"></span>
+          <span>Open-Source System</span>
+          <span class="text-border">·</span>
+          <span>Python 3.12</span>
+          <span class="text-border">·</span>
+          <span>FastAPI</span>
+          <span class="text-border">·</span>
+          <span class="text-brand-blue">Multi-Agent</span>
+        </div>
+
+        <!-- Headline -->
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white max-w-4xl leading-[1.12]">
+          Your Codebase.<br/>
+          <span class="text-brand-blue">Understood. Improved. Evolving.</span>
+        </h1>
+
+        <!-- Supporting Copy -->
+        <p class="mt-6 text-base sm:text-lg text-secondary max-w-2xl leading-relaxed">
+          An AI-powered development agent that explores your codebase, identifies potential issues, proposes verified AST fixes, reviews changes through critique loops, and learns from developer decisions to improve future workflows.
+        </p>
+
+        <!-- CTA Buttons -->
+        <div class="mt-8 flex flex-wrap gap-4 items-center">
+          <a href="/app" class="bg-brand-blue hover:bg-brand-blue-hover text-white text-sm font-semibold px-5 py-2.5 rounded transition flex items-center space-x-2">
+            <i data-lucide="play" class="w-4 h-4"></i>
+            <span>Launch Developer Console</span>
+          </a>
+          <a href="#pipeline" class="bg-surface-2 hover:bg-surface-3 text-default border border-border text-sm font-medium px-5 py-2.5 rounded transition flex items-center space-x-2">
+            <i data-lucide="layers" class="w-4 h-4 text-brand-blue"></i>
+            <span>Explore Interactive Pipeline</span>
+          </a>
+          <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="text-secondary hover:text-white text-sm font-medium px-4 py-2.5 rounded transition flex items-center space-x-2 border border-transparent hover:border-border">
+            <i data-lucide="github" class="w-4 h-4"></i>
+            <span>GitHub</span>
+          </a>
+        </div>
+
+        <!-- Key Pillars Summary Badges -->
+        <div class="mt-14 pt-8 border-t border-border-subtle grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
+          <div class="space-y-1">
+            <div class="text-muted uppercase text-[10px]">Analysis Scope</div>
+            <div class="text-white font-semibold">AST & Graph Aware</div>
+            <div class="text-muted text-[11px]">Tree-sitter, Radon, Vulture, Bandit</div>
+          </div>
+          <div class="space-y-1">
+            <div class="text-muted uppercase text-[10px]">Remediation Logic</div>
+            <div class="text-white font-semibold">Dual-LLM Critique</div>
+            <div class="text-muted text-[11px]">Gemini 2.5 Flash + Groq Llama 3.3</div>
+          </div>
+          <div class="space-y-1">
+            <div class="text-muted uppercase text-[10px]">Verification Engine</div>
+            <div class="text-white font-semibold">Self-Healing Tests</div>
+            <div class="text-muted text-[11px]">Pytest regression with feedback loops</div>
+          </div>
+          <div class="space-y-1">
+            <div class="text-muted uppercase text-[10px]">Developer Control</div>
+            <div class="text-white font-semibold">Zero Silent Commits</div>
+            <div class="text-muted text-[11px]">Explicit human approval on isolated branches</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION C: INTERACTIVE PRODUCT VISUALIZATION ==================== -->
+    <section id="pipeline" class="py-16 md:py-24 border-b border-border bg-surface/30">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="max-w-3xl mb-12">
+          <span class="font-mono text-xs text-brand-blue uppercase tracking-wider font-semibold">The Autonomous Lifecycle</span>
+          <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-1">
+            How the Multi-Agent Pipeline Operates
+          </h2>
+          <p class="text-secondary text-sm mt-2">
+            Click any stage in the sequence below to inspect what information it consumes, how it processes code, and the output it delivers.
+          </p>
+        </div>
+
+        <!-- Interactive Pipeline Stage Selector Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+          <!-- Stage 1 -->
+          <button class="stage-card active text-left p-3.5 rounded bg-surface border border-border transition hover:border-brand-blue focus:outline-none" onclick="selectStage(0)">
+            <div class="flex items-center justify-between mb-2">
+              <span class="stage-num font-mono text-[10px] w-5 h-5 rounded flex items-center justify-center font-bold bg-border text-secondary">01</span>
+              <i data-lucide="folder-git-2" class="w-4 h-4 text-brand-blue"></i>
+            </div>
+            <div class="font-semibold text-xs text-white">Repository</div>
+            <div class="text-[10px] text-muted font-mono mt-0.5">Workspace Target</div>
+          </button>
+
+          <!-- Stage 2 -->
+          <button class="stage-card text-left p-3.5 rounded bg-surface border border-border transition hover:border-brand-blue focus:outline-none" onclick="selectStage(1)">
+            <div class="flex items-center justify-between mb-2">
+              <span class="stage-num font-mono text-[10px] w-5 h-5 rounded flex items-center justify-center font-bold bg-border text-secondary">02</span>
+              <i data-lucide="scan" class="w-4 h-4 text-brand-blue"></i>
+            </div>
+            <div class="font-semibold text-xs text-white">Scanner</div>
+            <div class="text-[10px] text-muted font-mono mt-0.5">AST & Static Audit</div>
+          </button>
+
+          <!-- Stage 3 -->
+          <button class="stage-card text-left p-3.5 rounded bg-surface border border-border transition hover:border-brand-blue focus:outline-none" onclick="selectStage(2)">
+            <div class="flex items-center justify-between mb-2">
+              <span class="stage-num font-mono text-[10px] w-5 h-5 rounded flex items-center justify-center font-bold bg-border text-secondary">03</span>
+              <i data-lucide="git-commit" class="w-4 h-4 text-brand-blue"></i>
+            </div>
+            <div class="font-semibold text-xs text-white">Planner</div>
+            <div class="text-[10px] text-muted font-mono mt-0.5">Scoring & Clustering</div>
+          </button>
+
+          <!-- Stage 4 -->
+          <button class="stage-card text-left p-3.5 rounded bg-surface border border-border transition hover:border-brand-blue focus:outline-none" onclick="selectStage(3)">
+            <div class="flex items-center justify-between mb-2">
+              <span class="stage-num font-mono text-[10px] w-5 h-5 rounded flex items-center justify-center font-bold bg-border text-secondary">04</span>
+              <i data-lucide="code" class="w-4 h-4 text-brand-blue"></i>
+            </div>
+            <div class="font-semibold text-xs text-white">Coder</div>
+            <div class="text-[10px] text-muted font-mono mt-0.5">AST Patch Synthesis</div>
+          </button>
+
+          <!-- Stage 5 -->
+          <button class="stage-card text-left p-3.5 rounded bg-surface border border-border transition hover:border-brand-blue focus:outline-none" onclick="selectStage(4)">
+            <div class="flex items-center justify-between mb-2">
+              <span class="stage-num font-mono text-[10px] w-5 h-5 rounded flex items-center justify-center font-bold bg-border text-secondary">05</span>
+              <i data-lucide="check-circle" class="w-4 h-4 text-brand-blue"></i>
+            </div>
+            <div class="font-semibold text-xs text-white">Reviewer</div>
+            <div class="text-[10px] text-muted font-mono mt-0.5">Critique & Self-Heal</div>
+          </button>
+
+          <!-- Stage 6 -->
+          <button class="stage-card text-left p-3.5 rounded bg-surface border border-border transition hover:border-brand-blue focus:outline-none" onclick="selectStage(5)">
+            <div class="flex items-center justify-between mb-2">
+              <span class="stage-num font-mono text-[10px] w-5 h-5 rounded flex items-center justify-center font-bold bg-border text-secondary">06</span>
+              <i data-lucide="shield-check" class="w-4 h-4 text-success"></i>
+            </div>
+            <div class="font-semibold text-xs text-white">Approval</div>
+            <div class="text-[10px] text-muted font-mono mt-0.5">Human Governance</div>
+          </button>
+        </div>
+
+        <!-- Stage Inspector Display Panel -->
+        <div class="bg-surface border border-border rounded-lg p-6 lg:p-8">
+          <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 pb-6 border-b border-border">
+            <div>
+              <div class="flex items-center space-x-2">
+                <span id="inspector-step-badge" class="font-mono text-[10px] uppercase px-2 py-0.5 rounded bg-brand-blue/20 text-brand-blue font-bold">Stage 01</span>
+                <span id="inspector-role-badge" class="font-mono text-[10px] text-muted uppercase">Workspace Environment</span>
+              </div>
+              <h3 id="inspector-title" class="text-xl font-bold text-white mt-1">Repository Workspace</h3>
+              <p id="inspector-desc" class="text-secondary text-sm mt-1 max-w-2xl">
+                The entry point targets any local folder path or clones a remote Git repository into a protected sandbox. The system detects project structure and establishes working tree state.
+              </p>
+            </div>
+            <div class="flex items-center space-x-2 shrink-0">
+              <span class="text-[10px] font-mono text-muted uppercase">Interactive Demonstration</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+            <!-- Left Info Columns -->
+            <div class="lg:col-span-5 space-y-4">
+              <div class="bg-surface-2 p-4 rounded border border-border-subtle">
+                <div class="font-mono text-[11px] text-muted uppercase flex items-center space-x-1.5 mb-1.5">
+                  <i data-lucide="arrow-down-left" class="w-3.5 h-3.5 text-brand-blue"></i>
+                  <span>Input Data Received</span>
+                </div>
+                <div id="inspector-input" class="font-mono text-xs text-default">
+                  Target repo path, Git tree, and environment configurations.
+                </div>
+              </div>
+
+              <div class="bg-surface-2 p-4 rounded border border-border-subtle">
+                <div class="font-mono text-[11px] text-muted uppercase flex items-center space-x-1.5 mb-1.5">
+                  <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-success"></i>
+                  <span>Output Delivered</span>
+                </div>
+                <div id="inspector-output" class="font-mono text-xs text-default">
+                  Normalized source file list, module boundary definitions, and Git HEAD commit reference.
+                </div>
+              </div>
+
+              <div class="bg-surface-2 p-4 rounded border border-border-subtle">
+                <div class="font-mono text-[11px] text-muted uppercase flex items-center space-x-1.5 mb-1.5">
+                  <i data-lucide="shield" class="w-3.5 h-3.5 text-warning"></i>
+                  <span>Safety & Governance Role</span>
+                </div>
+                <div id="inspector-governance" class="text-xs text-secondary">
+                  Locks repository state to prevent concurrent file conflicts and ensures all modifications happen on isolated candidate branches.
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Telemetry/Code Preview -->
+            <div class="lg:col-span-7 bg-bg border border-border rounded p-4 font-mono text-xs overflow-x-auto">
+              <div class="flex items-center justify-between pb-2 mb-3 border-b border-border text-[10px] text-muted">
+                <span id="inspector-telemetry-label">agent_pipeline_payload.json</span>
+                <span class="text-brand-blue uppercase">Simulated Contract</span>
+              </div>
+              <pre id="inspector-payload" class="text-secondary leading-relaxed text-[11px]">
+{
+  "repository": "Codebase-Self-Evolving-Agent",
+  "branch": "main",
+  "head_commit": "50a9c6d",
+  "status": "ready_for_scan",
+  "file_count": 84,
+  "languages": ["Python", "HTML", "JavaScript"]
+}</pre>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION D: THE PROBLEM & THE SOLUTION ==================== -->
+    <section class="py-16 md:py-24 border-b border-border">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="max-w-3xl mb-12">
+          <span class="font-mono text-xs text-brand-blue uppercase tracking-wider font-semibold">Engineering Realities</span>
+          <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-1">
+            The Problem and the Solution
+          </h2>
+          <p class="text-secondary text-sm mt-2">
+            Why software entropy builds up over time, and how autonomous agent loops solve it without taking control away from the engineer.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <!-- The Problem -->
+          <div class="bg-surface border border-border rounded-lg p-6 lg:p-8 space-y-5">
+            <div class="flex items-center space-x-3 text-destructive">
+              <i data-lucide="alert-octagon" class="w-5 h-5"></i>
+              <h3 class="font-bold text-base text-white">The Software Entropy Reality</h3>
+            </div>
+            
+            <ul class="space-y-4 text-xs text-secondary leading-relaxed">
+              <li class="flex items-start space-x-3">
+                <span class="text-destructive font-mono mt-0.5 shrink-0">✕</span>
+                <div>
+                  <strong class="text-white">Invisible Technical Debt:</strong> Dead code paths, high cyclomatic complexity, and insecure hashing functions accumulate silently in fast-moving repos.
+                </div>
+              </li>
+              <li class="flex items-start space-x-3">
+                <span class="text-destructive font-mono mt-0.5 shrink-0">✕</span>
+                <div>
+                  <strong class="text-white">Unclear Blast Radiuses:</strong> Changing a function without understanding deep call graphs leads to unexpected downstream breaks and regression bugs.
+                </div>
+              </li>
+              <li class="flex items-start space-x-3">
+                <span class="text-destructive font-mono mt-0.5 shrink-0">✕</span>
+                <div>
+                  <strong class="text-white">Fatiguing Review Cycles:</strong> Senior developers spend valuable engineering hours triaging simple formatting, missing exceptions, and unused imports.
+                </div>
+              </li>
+              <li class="flex items-start space-x-3">
+                <span class="text-destructive font-mono mt-0.5 shrink-0">✕</span>
+                <div>
+                  <strong class="text-white">Forgotten Developer Preferences:</strong> Repeatedly rejecting the same LLM suggestion because generic coding tools have zero memory of your decisions.
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <!-- The Solution -->
+          <div class="bg-surface border border-border rounded-lg p-6 lg:p-8 space-y-5">
+            <div class="flex items-center space-x-3 text-brand-blue">
+              <i data-lucide="cpu" class="w-5 h-5"></i>
+              <h3 class="font-bold text-base text-white">The Self-Evolving Approach</h3>
+            </div>
+
+            <ul class="space-y-4 text-xs text-secondary leading-relaxed">
+              <li class="flex items-start space-x-3">
+                <span class="text-brand-blue font-mono mt-0.5 shrink-0">✓</span>
+                <div>
+                  <strong class="text-white">Multi-Tool AST Auditing:</strong> Scans using Tree-sitter, Radon, Vulture, and Bandit to locate exact syntax structures and security weaknesses.
+                </div>
+              </li>
+              <li class="flex items-start space-x-3">
+                <span class="text-brand-blue font-mono mt-0.5 shrink-0">✓</span>
+                <div>
+                  <strong class="text-white">Graph-Aware Impact Analysis:</strong> Builds NetworkX module and import graphs to calculate blast radius and avoid breaking dependent callers.
+                </div>
+              </li>
+              <li class="flex items-start space-x-3">
+                <span class="text-brand-blue font-mono mt-0.5 shrink-0">✓</span>
+                <div>
+                  <strong class="text-white">Self-Healing Test Validation:</strong> Automatically executes test suites against candidate fixes, piping traceback errors back to the model for correction.
+                </div>
+              </li>
+              <li class="flex items-start space-x-3">
+                <span class="text-brand-blue font-mono mt-0.5 shrink-0">✓</span>
+                <div>
+                  <strong class="text-white">Developer Decision Memory:</strong> SQLite storage remembers every approved and rejected fix, preventing unwanted suggestions from ever recurring.
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION E: HOW IT WORKS (4 STEPS) ==================== -->
+    <section id="how-it-works" class="py-16 md:py-24 border-b border-border bg-surface/20">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="max-w-3xl mb-14">
+          <span class="font-mono text-xs text-brand-blue uppercase tracking-wider font-semibold">User Experience</span>
+          <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-1">
+            How It Works in 4 Steps
+          </h2>
+          <p class="text-secondary text-sm mt-2">
+            A transparent workflow designed to assist developers, never to operate as an unpredictable black box.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <!-- Step 1 -->
+          <div class="bg-surface border border-border rounded-lg p-6 flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-xs font-bold text-brand-blue">STEP 01</span>
+                <i data-lucide="link" class="w-4 h-4 text-muted"></i>
+              </div>
+              <h3 class="text-base font-bold text-white mt-3">Connect Repository</h3>
+              <p class="text-xs text-secondary mt-2 leading-relaxed">
+                Provide your local folder path or paste a public Git URL. The agent initializes workspace telemetry, indexes ASTs, and verifies branch readiness.
+              </p>
+            </div>
+            <div class="bg-surface-2 p-3 rounded border border-border-subtle font-mono text-[11px] text-muted">
+              <code>workspace: /path/to/repo</code>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="bg-surface border border-border rounded-lg p-6 flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-xs font-bold text-brand-blue">STEP 02</span>
+                <i data-lucide="activity" class="w-4 h-4 text-muted"></i>
+              </div>
+              <h3 class="text-base font-bold text-white mt-3">Analyze Codebase</h3>
+              <p class="text-xs text-secondary mt-2 leading-relaxed">
+                The scanner checks cyclomatic complexity, dead code paths, and vulnerabilities. Findings are categorized, ranked, and mapped across dependency trees.
+              </p>
+            </div>
+            <div class="bg-surface-2 p-3 rounded border border-border-subtle font-mono text-[11px] text-muted">
+              <code>issues: 12 detected (ranked)</code>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="bg-surface border border-border rounded-lg p-6 flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-xs font-bold text-brand-blue">STEP 03</span>
+                <i data-lucide="git-pull-request" class="w-4 h-4 text-muted"></i>
+              </div>
+              <h3 class="text-base font-bold text-white mt-3">Review Fix Diffs</h3>
+              <p class="text-xs text-secondary mt-2 leading-relaxed">
+                Inspect synthesized candidate fixes in an interactive side-by-side diff. Review automated test validation results and click Approve or Reject.
+              </p>
+            </div>
+            <div class="bg-surface-2 p-3 rounded border border-border-subtle font-mono text-[11px] text-muted">
+              <code>tests: passed (2/2 suites)</code>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="bg-surface border border-border rounded-lg p-6 flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-xs font-bold text-brand-blue">STEP 04</span>
+                <i data-lucide="database" class="w-4 h-4 text-muted"></i>
+              </div>
+              <h3 class="text-base font-bold text-white mt-3">Learn From Decisions</h3>
+              <p class="text-xs text-secondary mt-2 leading-relaxed">
+                Approved fixes merge safely into candidate branches. Rejected patterns are committed into SQLite memory, suppressing future false positives.
+              </p>
+            </div>
+            <div class="bg-surface-2 p-3 rounded border border-border-subtle font-mono text-[11px] text-muted">
+              <code>decision: recorded in memory.db</code>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION F: FEATURE SHOWCASE ==================== -->
+    <section id="features" class="py-16 md:py-24 border-b border-border">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="max-w-3xl mb-14">
+          <span class="font-mono text-xs text-brand-blue uppercase tracking-wider font-semibold">Engineered Capabilities</span>
+          <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-1">
+            Features Built for Real Codebases
+          </h2>
+          <p class="text-secondary text-sm mt-2">
+            Every capability described here is verified and implemented in the current repository code.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Feature 1 -->
+          <div class="bg-surface border border-border rounded-lg p-6 space-y-3 hover:border-brand-blue transition">
+            <div class="w-9 h-9 rounded bg-surface-2 border border-border flex items-center justify-center text-brand-blue">
+              <i data-lucide="scan-line" class="w-4 h-4"></i>
+            </div>
+            <h3 class="text-base font-bold text-white">AST-Level Codebase Scanning</h3>
+            <p class="text-xs text-secondary leading-relaxed">
+              Combines Tree-sitter AST parsing with Radon (cyclomatic complexity), Vulture (dead functions/variables), and Bandit (security vulnerabilities).
+            </p>
+            <div class="font-mono text-[10px] text-muted">core/scanner.py</div>
+          </div>
+
+          <!-- Feature 2 -->
+          <div class="bg-surface border border-border rounded-lg p-6 space-y-3 hover:border-brand-blue transition">
+            <div class="w-9 h-9 rounded bg-surface-2 border border-border flex items-center justify-center text-brand-blue">
+              <i data-lucide="network" class="w-4 h-4"></i>
+            </div>
+            <h3 class="text-base font-bold text-white">Dependency Graph Intelligence</h3>
+            <p class="text-xs text-secondary leading-relaxed">
+              Maps module imports and function caller hierarchies with NetworkX. Visualizes circular dependencies and computes blast radiuses before modifying code.
+            </p>
+            <div class="font-mono text-[10px] text-muted">core/graph.py</div>
+          </div>
+
+          <!-- Feature 3 -->
+          <div class="bg-surface border border-border rounded-lg p-6 space-y-3 hover:border-brand-blue transition">
+            <div class="w-9 h-9 rounded bg-surface-2 border border-border flex items-center justify-center text-brand-blue">
+              <i data-lucide="git-pull-request" class="w-4 h-4"></i>
+            </div>
+            <h3 class="text-base font-bold text-white">Interactive Fix Review Studio</h3>
+            <p class="text-xs text-secondary leading-relaxed">
+              Provides side-by-side diff viewers with syntax coloring, reviewer critiques, test logs, and explicit developer Approve and Reject actions.
+            </p>
+            <div class="font-mono text-[10px] text-muted">ui/static/index.html</div>
+          </div>
+
+          <!-- Feature 4 -->
+          <div class="bg-surface border border-border rounded-lg p-6 space-y-3 hover:border-brand-blue transition">
+            <div class="w-9 h-9 rounded bg-surface-2 border border-border flex items-center justify-center text-brand-blue">
+              <i data-lucide="search" class="w-4 h-4"></i>
+            </div>
+            <h3 class="text-base font-bold text-white">Semantic Vector Search</h3>
+            <p class="text-xs text-secondary leading-relaxed">
+              Indexes codebase chunks into ChromaDB vector store. Enables searching logic conceptually in natural language (e.g. "where is token authentication verified").
+            </p>
+            <div class="font-mono text-[10px] text-muted">memory/chroma.py</div>
+          </div>
+
+          <!-- Feature 5 -->
+          <div class="bg-surface border border-border rounded-lg p-6 space-y-3 hover:border-brand-blue transition">
+            <div class="w-9 h-9 rounded bg-surface-2 border border-border flex items-center justify-center text-brand-blue">
+              <i data-lucide="brain" class="w-4 h-4"></i>
+            </div>
+            <h3 class="text-base font-bold text-white">Developer Decision Memory</h3>
+            <p class="text-xs text-secondary leading-relaxed">
+              Stores approval history, rejection reasons, and verified outcomes in SQLite. The prompt synthesizers query past rejections to avoid repeating mistakes.
+            </p>
+            <div class="font-mono text-[10px] text-muted">memory/sqlite.py</div>
+          </div>
+
+          <!-- Feature 6 -->
+          <div class="bg-surface border border-border rounded-lg p-6 space-y-3 hover:border-brand-blue transition">
+            <div class="w-9 h-9 rounded bg-surface-2 border border-border flex items-center justify-center text-brand-blue">
+              <i data-lucide="git-branch" class="w-4 h-4"></i>
+            </div>
+            <h3 class="text-base font-bold text-white">Sandboxed Branch Isolation</h3>
+            <p class="text-xs text-secondary leading-relaxed">
+              Never mutates your current branch directly. Creates isolated <code class="text-brand-blue">agent-fix-*</code> branches with automatic force-rollback if test suites fail.
+            </p>
+            <div class="font-mono text-[10px] text-muted">main.py</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION G: SEE A PRACTICAL EXAMPLE ==================== -->
+    <section id="example" class="py-16 md:py-24 border-b border-border bg-surface/30">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="max-w-3xl mb-12">
+          <span class="font-mono text-xs text-brand-blue uppercase tracking-wider font-semibold">Interactive Walkthrough</span>
+          <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-1">
+            See a Practical Fix Example
+          </h2>
+          <p class="text-secondary text-sm mt-2">
+            Experience how the review interface presents findings, diffs, test telemetry, and developer decision controls.
+          </p>
+        </div>
+
+        <!-- Simulated Fix Card -->
+        <div class="bg-surface border border-border rounded-lg overflow-hidden">
+          <!-- Card Header -->
+          <div class="p-5 border-b border-border bg-surface-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex items-center space-x-3">
+              <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-destructive/15 text-destructive font-bold border border-destructive/30">Security Finding</span>
+              <span class="font-mono text-xs font-semibold text-white">auth/hasher.py</span>
+              <span class="text-muted text-xs font-mono">L12-16</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-success/15 text-success border border-success/30 font-semibold">
+                ✓ Tests Passed (pytest 2/2)
+              </span>
+              <span class="text-[10px] font-mono text-muted uppercase">Simulated Demonstration</span>
+            </div>
+          </div>
+
+          <!-- Finding Details & Rationale -->
+          <div class="p-5 border-b border-border-subtle grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
+            <div>
+              <span class="text-[10px] text-muted uppercase block">Issue Detected</span>
+              <span class="text-default font-medium mt-0.5 block">Weak cryptographic hash algorithm (MD5)</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-muted uppercase block">Agent Recommendation</span>
+              <span class="text-brand-blue font-medium mt-0.5 block">Upgrade to SHA-256 with utf-8 encoding</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-muted uppercase block">Reviewer Critique</span>
+              <span class="text-secondary mt-0.5 block">Safe AST substitution; caller signature preserved</span>
+            </div>
+          </div>
+
+          <!-- Diff Display -->
+          <div class="bg-bg p-4 font-mono text-xs overflow-x-auto leading-relaxed border-b border-border">
+            <div class="text-[10px] text-muted pb-2 mb-2 border-b border-border/50">Diff: auth/hasher.py</div>
+            <div class="diff-line-ctx px-2 py-0.5">  import hashlib</div>
+            <div class="diff-line-ctx px-2 py-0.5"> </div>
+            <div class="diff-line-ctx px-2 py-0.5">  def hash_user_token(raw_token: str) -> str:</div>
+            <div class="diff-line-del px-2 py-0.5">-     # Weak MD5 hash vulnerable to collision attacks</div>
+            <div class="diff-line-del px-2 py-0.5">-     return hashlib.md5(raw_token.encode()).hexdigest()</div>
+            <div class="diff-line-add px-2 py-0.5">+     # Upgraded to SHA-256 for secure hashing</div>
+            <div class="diff-line-add px-2 py-0.5">+     return hashlib.sha256(raw_token.encode('utf-8')).hexdigest()</div>
+          </div>
+
+          <!-- Developer Approval Action Footer -->
+          <div class="p-4 bg-surface-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="text-xs text-secondary font-mono flex items-center space-x-2">
+              <i data-lucide="info" class="w-4 h-4 text-brand-blue"></i>
+              <span>Demonstration buttons: test the developer interaction model below</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <button id="demo-reject-btn" onclick="triggerDemoAction('reject')" class="px-4 py-1.5 rounded bg-surface border border-border hover:border-destructive hover:text-destructive text-secondary text-xs font-mono font-medium transition">
+                Reject Suggestion
+              </button>
+              <button id="demo-approve-btn" onclick="triggerDemoAction('approve')" class="px-4 py-1.5 rounded bg-brand-blue hover:bg-brand-blue-hover text-white text-xs font-mono font-semibold transition flex items-center space-x-1.5">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                <span>Approve & Merge Fix</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Feedback notification toast container -->
+          <div id="demo-feedback-toast" class="hidden px-5 py-3 font-mono text-xs border-t border-border"></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION H: INTERACTIVE QUICK START ==================== -->
+    <section id="quickstart" class="py-16 md:py-24 border-b border-border">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="max-w-3xl mb-12">
+          <span class="font-mono text-xs text-brand-blue uppercase tracking-wider font-semibold">Local Setup</span>
+          <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-1">
+            Get Started in Minutes
+          </h2>
+          <p class="text-secondary text-sm mt-2">
+            Run the entire system locally on your machine with Python 3.11 or 3.12.
+          </p>
+        </div>
+
+        <!-- OS Tab Switcher -->
+        <div class="flex items-center space-x-2 border-b border-border pb-3 mb-8 text-xs font-mono">
+          <span class="text-muted mr-2">Environment:</span>
+          <button id="tab-btn-win" onclick="switchOsTab('win')" class="px-3 py-1 rounded bg-surface-2 text-white font-semibold border border-brand-blue focus:outline-none">
+            Windows (PowerShell)
+          </button>
+          <button id="tab-btn-nix" onclick="switchOsTab('nix')" class="px-3 py-1 rounded bg-surface text-secondary hover:text-white border border-border focus:outline-none">
+            macOS / Linux (Bash)
+          </button>
+        </div>
+
+        <!-- Numbered Quick Start Sequence -->
+        <div class="space-y-6">
+          
+          <!-- Step 1 -->
+          <div class="bg-surface border border-border rounded-lg p-5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs font-bold text-brand-blue">STEP 1: CLONE REPOSITORY</span>
+              <button onclick="copySnippet('code-clone')" class="text-xs font-mono text-muted hover:text-white flex items-center space-x-1">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                <span id="label-clone">Copy</span>
+              </button>
+            </div>
+            <p class="text-xs text-secondary mb-3">Clone the repository from GitHub into your local directory.</p>
+            <div class="bg-bg p-3 rounded font-mono text-xs text-white overflow-x-auto">
+              <code id="code-clone">git clone https://github.com/jayeshtak/Codebase-Self-Evolving-Agent.git
+cd Codebase-Self-Evolving-Agent</code>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="bg-surface border border-border rounded-lg p-5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs font-bold text-brand-blue">STEP 2: CREATE VIRTUAL ENVIRONMENT</span>
+              <button onclick="copySnippet('code-venv')" class="text-xs font-mono text-muted hover:text-white flex items-center space-x-1">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                <span id="label-venv">Copy</span>
+              </button>
+            </div>
+            <p class="text-xs text-secondary mb-3">Create an isolated Python 3.12 environment.</p>
+            <div class="bg-bg p-3 rounded font-mono text-xs text-white overflow-x-auto">
+              <!-- Windows code -->
+              <code id="code-venv-win">python -m venv venv
+.\venv\Scripts\Activate.ps1</code>
+              <!-- Unix code -->
+              <code id="code-venv-nix" class="hidden">python3 -m venv venv
+source venv/bin/activate</code>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="bg-surface border border-border rounded-lg p-5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs font-bold text-brand-blue">STEP 3: INSTALL DEPENDENCIES</span>
+              <button onclick="copySnippet('code-install')" class="text-xs font-mono text-muted hover:text-white flex items-center space-x-1">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                <span id="label-install">Copy</span>
+              </button>
+            </div>
+            <p class="text-xs text-secondary mb-3">Install all analysis and multi-agent dependencies from requirements.txt.</p>
+            <div class="bg-bg p-3 rounded font-mono text-xs text-white overflow-x-auto">
+              <code id="code-install">pip install -r requirements.txt</code>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="bg-surface border border-border rounded-lg p-5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs font-bold text-brand-blue">STEP 4: CONFIGURE OPTIONAL API KEYS</span>
+              <button onclick="copySnippet('code-env')" class="text-xs font-mono text-muted hover:text-white flex items-center space-x-1">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                <span id="label-env">Copy</span>
+              </button>
+            </div>
+            <p class="text-xs text-secondary mb-3">Copy the environment example. (API keys are optional for offline AST analysis, required for generative LLM loops).</p>
+            <div class="bg-bg p-3 rounded font-mono text-xs text-white overflow-x-auto">
+              <!-- Windows code -->
+              <code id="code-env-win">Copy-Item .env.example .env</code>
+              <!-- Unix code -->
+              <code id="code-env-nix" class="hidden">cp .env.example .env</code>
+            </div>
+          </div>
+
+          <!-- Step 5 -->
+          <div class="bg-surface border border-border rounded-lg p-5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs font-bold text-brand-blue">STEP 5: LAUNCH APPLICATION SERVER</span>
+              <button onclick="copySnippet('code-run')" class="text-xs font-mono text-muted hover:text-white flex items-center space-x-1">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                <span id="label-run">Copy</span>
+              </button>
+            </div>
+            <p class="text-xs text-secondary mb-3">Start the FastAPI server on localhost port 8000.</p>
+            <div class="bg-bg p-3 rounded font-mono text-xs text-white overflow-x-auto">
+              <code id="code-run">python -m uvicorn ui.server:app --host 127.0.0.1 --port 8000</code>
+            </div>
+            <p class="text-[11px] text-muted mt-2 font-mono">Then open: <a href="/app" class="text-brand-blue underline">http://127.0.0.1:8000/app</a></p>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION I: ARCHITECTURE ==================== -->
+    <section id="architecture" class="py-16 md:py-24 border-b border-border bg-surface/20">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="max-w-3xl mb-12">
+          <span class="font-mono text-xs text-brand-blue uppercase tracking-wider font-semibold">System Design</span>
+          <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-1">
+            Application Architecture
+          </h2>
+          <p class="text-secondary text-sm mt-2">
+            A cohesive decoupling between user interface, FastAPI server orchestrator, multi-agent core, and persistent memory stores.
+          </p>
+        </div>
+
+        <!-- Architecture Diagram Card -->
+        <div class="bg-surface border border-border rounded-lg p-6 lg:p-8">
+          <div class="w-full overflow-x-auto">
+            <svg class="min-w-[700px] w-full" height="340" viewBox="0 0 800 340" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Tier 1: Client Layer -->
+              <rect x="20" y="20" width="220" height="90" rx="6" fill="#141414" stroke="#262626" stroke-width="1.5"/>
+              <text x="35" y="45" fill="#3B82F6" font-family="JetBrains Mono" font-size="11" font-weight="bold">CLIENT INTERFACE</text>
+              <text x="35" y="70" fill="#F5F5F5" font-family="Inter" font-size="13" font-weight="600">Developer Command Center</text>
+              <text x="35" y="90" fill="#9CA3AF" font-family="JetBrains Mono" font-size="10">HTML5 · Tailwind · Lucide SPA</text>
+
+              <!-- Arrow: Client -> Server -->
+              <path d="M240 65 L290 65" stroke="#3B82F6" stroke-width="1.5" stroke-dasharray="4 4"/>
+              <polygon points="290,62 297,65 290,68" fill="#3B82F6"/>
+
+              <!-- Tier 2: Server Layer -->
+              <rect x="297" y="20" width="230" height="90" rx="6" fill="#141414" stroke="#262626" stroke-width="1.5"/>
+              <text x="312" y="45" fill="#3B82F6" font-family="JetBrains Mono" font-size="11" font-weight="bold">SERVER ORCHESTRATOR</text>
+              <text x="312" y="70" fill="#F5F5F5" font-family="Inter" font-size="13" font-weight="600">FastAPI Backend (:8000)</text>
+              <text x="312" y="90" fill="#9CA3AF" font-family="JetBrains Mono" font-size="10">REST API · Concurrency Locks</text>
+
+              <!-- Arrow: Server -> Agents -->
+              <path d="M412 110 L412 160" stroke="#3B82F6" stroke-width="1.5"/>
+              <polygon points="409,160 412,167 415,160" fill="#3B82F6"/>
+
+              <!-- Tier 3: Agents Layer -->
+              <rect x="20" y="167" width="507" height="150" rx="6" fill="#0F0F0F" stroke="#262626" stroke-width="1.5"/>
+              <text x="35" y="192" fill="#3B82F6" font-family="JetBrains Mono" font-size="11" font-weight="bold">AUTONOMOUS MULTI-AGENT ENGINE</text>
+              
+              <!-- Sub-agent cards -->
+              <rect x="35" y="205" width="105" height="90" rx="4" fill="#161616" stroke="#2E2E2E"/>
+              <text x="45" y="225" fill="#F5F5F5" font-family="Inter" font-size="11" font-weight="bold">Scanner</text>
+              <text x="45" y="245" fill="#9CA3AF" font-family="JetBrains Mono" font-size="9">Tree-sitter</text>
+              <text x="45" y="260" fill="#9CA3AF" font-family="JetBrains Mono" font-size="9">Radon</text>
+              <text x="45" y="275" fill="#9CA3AF" font-family="JetBrains Mono" font-size="9">Bandit</text>
+
+              <rect x="150" y="205" width="105" height="90" rx="4" fill="#161616" stroke="#2E2E2E"/>
+              <text x="160" y="225" fill="#F5F5F5" font-family="Inter" font-size="11" font-weight="bold">Planner</text>
+              <text x="160" y="245" fill="#9CA3AF" font-family="JetBrains Mono" font-size="9">NetworkX</text>
+              <text x="160" y="260" fill="#9CA3AF" font-family="JetBrains Mono" font-size="9">Scoring</text>
+              <text x="160" y="275" fill="#9CA3AF" font-family="JetBrains Mono" font-size="9">Clusters</text>
+
+              <rect x="265" y="205" width="115" height="90" rx="4" fill="#161616" stroke="#2E2E2E"/>
+              <text x="275" y="225" fill="#F5F5F5" font-family="Inter" font-size="11" font-weight="bold">Coder (LLM)</text>
+              <text x="275" y="245" fill="#9CA3AF" font-family="JetBrains Mono" font-size="9">Gemini Flash</text>
+              <text x="275" y="260" fill="#9CA3AF" font-family="JetBrains Mono" font-size="9">Few-Shot</text>
+              <text x="275" y="275" fill="#9CA3AF" font-family="JetBrains Mono" font-size="9">libcst AST</text>
+
+              <rect x="390" y="205" width="120" height="90" rx="4" fill="#161616" stroke="#2E2E2E"/>
+              <text x="400" y="225" fill="#F5F5F5" font-family="Inter" font-size="11" font-weight="bold">Reviewer & Test</text>
+              <text x="400" y="245" fill="#9CA3AF" font-family="JetBrains Mono" font-size="9">Groq Llama</text>
+              <text x="400" y="260" fill="#9CA3AF" font-family="JetBrains Mono" font-size="9">Pytest Loop</text>
+              <text x="400" y="275" fill="#9CA3AF" font-family="JetBrains Mono" font-size="9">Self-Healing</text>
+
+              <!-- Tier 4: Storage Layer -->
+              <rect x="560" y="20" width="220" height="297" rx="6" fill="#141414" stroke="#262626" stroke-width="1.5"/>
+              <text x="580" y="45" fill="#3B82F6" font-family="JetBrains Mono" font-size="11" font-weight="bold">PERSISTENCE LAYER</text>
+              
+              <rect x="580" y="65" width="180" height="65" rx="4" fill="#161616" stroke="#2E2E2E"/>
+              <text x="592" y="88" fill="#F5F5F5" font-family="Inter" font-size="11" font-weight="bold">SQLite (memory.db)</text>
+              <text x="592" y="105" fill="#9CA3AF" font-family="JetBrains Mono" font-size="9">Decisions, Issues, History</text>
+
+              <rect x="580" y="145" width="180" height="65" rx="4" fill="#161616" stroke="#2E2E2E"/>
+              <text x="592" y="168" fill="#F5F5F5" font-family="Inter" font-size="11" font-weight="bold">ChromaDB Vector Store</text>
+              <text x="592" y="185" fill="#9CA3AF" font-family="JetBrains Mono" font-size="9">Embeddings & Semantic RAG</text>
+
+              <rect x="580" y="225" width="180" height="65" rx="4" fill="#161616" stroke="#2E2E2E"/>
+              <text x="592" y="248" fill="#F5F5F5" font-family="Inter" font-size="11" font-weight="bold">Git Workspace</text>
+              <text x="592" y="265" fill="#9CA3AF" font-family="JetBrains Mono" font-size="9">agent-fix-* Branches & Rollback</text>
+
+              <!-- Connection to Storage -->
+              <path d="M527 240 L560 240" stroke="#3B82F6" stroke-width="1.5"/>
+              <polygon points="553,237 560,240 553,243" fill="#3B82F6"/>
+            </svg>
+          </div>
+
+          <p class="text-xs text-secondary leading-relaxed mt-6 font-mono">
+            <strong>Data Flow Summary:</strong> The SPA client communicates via REST endpoints with the FastAPI orchestrator. Scans parse syntax trees and dependency graphs to prioritize issues. The Coder agent synthesizes AST patches, which are verified by the Reviewer and Test Executor. Accepted fixes merge to isolated git branches while decisions are indexed into SQLite memory.
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION J: SECURITY & DEVELOPER CONTROL ==================== -->
+    <section class="py-16 md:py-24 border-b border-border">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="max-w-3xl mb-12">
+          <span class="font-mono text-xs text-brand-blue uppercase tracking-wider font-semibold">Safety First</span>
+          <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-1">
+            Security & Developer Governance
+          </h2>
+          <p class="text-secondary text-sm mt-2">
+            Source code is sensitive. Here is how the system guards against accidental breakage and unauthorized changes.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-surface border border-border rounded-lg p-6 space-y-3">
+            <i data-lucide="shield-alert" class="w-5 h-5 text-warning"></i>
+            <h3 class="text-sm font-bold text-white">Explicit Human Approval</h3>
+            <p class="text-xs text-secondary leading-relaxed">
+              No code is ever silently committed or merged into your primary branch. Developers must inspect the diff and click Approve.
+            </p>
+          </div>
+
+          <div class="bg-surface border border-border rounded-lg p-6 space-y-3">
+            <i data-lucide="git-branch" class="w-5 h-5 text-brand-blue"></i>
+            <h3 class="text-sm font-bold text-white">Isolated Fix Branches</h3>
+            <p class="text-xs text-secondary leading-relaxed">
+              Every candidate fix is committed to an isolated <code class="text-brand-blue font-mono">agent-fix-*</code> branch. If validation fails, Git immediately rolls back to clean HEAD.
+            </p>
+          </div>
+
+          <div class="bg-surface border border-border rounded-lg p-6 space-y-3">
+            <i data-lucide="lock" class="w-5 h-5 text-success"></i>
+            <h3 class="text-sm font-bold text-white">Sandbox & Demo Isolation</h3>
+            <p class="text-xs text-secondary leading-relaxed">
+              Setting <code class="text-brand-blue font-mono">DEMO_MODE=true</code> prevents filesystem escape and disallows unauthorized branch checkout, making live demonstrations completely safe.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION K: FINAL CALL TO ACTION ==================== -->
+    <section class="py-20 border-b border-border text-center bg-surface/40">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight text-white">
+          Give your codebase a clearer path forward.
+        </h2>
+        <p class="text-secondary text-sm sm:text-base leading-relaxed">
+          Explore the workflow, understand the architecture, and run the agent against a repository you control.
+        </p>
+        <div class="flex flex-wrap justify-center gap-4 pt-2">
+          <a href="/app" class="bg-brand-blue hover:bg-brand-blue-hover text-white text-sm font-semibold px-6 py-2.5 rounded transition flex items-center space-x-2">
+            <span>Launch Developer Console</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </a>
+          <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="bg-surface-2 hover:bg-surface-3 text-default border border-border text-sm font-medium px-5 py-2.5 rounded transition flex items-center space-x-2">
+            <i data-lucide="github" class="w-4 h-4"></i>
+            <span>Explore on GitHub</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== SECTION L: FOOTER ==================== -->
+  <footer class="bg-surface py-12 font-mono text-xs text-muted border-t border-border">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6 pb-8 border-b border-border-subtle">
+        <div class="space-y-1">
+          <div class="flex items-center space-x-2">
+            <span class="w-2 h-2 rounded-full bg-brand-blue"></span>
+            <span class="text-white font-semibold">Codebase Self-Evolving Agent</span>
+          </div>
+          <p class="text-[11px] text-secondary">
+            Continuous codebase evolution, AST refactoring, and multi-agent test-driven verification.
+          </p>
+        </div>
+        <div class="flex items-center space-x-6 text-[11px]">
+          <a href="/app" class="hover:text-white transition">Console</a>
+          <a href="#pipeline" class="hover:text-white transition">Pipeline</a>
+          <a href="#quickstart" class="hover:text-white transition">Setup</a>
+          <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="hover:text-white transition">GitHub</a>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-[11px]">
+        <div>
+          Licensed under the <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="text-secondary hover:text-white underline">MIT License</a>.
+        </div>
+        <div>
+          Technology: Python 3.12 · FastAPI · Tree-sitter · Radon · ChromaDB · SQLite
+        </div>
+      </div>
+      
+      <p class="text-[10px] text-muted leading-relaxed">
+        <strong>Notice:</strong> This software is a developer tool. Proposed patches should be tested and reviewed before production deployment.
+      </p>
+    </div>
+  </footer>
+
+  <!-- ==================== INTERACTIVE SCRIPTS ==================== -->
+  <script>
+    // Initialize Lucide icons
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
+
+    // Mobile menu toggle
+    const menuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    if (menuBtn && mobileMenu) {
+      menuBtn.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+      });
+    }
+
+    // Interactive Stage Data
+    const stages = [
+      {
+        step: "Stage 01",
+        role: "Workspace Environment",
+        title: "Repository Workspace",
+        desc: "The entry point targets any local folder path or clones a remote Git repository into a protected sandbox. The system detects project structure and establishes working tree state.",
+        input: "Target repo path, Git tree, and environment configurations.",
+        output: "Normalized source file list, module boundary definitions, and Git HEAD commit reference.",
+        governance: "Locks repository state to prevent concurrent file conflicts and ensures all modifications happen on isolated candidate branches.",
+        telemetryLabel: "workspace_metadata.json",
+        payload: `{
+  "repository": "Codebase-Self-Evolving-Agent",
+  "branch": "main",
+  "head_commit": "50a9c6d",
+  "status": "ready_for_scan",
+  "file_count": 84,
+  "languages": ["Python", "HTML", "JavaScript"]
+}`
+      },
+      {
+        step: "Stage 02",
+        role: "Static & AST Intelligence",
+        title: "Scanner Agent",
+        desc: "Executes static analysis engines concurrently: Tree-sitter for AST parsing, Radon for cyclomatic complexity, Vulture for dead code, and Bandit for security vulnerabilities.",
+        input: "AST trees of all target files and dependency call maps.",
+        output: "Ranked list of detected findings (dead_code, complexity, security, style, missing_docs).",
+        governance: "Read-only static scanning. Does not alter filesystem contents during audit phases.",
+        telemetryLabel: "scanner_findings_sample.json",
+        payload: `{
+  "scanned_files": 42,
+  "findings_count": 14,
+  "top_issue": {
+    "type": "security",
+    "rule": "B303:md5_hash",
+    "file": "auth/hasher.py",
+    "line": 14,
+    "severity": "HIGH",
+    "description": "Use of insecure MD5 hash function"
+  }
+}`
+      },
+      {
+        step: "Stage 03",
+        role: "Dependency & Priority Engine",
+        title: "Planner Agent",
+        desc: "Ranks issues using multi-factor scoring (severity + complexity + impact score). Evaluates NetworkX dependency graphs to cluster non-conflicting fixes together.",
+        input: "Raw issue list and NetworkX module import and call graph.",
+        output: "Prioritized execution plan with independent fix clusters and conflict mitigation.",
+        governance: "Prevents circular remediation plans and isolates critical files from parallel edits.",
+        telemetryLabel: "planner_execution_graph.json",
+        payload: `{
+  "plan_id": "plan-7f89c2",
+  "total_planned": 8,
+  "clusters": [
+    {
+      "cluster_id": "cluster_security_auth",
+      "files": ["auth/hasher.py"],
+      "impact_score": 1.4,
+      "priority": "P0"
+    }
+  ]
+}`
+      },
+      {
+        step: "Stage 04",
+        role: "Generative Code Synthesis",
+        title: "Coder Agent",
+        desc: "Synthesizes surgical AST modifications using Gemini 2.5 Flash and libcst. Injects few-shot prompt patterns and checks past rejection memory in SQLite.",
+        input: "Issue record, AST slice of target function, and past rejection memory.",
+        output: "Candidate code replacement block with before-and-after line spans.",
+        governance: "Applies changes solely within memory or an isolated candidate branch, never directly to main.",
+        telemetryLabel: "coder_patch_candidate.json",
+        payload: `{
+  "target_file": "auth/hasher.py",
+  "patch_type": "ast_function_replacement",
+  "original_snippet": "return hashlib.md5(token.encode()).hexdigest()",
+  "proposed_snippet": "return hashlib.sha256(token.encode('utf-8')).hexdigest()",
+  "explanation": "Replaced deprecated MD5 hash with collision-resistant SHA-256."
+}`
+      },
+      {
+        step: "Stage 05",
+        role: "Dual-LLM Critique & Test Verification",
+        title: "Reviewer & Test Executor",
+        desc: "Groq Llama 3.3 70B performs strict peer review on the candidate diff. Simultaneously, the Test Executor runs pytest suites against the modified candidate branch.",
+        input: "Generated diff and project test suites.",
+        output: "Approval critique score, test execution pass/fail status, and self-heal diagnostic logs.",
+        governance: "If test suites fail, the self-healing loop triggers up to 2 repair iterations; otherwise, the fix is rolled back.",
+        telemetryLabel: "reviewer_validation_report.json",
+        payload: `{
+  "reviewer_model": "llama-3.3-70b-versatile",
+  "review_score": 94,
+  "critique": "Fix accurately resolves B303 vulnerability without altering function return types.",
+  "pytest_result": "passed",
+  "tests_ran": 4,
+  "failures": 0
+}`
+      },
+      {
+        step: "Stage 06",
+        role: "Developer Verification & Memory",
+        title: "Human Approval Step",
+        desc: "Presents the developer with full context: original finding, side-by-side diff, test outcomes, and critique rationale. The developer clicks Approve or Reject.",
+        input: "Candidate review bundle and developer decision.",
+        output: "Merged branch or rollback signal; feedback logged to SQLite memory.db.",
+        governance: "100% human-in-the-loop governance. Preserves developer authority over production code.",
+        telemetryLabel: "decision_audit_record.json",
+        payload: `{
+  "decision": "APPROVED",
+  "decision_by": "developer",
+  "target_branch": "agent-fix-auth-hasher-20261018",
+  "action": "merged_to_candidate",
+  "memory_recorded": true
+}`
+      }
+    ];
+
+    function selectStage(index) {
+      const cards = document.querySelectorAll('.stage-card');
+      cards.forEach((c, idx) => {
+        if (idx === index) {
+          c.classList.add('active');
+        } else {
+          c.classList.remove('active');
+        }
+      });
+
+      const data = stages[index];
+      if (!data) return;
+
+      document.getElementById('inspector-step-badge').innerText = data.step;
+      document.getElementById('inspector-role-badge').innerText = data.role;
+      document.getElementById('inspector-title').innerText = data.title;
+      document.getElementById('inspector-desc').innerText = data.desc;
+      document.getElementById('inspector-input').innerText = data.input;
+      document.getElementById('inspector-output').innerText = data.output;
+      document.getElementById('inspector-governance').innerText = data.governance;
+      document.getElementById('inspector-telemetry-label').innerText = data.telemetryLabel;
+      document.getElementById('inspector-payload').innerText = data.payload;
+    }
+
+    // OS Switcher for Quick Start
+    function switchOsTab(os) {
+      const btnWin = document.getElementById('tab-btn-win');
+      const btnNix = document.getElementById('tab-btn-nix');
+
+      const venvWin = document.getElementById('code-venv-win');
+      const venvNix = document.getElementById('code-venv-nix');
+      const envWin = document.getElementById('code-env-win');
+      const envNix = document.getElementById('code-env-nix');
+
+      if (os === 'win') {
+        btnWin.className = 'px-3 py-1 rounded bg-surface-2 text-white font-semibold border border-brand-blue focus:outline-none';
+        btnNix.className = 'px-3 py-1 rounded bg-surface text-secondary hover:text-white border border-border focus:outline-none';
+        venvWin.classList.remove('hidden');
+        venvNix.classList.add('hidden');
+        envWin.classList.remove('hidden');
+        envNix.classList.add('hidden');
+      } else {
+        btnNix.className = 'px-3 py-1 rounded bg-surface-2 text-white font-semibold border border-brand-blue focus:outline-none';
+        btnWin.className = 'px-3 py-1 rounded bg-surface text-secondary hover:text-white border border-border focus:outline-none';
+        venvNix.classList.remove('hidden');
+        venvWin.classList.add('hidden');
+        envNix.classList.remove('hidden');
+        envWin.classList.add('hidden');
+      }
+    }
+
+    // Clipboard Copy Helper
+    function copySnippet(elementId) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      const text = el.innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const labelMap = {
+          'code-clone': 'label-clone',
+          'code-venv': 'label-venv',
+          'code-install': 'label-install',
+          'code-env': 'label-env',
+          'code-run': 'label-run'
+        };
+        const labelId = labelMap[elementId];
+        if (labelId) {
+          const label = document.getElementById(labelId);
+          if (label) {
+            const original = label.innerText;
+            label.innerText = 'Copied!';
+            setTimeout(() => { label.innerText = original; }, 2000);
+          }
+        }
+      });
+    }
+
+    // Demonstration Action in Live Example
+    function triggerDemoAction(action) {
+      const toast = document.getElementById('demo-feedback-toast');
+      if (!toast) return;
+
+      toast.classList.remove('hidden');
+      if (action === 'approve') {
+        toast.className = 'px-5 py-3 font-mono text-xs border-t border-success/30 bg-success/10 text-success';
+        toast.innerHTML = '<strong>[Demo Approved]</strong> In the actual product, this action safely creates an <code>agent-fix-*</code> commit, updates the Git working tree, and stores an approval record in SQLite memory to reward this prompt strategy.';
+      } else {
+        toast.className = 'px-5 py-3 font-mono text-xs border-t border-destructive/30 bg-destructive/10 text-destructive';
+        toast.innerHTML = '<strong>[Demo Rejected]</strong> In the actual product, the working tree immediately rolls back to clean HEAD. A rejection entry with developer critique is written to <code>memory.db</code> so the agent learns not to propose this change again.';
+      }
+    }
+  </script>
+</body>
+</html>
