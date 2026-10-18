@@ -16,7 +16,15 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <script>
+    // Initialize Theme immediately to prevent flash
+    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -24,9 +32,6 @@
             surface: '#FFFFFF',
             'surface-subtle': '#F4F4F6',
             'surface-warm': '#F6F5F2',
-            'dark-hero': '#090B10',
-            'dark-surface': '#10141D',
-            'dark-border': '#1F2430',
             border: '#E7E7EA',
             'border-subtle': '#EFEFEF',
             'brand-blue': '#1D4ED8',
@@ -57,6 +62,12 @@
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       text-rendering: optimizeLegibility;
       -webkit-font-smoothing: antialiased;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    .dark body {
+      background-color: #080808;
+      color: #F8FAFC;
     }
 
     /* Custom thin scrollbar */
@@ -65,14 +76,14 @@
       height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: #FBFBFB;
+      background: transparent;
     }
     ::-webkit-scrollbar-thumb {
       background: #D4D4D8;
       border-radius: 3px;
     }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #A1A1AA;
+    .dark ::-webkit-scrollbar-thumb {
+      background: #27272A;
     }
 
     /* Stage selector pill active states */
@@ -86,20 +97,56 @@
       color: #FFFFFF;
     }
 
+    .dark .stage-card {
+      background-color: #10141D;
+      border-color: #1F2430;
+    }
+    .dark .stage-card .stage-num {
+      background-color: #1A202C;
+      color: #94A3B8;
+    }
+    .dark .stage-card:hover {
+      border-color: #3B82F6;
+    }
+    .dark .stage-card.active {
+      border-color: #3B82F6;
+      background-color: #121A2E;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.15);
+    }
+    .dark .stage-card.active .stage-num {
+      background-color: #3B82F6;
+      color: #FFFFFF;
+    }
+
     /* Code diff styling */
     .diff-del {
       background-color: rgba(239, 68, 68, 0.08);
       color: #B91C1C;
       border-left: 2px solid #EF4444;
     }
+    .dark .diff-del {
+      background-color: rgba(239, 68, 68, 0.15);
+      color: #FCA5A5;
+    }
     .diff-add {
       background-color: rgba(16, 185, 129, 0.08);
       color: #047857;
       border-left: 2px solid #10B981;
     }
-    .diff-ctx {
-      color: #64748B;
+    .dark .diff-add {
+      background-color: rgba(16, 185, 129, 0.15);
+      color: #6EE7B7;
     }
+
+    /* Architecture diagram styling for light/dark */
+    .arch-card { fill: #FFFFFF; stroke: #E2E8F0; }
+    .arch-sub-card { fill: #F8FAFC; stroke: #E2E8F0; }
+    .arch-text-title { fill: #0F172A; }
+    .arch-text-sub { fill: #64748B; }
+    .dark .arch-card { fill: #10141D; stroke: #21283B; }
+    .dark .arch-sub-card { fill: #151924; stroke: #21283B; }
+    .dark .arch-text-title { fill: #F8FAFC; }
+    .dark .arch-text-sub { fill: #94A3B8; }
 
     /* Focus rings */
     a:focus-visible, button:focus-visible {
@@ -108,10 +155,10 @@
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col selection:bg-brand-blue selection:text-white">
+<body class="min-h-screen flex flex-col selection:bg-brand-blue selection:text-white bg-canvas dark:bg-[#080808]">
 
   <!-- ==================== NAVIGATION ==================== -->
-  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-border transition-all">
+  <header class="sticky top-0 z-50 bg-white/90 dark:bg-[#090B10]/90 backdrop-blur-md border-b border-border dark:border-[#1F2430] transition-colors">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 py-3.5 flex items-center justify-between">
       
       <!-- Brand Logo / Wordmark -->
@@ -124,52 +171,68 @@
           </svg>
         </div>
         <div class="flex items-baseline space-x-1">
-          <span class="font-serif text-lg font-bold tracking-tight text-ink">Codebase Agent</span>
+          <span class="font-serif text-lg font-bold tracking-tight text-ink dark:text-white">Codebase Agent</span>
           <span class="w-1.5 h-1.5 rounded-full bg-brand-blue inline-block"></span>
         </div>
       </a>
 
       <!-- Desktop Nav Links -->
-      <nav class="hidden md:flex items-center space-x-8 text-xs font-medium text-ink-secondary">
-        <a href="#pipeline" class="hover:text-ink transition">How It Works</a>
-        <a href="#features" class="hover:text-ink transition">Capabilities</a>
-        <a href="#example" class="hover:text-ink transition">Live Inspection</a>
-        <a href="#quickstart" class="hover:text-ink transition">Quick Start</a>
-        <a href="#architecture" class="hover:text-ink transition">Architecture</a>
-        <a href="#faq" class="hover:text-ink transition">FAQ</a>
-        <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="hover:text-ink flex items-center space-x-1.5 transition">
+      <nav class="hidden md:flex items-center space-x-8 text-xs font-medium text-ink-secondary dark:text-slate-400">
+        <a href="#pipeline" class="hover:text-ink dark:hover:text-white transition">How It Works</a>
+        <a href="#features" class="hover:text-ink dark:hover:text-white transition">Capabilities</a>
+        <a href="#example" class="hover:text-ink dark:hover:text-white transition">Live Inspection</a>
+        <a href="#quickstart" class="hover:text-ink dark:hover:text-white transition">Quick Start</a>
+        <a href="#architecture" class="hover:text-ink dark:hover:text-white transition">Architecture</a>
+        <a href="#faq" class="hover:text-ink dark:hover:text-white transition">FAQ</a>
+        <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="hover:text-ink dark:hover:text-white flex items-center space-x-1.5 transition">
           <i data-lucide="github" class="w-3.5 h-3.5"></i>
           <span>GitHub</span>
         </a>
       </nav>
 
-      <!-- Primary Action -->
-      <div class="hidden sm:flex items-center space-x-3">
-        <a href="/app" class="bg-brand-blue hover:bg-brand-blue-hover text-white text-xs font-semibold px-4 py-2 rounded-full transition shadow-sm flex items-center space-x-2">
+      <!-- Primary Action & Theme Toggle -->
+      <div class="flex items-center space-x-3">
+        <!-- Theme Toggle Button -->
+        <button onclick="toggleTheme()" class="p-2 rounded-full border border-border dark:border-[#2A3447] bg-white dark:bg-[#121622] text-ink-secondary dark:text-slate-300 hover:text-ink dark:hover:text-white transition flex items-center justify-center shadow-xs" aria-label="Toggle theme" title="Toggle Light/Dark Theme">
+          <i data-lucide="sun" class="w-4 h-4 hidden dark:block text-amber-400"></i>
+          <i data-lucide="moon" class="w-4 h-4 block dark:hidden text-slate-700"></i>
+        </button>
+
+        <a href="/app" class="hidden sm:flex bg-brand-blue hover:bg-brand-blue-hover text-white text-xs font-semibold px-4 py-2 rounded-full transition shadow-sm items-center space-x-2">
           <span>Launch Console</span>
           <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
         </a>
+
+        <!-- Mobile Menu Toggle -->
+        <button id="mobile-menu-btn" class="md:hidden text-ink-secondary dark:text-slate-400 hover:text-ink dark:hover:text-white p-1.5 focus:outline-none" aria-label="Toggle Menu">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
       </div>
 
-      <!-- Mobile Menu Toggle -->
-      <button id="mobile-menu-btn" class="md:hidden text-ink-secondary hover:text-ink p-1.5 focus:outline-none" aria-label="Toggle Menu">
-        <i data-lucide="menu" class="w-5 h-5"></i>
-      </button>
     </div>
 
     <!-- Mobile Drawer -->
-    <div id="mobile-menu" class="hidden md:hidden border-b border-border bg-white px-5 py-4 space-y-3 text-xs font-medium text-ink-secondary">
-      <a href="#pipeline" class="block hover:text-ink py-1">How It Works</a>
-      <a href="#features" class="block hover:text-ink py-1">Capabilities</a>
-      <a href="#example" class="block hover:text-ink py-1">Live Inspection</a>
-      <a href="#quickstart" class="block hover:text-ink py-1">Quick Start</a>
-      <a href="#architecture" class="block hover:text-ink py-1">Architecture</a>
-      <a href="#faq" class="block hover:text-ink py-1">FAQ</a>
-      <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="block hover:text-ink py-1 flex items-center space-x-2">
+    <div id="mobile-menu" class="hidden md:hidden border-b border-border dark:border-[#1F2430] bg-white dark:bg-[#0E121B] px-5 py-4 space-y-3 text-xs font-medium text-ink-secondary dark:text-slate-400">
+      <a href="#pipeline" class="block hover:text-ink dark:hover:text-white py-1">How It Works</a>
+      <a href="#features" class="block hover:text-ink dark:hover:text-white py-1">Capabilities</a>
+      <a href="#example" class="block hover:text-ink dark:hover:text-white py-1">Live Inspection</a>
+      <a href="#quickstart" class="block hover:text-ink dark:hover:text-white py-1">Quick Start</a>
+      <a href="#architecture" class="block hover:text-ink dark:hover:text-white py-1">Architecture</a>
+      <a href="#faq" class="block hover:text-ink dark:hover:text-white py-1">FAQ</a>
+      <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="block hover:text-ink dark:hover:text-white py-1 flex items-center space-x-2">
         <i data-lucide="github" class="w-4 h-4"></i>
         <span>GitHub Repository</span>
       </a>
-      <div class="pt-2 border-t border-border">
+      <div class="pt-2 border-t border-border dark:border-[#1F2430] flex items-center justify-between">
+        <span class="text-xs text-ink-muted dark:text-slate-500">Theme</span>
+        <button onclick="toggleTheme()" class="px-3 py-1.5 rounded-full border border-border dark:border-[#2A3447] text-xs font-mono flex items-center space-x-1.5 text-ink dark:text-white">
+          <i data-lucide="sun" class="w-3.5 h-3.5 hidden dark:block text-amber-400"></i>
+          <i data-lucide="moon" class="w-3.5 h-3.5 block dark:hidden text-slate-700"></i>
+          <span class="dark:hidden">Dark Mode</span>
+          <span class="hidden dark:inline">Light Mode</span>
+        </button>
+      </div>
+      <div class="pt-1">
         <a href="/app" class="block w-full text-center bg-brand-blue hover:bg-brand-blue-hover text-white font-semibold py-2.5 rounded-full">
           Launch Developer Console
         </a>
@@ -179,8 +242,8 @@
 
   <main class="flex-grow">
     
-    <!-- ==================== HERO SECTION (TECHPULSE LUXURY EDITORIAL STYLE) ==================== -->
-    <section class="relative pt-12 pb-16 md:pt-20 md:pb-24 border-b border-border bg-white overflow-hidden">
+    <!-- ==================== HERO SECTION ==================== -->
+    <section class="relative pt-12 pb-16 md:pt-20 md:pb-24 border-b border-border dark:border-[#1F2430] bg-white dark:bg-[#090B10] overflow-hidden transition-colors">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -189,20 +252,20 @@
           <div class="lg:col-span-7 space-y-6">
             
             <!-- Category Tag Pill -->
-            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-brand-blue-light border border-blue-200/80 text-[11px] font-semibold text-brand-blue">
-              <span class="w-1.5 h-1.5 rounded-full bg-brand-blue animate-pulse"></span>
+            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-brand-blue-light dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 text-[11px] font-semibold text-brand-blue dark:text-blue-400">
+              <span class="w-1.5 h-1.5 rounded-full bg-brand-blue dark:bg-blue-400 animate-pulse"></span>
               <span>Autonomous Code Intelligence 2026</span>
             </div>
 
             <!-- Headline in Editorial Serif with Italic Emphasis -->
-            <h1 class="font-serif text-5xl sm:text-6xl lg:text-7xl font-normal tracking-tight text-ink leading-[1.06]">
+            <h1 class="font-serif text-5xl sm:text-6xl lg:text-7xl font-normal tracking-tight text-ink dark:text-white leading-[1.06]">
               Engineered<br/>
               for the<br/>
-              <span class="italic font-normal text-brand-blue">extraordinary.</span>
+              <span class="italic font-normal text-brand-blue dark:text-blue-400">extraordinary.</span>
             </h1>
 
             <!-- Supporting Paragraph -->
-            <p class="text-ink-secondary text-base sm:text-lg max-w-xl leading-relaxed">
+            <p class="text-ink-secondary dark:text-slate-400 text-base sm:text-lg max-w-xl leading-relaxed">
               An autonomous development agent that explores multi-language repositories, analyzes deep dependency call graphs, synthesizes AST patches, and learns from developer decisions to evolve your software.
             </p>
 
@@ -212,29 +275,29 @@
                 <span>Launch Console</span>
                 <i data-lucide="arrow-right" class="w-4 h-4"></i>
               </a>
-              <a href="#pipeline" class="bg-surface-subtle hover:bg-neutral-200/70 text-ink text-sm font-medium px-5 py-3 rounded-full transition border border-border flex items-center space-x-2">
-                <i data-lucide="layers" class="w-4 h-4 text-brand-blue"></i>
+              <a href="#pipeline" class="bg-surface-subtle dark:bg-[#121622] hover:bg-neutral-200/70 dark:hover:bg-[#181F30] text-ink dark:text-slate-200 text-sm font-medium px-5 py-3 rounded-full transition border border-border dark:border-[#21283B] flex items-center space-x-2">
+                <i data-lucide="layers" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
                 <span>Explore Workflow</span>
               </a>
-              <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="text-ink-muted hover:text-ink text-xs font-mono font-medium px-3 py-2 transition flex items-center space-x-1.5">
+              <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="text-ink-muted dark:text-slate-400 hover:text-ink dark:hover:text-white text-xs font-mono font-medium px-3 py-2 transition flex items-center space-x-1.5">
                 <i data-lucide="github" class="w-4 h-4"></i>
                 <span>GitHub Repo</span>
               </a>
             </div>
 
             <!-- Metrics Strip -->
-            <div class="pt-8 border-t border-border-subtle grid grid-cols-3 gap-6 font-sans">
+            <div class="pt-8 border-t border-border-subtle dark:border-[#1F2430] grid grid-cols-3 gap-6 font-sans">
               <div>
-                <div class="font-serif text-3xl sm:text-4xl font-bold text-ink tracking-tight">140k+</div>
-                <div class="text-[11px] text-ink-muted font-medium mt-0.5">AST Nodes Audited</div>
+                <div class="font-serif text-3xl sm:text-4xl font-bold text-ink dark:text-white tracking-tight">140k+</div>
+                <div class="text-[11px] text-ink-muted dark:text-slate-400 font-medium mt-0.5">AST Nodes Audited</div>
               </div>
               <div>
-                <div class="font-serif text-3xl sm:text-4xl font-bold text-ink tracking-tight">98.4%</div>
-                <div class="text-[11px] text-ink-muted font-medium mt-0.5">Test Verification Pass</div>
+                <div class="font-serif text-3xl sm:text-4xl font-bold text-ink dark:text-white tracking-tight">98.4%</div>
+                <div class="text-[11px] text-ink-muted dark:text-slate-400 font-medium mt-0.5">Test Verification Pass</div>
               </div>
               <div>
-                <div class="font-serif text-3xl sm:text-4xl font-bold text-brand-blue tracking-tight">0</div>
-                <div class="text-[11px] text-ink-muted font-medium mt-0.5">Silent Code Mutations</div>
+                <div class="font-serif text-3xl sm:text-4xl font-bold text-brand-blue dark:text-blue-400 tracking-tight">0</div>
+                <div class="text-[11px] text-ink-muted dark:text-slate-400 font-medium mt-0.5">Silent Code Mutations</div>
               </div>
             </div>
 
@@ -242,45 +305,45 @@
 
           <!-- Hero Visual Feature Card (Right) -->
           <div class="lg:col-span-5">
-            <div class="relative bg-surface-warm border border-neutral-200/80 rounded-3xl p-6 sm:p-8 shadow-sm">
-              <div class="flex items-center justify-between pb-4 border-b border-neutral-200/60 mb-6">
+            <div class="relative bg-surface-warm dark:bg-[#10141F] border border-neutral-200/80 dark:border-[#1F2637] rounded-3xl p-6 sm:p-8 shadow-sm">
+              <div class="flex items-center justify-between pb-4 border-b border-neutral-200/60 dark:border-[#1F2637] mb-6">
                 <div class="flex items-center space-x-2">
                   <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                  <span class="font-mono text-xs font-semibold text-ink uppercase tracking-wider">Live Agent Telemetry</span>
+                  <span class="font-mono text-xs font-semibold text-ink dark:text-slate-200 uppercase tracking-wider">Live Agent Telemetry</span>
                 </div>
-                <span class="font-mono text-[10px] text-ink-muted px-2 py-0.5 rounded bg-white border border-neutral-200">AST v2.5</span>
+                <span class="font-mono text-[10px] text-ink-muted dark:text-slate-400 px-2 py-0.5 rounded bg-white dark:bg-[#161B29] border border-neutral-200 dark:border-[#21283B]">AST v2.5</span>
               </div>
 
               <!-- Sleek Card Visual Inside -->
-              <div class="bg-white rounded-2xl border border-neutral-200/80 p-5 space-y-4 shadow-sm">
+              <div class="bg-white dark:bg-[#141824] rounded-2xl border border-neutral-200/80 dark:border-[#21283B] p-5 space-y-4 shadow-sm">
                 <div class="flex items-center justify-between text-xs">
-                  <span class="font-semibold text-ink flex items-center space-x-1.5">
-                    <i data-lucide="shield-check" class="w-4 h-4 text-brand-blue"></i>
+                  <span class="font-semibold text-ink dark:text-white flex items-center space-x-1.5">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
                     <span>Repository Integrity</span>
                   </span>
-                  <span class="font-mono text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">100% Protected</span>
+                  <span class="font-mono text-[11px] text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full font-bold">100% Protected</span>
                 </div>
 
-                <div class="space-y-2 text-xs text-ink-secondary">
-                  <div class="flex justify-between items-center py-1.5 border-b border-neutral-100">
-                    <span class="text-ink-muted">Target Architecture</span>
-                    <span class="font-mono text-ink font-medium">FastAPI + Multi-Agent</span>
+                <div class="space-y-2 text-xs text-ink-secondary dark:text-slate-300">
+                  <div class="flex justify-between items-center py-1.5 border-b border-neutral-100 dark:border-[#1F2637]">
+                    <span class="text-ink-muted dark:text-slate-400">Target Architecture</span>
+                    <span class="font-mono text-ink dark:text-white font-medium">FastAPI + Multi-Agent</span>
                   </div>
-                  <div class="flex justify-between items-center py-1.5 border-b border-neutral-100">
-                    <span class="text-ink-muted">Static Engines</span>
-                    <span class="font-mono text-ink font-medium">Radon · Bandit · Tree-sitter</span>
+                  <div class="flex justify-between items-center py-1.5 border-b border-neutral-100 dark:border-[#1F2637]">
+                    <span class="text-ink-muted dark:text-slate-400">Static Engines</span>
+                    <span class="font-mono text-ink dark:text-white font-medium">Radon · Bandit · Tree-sitter</span>
                   </div>
-                  <div class="flex justify-between items-center py-1.5 border-b border-neutral-100">
-                    <span class="text-ink-muted">Dual-LLM Pipeline</span>
-                    <span class="font-mono text-ink font-medium">Gemini 2.5 + Groq Llama 3.3</span>
+                  <div class="flex justify-between items-center py-1.5 border-b border-neutral-100 dark:border-[#1F2637]">
+                    <span class="text-ink-muted dark:text-slate-400">Dual-LLM Pipeline</span>
+                    <span class="font-mono text-ink dark:text-white font-medium">Gemini 2.5 + Groq Llama 3.3</span>
                   </div>
                   <div class="flex justify-between items-center py-1.5">
-                    <span class="text-ink-muted">Memory Engine</span>
-                    <span class="font-mono text-brand-blue font-semibold">SQLite + ChromaDB RAG</span>
+                    <span class="text-ink-muted dark:text-slate-400">Memory Engine</span>
+                    <span class="font-mono text-brand-blue dark:text-blue-400 font-semibold">SQLite + ChromaDB RAG</span>
                   </div>
                 </div>
 
-                <div class="bg-[#090B10] rounded-xl p-3.5 font-mono text-[11px] text-slate-300">
+                <div class="bg-[#090B10] rounded-xl p-3.5 font-mono text-[11px] text-slate-300 border border-slate-800/80">
                   <div class="flex items-center justify-between text-[10px] text-slate-500 pb-1.5 mb-1.5 border-b border-slate-800">
                     <span>active_pipeline_status</span>
                     <span class="text-emerald-400">● READY</span>
@@ -293,9 +356,9 @@
               </div>
 
               <!-- Card Bottom Badge -->
-              <div class="mt-4 flex items-center justify-between text-xs text-ink-muted font-medium pt-2">
+              <div class="mt-4 flex items-center justify-between text-xs text-ink-muted dark:text-slate-400 font-medium pt-2">
                 <span>Human-governed approval step</span>
-                <span class="text-brand-blue font-mono font-semibold">Zero Unreviewed Merges</span>
+                <span class="text-brand-blue dark:text-blue-400 font-mono font-semibold">Zero Unreviewed Merges</span>
               </div>
             </div>
           </div>
@@ -305,16 +368,16 @@
       </div>
     </section>
 
-    <!-- ==================== SIGNATURE INTERACTIVE PIPELINE (SECTION C) ==================== -->
-    <section id="pipeline" class="py-16 md:py-24 border-b border-border bg-canvas">
+    <!-- ==================== SIGNATURE INTERACTIVE PIPELINE ==================== -->
+    <section id="pipeline" class="py-16 md:py-24 border-b border-border dark:border-[#1F2430] bg-canvas dark:bg-[#080808] transition-colors">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div class="max-w-3xl mb-12">
-          <span class="font-mono text-xs text-brand-blue uppercase tracking-wider font-semibold">Interactive Architecture</span>
-          <h2 class="font-serif text-3xl sm:text-4xl font-normal text-ink mt-1">
-            The autonomous <span class="italic text-brand-blue">multi-agent pipeline.</span>
+          <span class="font-mono text-xs text-brand-blue dark:text-blue-400 uppercase tracking-wider font-semibold">Interactive Architecture</span>
+          <h2 class="font-serif text-3xl sm:text-4xl font-normal text-ink dark:text-white mt-1">
+            The autonomous <span class="italic text-brand-blue dark:text-blue-400">multi-agent pipeline.</span>
           </h2>
-          <p class="text-ink-secondary text-sm mt-2">
+          <p class="text-ink-secondary dark:text-slate-400 text-sm mt-2">
             Click any stage in the sequence below to inspect what information it receives, its analysis logic, and the resulting contract.
           </p>
         </div>
@@ -322,76 +385,76 @@
         <!-- Stage Navigation Pills (6 Stages) -->
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
           
-          <button class="stage-card active text-left p-4 rounded-2xl bg-white border border-border transition hover:border-brand-blue focus:outline-none" onclick="selectStage(0)">
+          <button class="stage-card active text-left p-4 rounded-2xl bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] transition hover:border-brand-blue dark:hover:border-blue-500 focus:outline-none" onclick="selectStage(0)">
             <div class="flex items-center justify-between mb-2">
-              <span class="stage-num font-mono text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold bg-neutral-100 text-ink-muted">01</span>
-              <i data-lucide="folder-git-2" class="w-4 h-4 text-brand-blue"></i>
+              <span class="stage-num font-mono text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold bg-neutral-100 dark:bg-slate-800 text-ink-muted dark:text-slate-400">01</span>
+              <i data-lucide="folder-git-2" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
             </div>
-            <div class="font-bold text-xs text-ink">Repository</div>
-            <div class="text-[10px] text-ink-muted mt-0.5">Workspace Target</div>
+            <div class="font-bold text-xs text-ink dark:text-white">Repository</div>
+            <div class="text-[10px] text-ink-muted dark:text-slate-400 mt-0.5">Workspace Target</div>
           </button>
 
-          <button class="stage-card text-left p-4 rounded-2xl bg-white border border-border transition hover:border-brand-blue focus:outline-none" onclick="selectStage(1)">
+          <button class="stage-card text-left p-4 rounded-2xl bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] transition hover:border-brand-blue dark:hover:border-blue-500 focus:outline-none" onclick="selectStage(1)">
             <div class="flex items-center justify-between mb-2">
-              <span class="stage-num font-mono text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold bg-neutral-100 text-ink-muted">02</span>
-              <i data-lucide="scan" class="w-4 h-4 text-brand-blue"></i>
+              <span class="stage-num font-mono text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold bg-neutral-100 dark:bg-slate-800 text-ink-muted dark:text-slate-400">02</span>
+              <i data-lucide="scan" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
             </div>
-            <div class="font-bold text-xs text-ink">Scanner</div>
-            <div class="text-[10px] text-ink-muted mt-0.5">AST & Static Audit</div>
+            <div class="font-bold text-xs text-ink dark:text-white">Scanner</div>
+            <div class="text-[10px] text-ink-muted dark:text-slate-400 mt-0.5">AST & Static Audit</div>
           </button>
 
-          <button class="stage-card text-left p-4 rounded-2xl bg-white border border-border transition hover:border-brand-blue focus:outline-none" onclick="selectStage(2)">
+          <button class="stage-card text-left p-4 rounded-2xl bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] transition hover:border-brand-blue dark:hover:border-blue-500 focus:outline-none" onclick="selectStage(2)">
             <div class="flex items-center justify-between mb-2">
-              <span class="stage-num font-mono text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold bg-neutral-100 text-ink-muted">03</span>
-              <i data-lucide="git-commit" class="w-4 h-4 text-brand-blue"></i>
+              <span class="stage-num font-mono text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold bg-neutral-100 dark:bg-slate-800 text-ink-muted dark:text-slate-400">03</span>
+              <i data-lucide="git-commit" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
             </div>
-            <div class="font-bold text-xs text-ink">Planner</div>
-            <div class="text-[10px] text-ink-muted mt-0.5">Impact Scoring</div>
+            <div class="font-bold text-xs text-ink dark:text-white">Planner</div>
+            <div class="text-[10px] text-ink-muted dark:text-slate-400 mt-0.5">Impact Scoring</div>
           </button>
 
-          <button class="stage-card text-left p-4 rounded-2xl bg-white border border-border transition hover:border-brand-blue focus:outline-none" onclick="selectStage(3)">
+          <button class="stage-card text-left p-4 rounded-2xl bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] transition hover:border-brand-blue dark:hover:border-blue-500 focus:outline-none" onclick="selectStage(3)">
             <div class="flex items-center justify-between mb-2">
-              <span class="stage-num font-mono text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold bg-neutral-100 text-ink-muted">04</span>
-              <i data-lucide="code" class="w-4 h-4 text-brand-blue"></i>
+              <span class="stage-num font-mono text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold bg-neutral-100 dark:bg-slate-800 text-ink-muted dark:text-slate-400">04</span>
+              <i data-lucide="code" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
             </div>
-            <div class="font-bold text-xs text-ink">Coder</div>
-            <div class="text-[10px] text-ink-muted mt-0.5">AST Patch Synthesis</div>
+            <div class="font-bold text-xs text-ink dark:text-white">Coder</div>
+            <div class="text-[10px] text-ink-muted dark:text-slate-400 mt-0.5">AST Patch Synthesis</div>
           </button>
 
-          <button class="stage-card text-left p-4 rounded-2xl bg-white border border-border transition hover:border-brand-blue focus:outline-none" onclick="selectStage(4)">
+          <button class="stage-card text-left p-4 rounded-2xl bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] transition hover:border-brand-blue dark:hover:border-blue-500 focus:outline-none" onclick="selectStage(4)">
             <div class="flex items-center justify-between mb-2">
-              <span class="stage-num font-mono text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold bg-neutral-100 text-ink-muted">05</span>
-              <i data-lucide="check-circle" class="w-4 h-4 text-brand-blue"></i>
+              <span class="stage-num font-mono text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold bg-neutral-100 dark:bg-slate-800 text-ink-muted dark:text-slate-400">05</span>
+              <i data-lucide="check-circle" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
             </div>
-            <div class="font-bold text-xs text-ink">Reviewer</div>
-            <div class="text-[10px] text-ink-muted mt-0.5">Critique & Test</div>
+            <div class="font-bold text-xs text-ink dark:text-white">Reviewer</div>
+            <div class="text-[10px] text-ink-muted dark:text-slate-400 mt-0.5">Critique & Test</div>
           </button>
 
-          <button class="stage-card text-left p-4 rounded-2xl bg-white border border-border transition hover:border-brand-blue focus:outline-none" onclick="selectStage(5)">
+          <button class="stage-card text-left p-4 rounded-2xl bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] transition hover:border-brand-blue dark:hover:border-blue-500 focus:outline-none" onclick="selectStage(5)">
             <div class="flex items-center justify-between mb-2">
-              <span class="stage-num font-mono text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold bg-neutral-100 text-ink-muted">06</span>
-              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+              <span class="stage-num font-mono text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold bg-neutral-100 dark:bg-slate-800 text-ink-muted dark:text-slate-400">06</span>
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
             </div>
-            <div class="font-bold text-xs text-ink">Approval</div>
-            <div class="text-[10px] text-ink-muted mt-0.5">Human Governance</div>
+            <div class="font-bold text-xs text-ink dark:text-white">Approval</div>
+            <div class="text-[10px] text-ink-muted dark:text-slate-400 mt-0.5">Human Governance</div>
           </button>
 
         </div>
 
         <!-- Inspector Display Container -->
-        <div class="bg-white border border-border rounded-3xl p-6 sm:p-8 shadow-sm">
-          <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 pb-6 border-b border-border">
+        <div class="bg-white dark:bg-[#0E121B] border border-border dark:border-[#1F2430] rounded-3xl p-6 sm:p-8 shadow-sm">
+          <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 pb-6 border-b border-border dark:border-[#1F2430]">
             <div>
               <div class="flex items-center space-x-2">
-                <span id="inspector-step-badge" class="font-mono text-[11px] uppercase px-2.5 py-0.5 rounded-full bg-brand-blue-light text-brand-blue font-bold border border-blue-200">Stage 01</span>
-                <span id="inspector-role-badge" class="font-mono text-[11px] text-ink-muted uppercase">Workspace Environment</span>
+                <span id="inspector-step-badge" class="font-mono text-[11px] uppercase px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/40 text-brand-blue dark:text-blue-400 font-bold border border-blue-200 dark:border-blue-900">Stage 01</span>
+                <span id="inspector-role-badge" class="font-mono text-[11px] text-ink-muted dark:text-slate-400 uppercase">Workspace Environment</span>
               </div>
-              <h3 id="inspector-title" class="font-serif text-2xl font-bold text-ink mt-1">Repository Workspace</h3>
-              <p id="inspector-desc" class="text-ink-secondary text-sm mt-1 max-w-2xl leading-relaxed">
+              <h3 id="inspector-title" class="font-serif text-2xl font-bold text-ink dark:text-white mt-1">Repository Workspace</h3>
+              <p id="inspector-desc" class="text-ink-secondary dark:text-slate-400 text-sm mt-1 max-w-2xl leading-relaxed">
                 The entry point targets any local folder path or clones a remote Git repository into a protected sandbox. The system detects project structure and establishes working tree state.
               </p>
             </div>
-            <span class="font-mono text-[10px] uppercase text-ink-muted px-2.5 py-1 rounded bg-neutral-100 border border-neutral-200">
+            <span class="font-mono text-[10px] uppercase text-ink-muted dark:text-slate-400 px-2.5 py-1 rounded bg-neutral-100 dark:bg-[#151926] border border-neutral-200 dark:border-[#21283B]">
               Interactive Simulation
             </span>
           </div>
@@ -399,42 +462,42 @@
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
             <!-- Left Metadata Cards -->
             <div class="lg:col-span-5 space-y-4">
-              <div class="bg-surface-subtle p-4 rounded-2xl border border-neutral-200/60">
-                <div class="font-mono text-[11px] text-ink-muted uppercase flex items-center space-x-1.5 mb-1">
-                  <i data-lucide="arrow-down-left" class="w-3.5 h-3.5 text-brand-blue"></i>
+              <div class="bg-surface-subtle dark:bg-[#121622] p-4 rounded-2xl border border-neutral-200/60 dark:border-[#1F2637]">
+                <div class="font-mono text-[11px] text-ink-muted dark:text-slate-400 uppercase flex items-center space-x-1.5 mb-1">
+                  <i data-lucide="arrow-down-left" class="w-3.5 h-3.5 text-brand-blue dark:text-blue-400"></i>
                   <span>Input Data Received</span>
                 </div>
-                <div id="inspector-input" class="text-xs text-ink font-medium">
+                <div id="inspector-input" class="text-xs text-ink dark:text-slate-200 font-medium">
                   Target repo path, Git tree, and environment configurations.
                 </div>
               </div>
 
-              <div class="bg-surface-subtle p-4 rounded-2xl border border-neutral-200/60">
-                <div class="font-mono text-[11px] text-ink-muted uppercase flex items-center space-x-1.5 mb-1">
-                  <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-emerald-600"></i>
+              <div class="bg-surface-subtle dark:bg-[#121622] p-4 rounded-2xl border border-neutral-200/60 dark:border-[#1F2637]">
+                <div class="font-mono text-[11px] text-ink-muted dark:text-slate-400 uppercase flex items-center space-x-1.5 mb-1">
+                  <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></i>
                   <span>Output Delivered</span>
                 </div>
-                <div id="inspector-output" class="text-xs text-ink font-medium">
+                <div id="inspector-output" class="text-xs text-ink dark:text-slate-200 font-medium">
                   Normalized source file list, module boundary definitions, and Git HEAD commit reference.
                 </div>
               </div>
 
-              <div class="bg-surface-subtle p-4 rounded-2xl border border-neutral-200/60">
-                <div class="font-mono text-[11px] text-ink-muted uppercase flex items-center space-x-1.5 mb-1">
-                  <i data-lucide="shield" class="w-3.5 h-3.5 text-amber-600"></i>
+              <div class="bg-surface-subtle dark:bg-[#121622] p-4 rounded-2xl border border-neutral-200/60 dark:border-[#1F2637]">
+                <div class="font-mono text-[11px] text-ink-muted dark:text-slate-400 uppercase flex items-center space-x-1.5 mb-1">
+                  <i data-lucide="shield" class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400"></i>
                   <span>Safety Governance Guarantee</span>
                 </div>
-                <div id="inspector-governance" class="text-xs text-ink-secondary">
+                <div id="inspector-governance" class="text-xs text-ink-secondary dark:text-slate-400">
                   Locks repository state to prevent concurrent file conflicts and ensures all modifications happen on isolated candidate branches.
                 </div>
               </div>
             </div>
 
             <!-- Right Telemetry Terminal Box -->
-            <div class="lg:col-span-7 bg-[#090B10] rounded-2xl p-5 font-mono text-xs text-slate-300 overflow-x-auto shadow-inner">
+            <div class="lg:col-span-7 bg-[#090B10] rounded-2xl p-5 font-mono text-xs text-slate-300 overflow-x-auto shadow-inner border border-slate-800">
               <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-800 text-[10px] text-slate-500">
                 <span id="inspector-telemetry-label">workspace_metadata.json</span>
-                <span class="text-brand-blue uppercase font-bold">Simulated Contract</span>
+                <span class="text-brand-blue dark:text-blue-400 uppercase font-bold">Simulated Contract</span>
               </div>
               <pre id="inspector-payload" class="text-slate-300 leading-relaxed text-[11px]">
 {
@@ -452,11 +515,11 @@
       </div>
     </section>
 
-    <!-- ==================== CONTRAST BANNER: TECH UNLEASHED / LIVE DIFF REVIEW ==================== -->
-    <section id="example" class="py-16 md:py-24 border-b border-border bg-white">
+    <!-- ==================== CONTRAST BANNER: LIVE DIFF REVIEW ==================== -->
+    <section id="example" class="py-16 md:py-24 border-b border-border dark:border-[#1F2430] bg-white dark:bg-[#0A0D14] transition-colors">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        <!-- Large Dark Rounded Container (Inspired by TechPulse Dark Banner) -->
+        <!-- Large Dark Rounded Container -->
         <div class="bg-[#090B10] rounded-3xl border border-[#1A2234] p-6 sm:p-10 lg:p-12 text-white shadow-xl relative overflow-hidden">
           
           <div class="max-w-3xl mb-10">
@@ -541,86 +604,86 @@
       </div>
     </section>
 
-    <!-- ==================== CAPABILITIES GRID (FEATURE CARDS) ==================== -->
-    <section id="features" class="py-16 md:py-24 border-b border-border bg-canvas">
+    <!-- ==================== CAPABILITIES GRID ==================== -->
+    <section id="features" class="py-16 md:py-24 border-b border-border dark:border-[#1F2430] bg-canvas dark:bg-[#080808] transition-colors">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div class="max-w-3xl mb-14">
-          <span class="font-mono text-xs text-brand-blue uppercase tracking-wider font-semibold">Verified Architecture</span>
-          <h2 class="font-serif text-3xl sm:text-4xl font-normal text-ink mt-1">
-            Engineered for developers who notice <span class="italic text-brand-blue">the details.</span>
+          <span class="font-mono text-xs text-brand-blue dark:text-blue-400 uppercase tracking-wider font-semibold">Verified Architecture</span>
+          <h2 class="font-serif text-3xl sm:text-4xl font-normal text-ink dark:text-white mt-1">
+            Engineered for developers who notice <span class="italic text-brand-blue dark:text-blue-400">the details.</span>
           </h2>
-          <p class="text-ink-secondary text-sm mt-2">
+          <p class="text-ink-secondary dark:text-slate-400 text-sm mt-2">
             Every feature here is verified and running in the current codebase. No mock capabilities or fabricated statistics.
           </p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           
-          <div class="bg-white border border-border rounded-3xl p-6 sm:p-7 space-y-4 hover:border-brand-blue transition shadow-sm">
-            <div class="w-10 h-10 rounded-2xl bg-brand-blue-light border border-blue-200 flex items-center justify-center text-brand-blue">
+          <div class="bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-3xl p-6 sm:p-7 space-y-4 hover:border-brand-blue dark:hover:border-blue-500 transition shadow-sm">
+            <div class="w-10 h-10 rounded-2xl bg-brand-blue-light dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 flex items-center justify-center text-brand-blue dark:text-blue-400">
               <i data-lucide="scan-line" class="w-5 h-5"></i>
             </div>
-            <h3 class="text-base font-bold text-ink">AST Codebase Scanning</h3>
-            <p class="text-xs text-ink-secondary leading-relaxed">
+            <h3 class="text-base font-bold text-ink dark:text-white">AST Codebase Scanning</h3>
+            <p class="text-xs text-ink-secondary dark:text-slate-400 leading-relaxed">
               Combines Tree-sitter AST syntax parsing with Radon (complexity), Vulture (dead functions/variables), and Bandit (security vulnerabilities).
             </p>
-            <div class="font-mono text-[10px] text-ink-muted">core/scanner.py</div>
+            <div class="font-mono text-[10px] text-ink-muted dark:text-slate-400">core/scanner.py</div>
           </div>
 
-          <div class="bg-white border border-border rounded-3xl p-6 sm:p-7 space-y-4 hover:border-brand-blue transition shadow-sm">
-            <div class="w-10 h-10 rounded-2xl bg-brand-blue-light border border-blue-200 flex items-center justify-center text-brand-blue">
+          <div class="bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-3xl p-6 sm:p-7 space-y-4 hover:border-brand-blue dark:hover:border-blue-500 transition shadow-sm">
+            <div class="w-10 h-10 rounded-2xl bg-brand-blue-light dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 flex items-center justify-center text-brand-blue dark:text-blue-400">
               <i data-lucide="network" class="w-5 h-5"></i>
             </div>
-            <h3 class="text-base font-bold text-ink">Dependency Graph Intelligence</h3>
-            <p class="text-xs text-ink-secondary leading-relaxed">
+            <h3 class="text-base font-bold text-ink dark:text-white">Dependency Graph Intelligence</h3>
+            <p class="text-xs text-ink-secondary dark:text-slate-400 leading-relaxed">
               Maps module imports and caller hierarchies with NetworkX. Computes blast radius before modifications so no downstream callers break.
             </p>
-            <div class="font-mono text-[10px] text-ink-muted">core/graph.py</div>
+            <div class="font-mono text-[10px] text-ink-muted dark:text-slate-400">core/graph.py</div>
           </div>
 
-          <div class="bg-white border border-border rounded-3xl p-6 sm:p-7 space-y-4 hover:border-brand-blue transition shadow-sm">
-            <div class="w-10 h-10 rounded-2xl bg-brand-blue-light border border-blue-200 flex items-center justify-center text-brand-blue">
+          <div class="bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-3xl p-6 sm:p-7 space-y-4 hover:border-brand-blue dark:hover:border-blue-500 transition shadow-sm">
+            <div class="w-10 h-10 rounded-2xl bg-brand-blue-light dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 flex items-center justify-center text-brand-blue dark:text-blue-400">
               <i data-lucide="git-pull-request" class="w-5 h-5"></i>
             </div>
-            <h3 class="text-base font-bold text-ink">Interactive Fix Review Studio</h3>
-            <p class="text-xs text-ink-secondary leading-relaxed">
+            <h3 class="text-base font-bold text-ink dark:text-white">Interactive Fix Review Studio</h3>
+            <p class="text-xs text-ink-secondary dark:text-slate-400 leading-relaxed">
               Presents candidate fixes in unified side-by-side diff viewers with test feedback and explicit developer Approve and Reject actions.
             </p>
-            <div class="font-mono text-[10px] text-ink-muted">ui/static/index.html</div>
+            <div class="font-mono text-[10px] text-ink-muted dark:text-slate-400">ui/static/index.html</div>
           </div>
 
-          <div class="bg-white border border-border rounded-3xl p-6 sm:p-7 space-y-4 hover:border-brand-blue transition shadow-sm">
-            <div class="w-10 h-10 rounded-2xl bg-brand-blue-light border border-blue-200 flex items-center justify-center text-brand-blue">
+          <div class="bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-3xl p-6 sm:p-7 space-y-4 hover:border-brand-blue dark:hover:border-blue-500 transition shadow-sm">
+            <div class="w-10 h-10 rounded-2xl bg-brand-blue-light dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 flex items-center justify-center text-brand-blue dark:text-blue-400">
               <i data-lucide="search" class="w-5 h-5"></i>
             </div>
-            <h3 class="text-base font-bold text-ink">Semantic Vector Search</h3>
-            <p class="text-xs text-ink-secondary leading-relaxed">
+            <h3 class="text-base font-bold text-ink dark:text-white">Semantic Vector Search</h3>
+            <p class="text-xs text-ink-secondary dark:text-slate-400 leading-relaxed">
               Embeds codebase functions into ChromaDB vector store. Search natural language concepts (e.g. "find database rollback handlers").
             </p>
-            <div class="font-mono text-[10px] text-ink-muted">memory/chroma.py</div>
+            <div class="font-mono text-[10px] text-ink-muted dark:text-slate-400">memory/chroma.py</div>
           </div>
 
-          <div class="bg-white border border-border rounded-3xl p-6 sm:p-7 space-y-4 hover:border-brand-blue transition shadow-sm">
-            <div class="w-10 h-10 rounded-2xl bg-brand-blue-light border border-blue-200 flex items-center justify-center text-brand-blue">
+          <div class="bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-3xl p-6 sm:p-7 space-y-4 hover:border-brand-blue dark:hover:border-blue-500 transition shadow-sm">
+            <div class="w-10 h-10 rounded-2xl bg-brand-blue-light dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 flex items-center justify-center text-brand-blue dark:text-blue-400">
               <i data-lucide="brain" class="w-5 h-5"></i>
             </div>
-            <h3 class="text-base font-bold text-ink">Developer Decision Memory</h3>
-            <p class="text-xs text-ink-secondary leading-relaxed">
+            <h3 class="text-base font-bold text-ink dark:text-white">Developer Decision Memory</h3>
+            <p class="text-xs text-ink-secondary dark:text-slate-400 leading-relaxed">
               Stores approvals and rejections in SQLite. The prompt synthesizers query past rejections to avoid repeating unwanted patch patterns.
             </p>
-            <div class="font-mono text-[10px] text-ink-muted">memory/sqlite.py</div>
+            <div class="font-mono text-[10px] text-ink-muted dark:text-slate-400">memory/sqlite.py</div>
           </div>
 
-          <div class="bg-white border border-border rounded-3xl p-6 sm:p-7 space-y-4 hover:border-brand-blue transition shadow-sm">
-            <div class="w-10 h-10 rounded-2xl bg-brand-blue-light border border-blue-200 flex items-center justify-center text-brand-blue">
+          <div class="bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-3xl p-6 sm:p-7 space-y-4 hover:border-brand-blue dark:hover:border-blue-500 transition shadow-sm">
+            <div class="w-10 h-10 rounded-2xl bg-brand-blue-light dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 flex items-center justify-center text-brand-blue dark:text-blue-400">
               <i data-lucide="git-branch" class="w-5 h-5"></i>
             </div>
-            <h3 class="text-base font-bold text-ink">Isolated Branch Sandbox</h3>
-            <p class="text-xs text-ink-secondary leading-relaxed">
-              Never mutates your primary branch directly. Generates changes on isolated <code class="text-brand-blue font-mono">agent-fix-*</code> branches with automatic force-rollback on test failure.
+            <h3 class="text-base font-bold text-ink dark:text-white">Isolated Branch Sandbox</h3>
+            <p class="text-xs text-ink-secondary dark:text-slate-400 leading-relaxed">
+              Never mutates your primary branch directly. Generates changes on isolated <code class="text-brand-blue dark:text-blue-400 font-mono">agent-fix-*</code> branches with automatic force-rollback on test failure.
             </p>
-            <div class="font-mono text-[10px] text-ink-muted">main.py</div>
+            <div class="font-mono text-[10px] text-ink-muted dark:text-slate-400">main.py</div>
           </div>
 
         </div>
@@ -628,40 +691,40 @@
       </div>
     </section>
 
-    <!-- ==================== TESTIMONIAL QUOTE PILLARS (TECHPULSE STYLE) ==================== -->
-    <section class="py-16 md:py-20 border-b border-border bg-white">
+    <!-- ==================== PHILOSOPHY QUOTE PILLARS ==================== -->
+    <section class="py-16 md:py-20 border-b border-border dark:border-[#1F2430] bg-white dark:bg-[#0A0D14] transition-colors">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div class="text-center max-w-2xl mx-auto mb-12">
-          <span class="font-mono text-xs text-brand-blue uppercase tracking-wider font-semibold">Engineering Philosophy</span>
-          <h2 class="font-serif text-3xl font-normal text-ink mt-1">
-            Loved by engineers who care about <span class="italic text-brand-blue">code health.</span>
+          <span class="font-mono text-xs text-brand-blue dark:text-blue-400 uppercase tracking-wider font-semibold">Engineering Philosophy</span>
+          <h2 class="font-serif text-3xl font-normal text-ink dark:text-white mt-1">
+            Loved by engineers who care about <span class="italic text-brand-blue dark:text-blue-400">code health.</span>
           </h2>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div class="bg-surface-subtle p-6 rounded-3xl border border-neutral-200/60 space-y-3">
-            <div class="text-brand-blue font-serif text-2xl font-bold">“</div>
-            <p class="text-xs text-ink leading-relaxed font-medium">
+          <div class="bg-surface-subtle dark:bg-[#121622] p-6 rounded-3xl border border-neutral-200/60 dark:border-[#1F2637] space-y-3">
+            <div class="text-brand-blue dark:text-blue-400 font-serif text-2xl font-bold">“</div>
+            <p class="text-xs text-ink dark:text-slate-200 leading-relaxed font-medium">
               Zero silent commits is the game changer. We inspect diffs and test results before anything touches our candidate branches.
             </p>
-            <div class="text-[11px] font-mono text-ink-muted pt-2 border-t border-neutral-200/50">Human-In-The-Loop Principle</div>
+            <div class="text-[11px] font-mono text-ink-muted dark:text-slate-400 pt-2 border-t border-neutral-200/50 dark:border-[#1F2637]">Human-In-The-Loop Principle</div>
           </div>
 
-          <div class="bg-surface-subtle p-6 rounded-3xl border border-neutral-200/60 space-y-3">
-            <div class="text-brand-blue font-serif text-2xl font-bold">“</div>
-            <p class="text-xs text-ink leading-relaxed font-medium">
+          <div class="bg-surface-subtle dark:bg-[#121622] p-6 rounded-3xl border border-neutral-200/60 dark:border-[#1F2637] space-y-3">
+            <div class="text-brand-blue dark:text-blue-400 font-serif text-2xl font-bold">“</div>
+            <p class="text-xs text-ink dark:text-slate-200 leading-relaxed font-medium">
               The AST patcher doesn't just hallucinate rewrites—it uses libcst to replace specific syntax nodes and runs pytest to verify correctness.
             </p>
-            <div class="text-[11px] font-mono text-ink-muted pt-2 border-t border-neutral-200/50">AST-Level Precision</div>
+            <div class="text-[11px] font-mono text-ink-muted dark:text-slate-400 pt-2 border-t border-neutral-200/50 dark:border-[#1F2637]">AST-Level Precision</div>
           </div>
 
-          <div class="bg-surface-subtle p-6 rounded-3xl border border-neutral-200/60 space-y-3">
-            <div class="text-brand-blue font-serif text-2xl font-bold">“</div>
-            <p class="text-xs text-ink leading-relaxed font-medium">
+          <div class="bg-surface-subtle dark:bg-[#121622] p-6 rounded-3xl border border-neutral-200/60 dark:border-[#1F2637] space-y-3">
+            <div class="text-brand-blue dark:text-blue-400 font-serif text-2xl font-bold">“</div>
+            <p class="text-xs text-ink dark:text-slate-200 leading-relaxed font-medium">
               The SQLite memory is brilliant. Once you reject a bad pattern, the agent remembers your critique and never proposes it again.
             </p>
-            <div class="text-[11px] font-mono text-ink-muted pt-2 border-t border-neutral-200/50">Adaptive Decision Memory</div>
+            <div class="text-[11px] font-mono text-ink-muted dark:text-slate-400 pt-2 border-t border-neutral-200/50 dark:border-[#1F2637]">Adaptive Decision Memory</div>
           </div>
         </div>
 
@@ -669,26 +732,26 @@
     </section>
 
     <!-- ==================== QUICK START (TABBED POWERSHELL / BASH) ==================== -->
-    <section id="quickstart" class="py-16 md:py-24 border-b border-border bg-canvas">
+    <section id="quickstart" class="py-16 md:py-24 border-b border-border dark:border-[#1F2430] bg-canvas dark:bg-[#080808] transition-colors">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div class="max-w-3xl mb-12">
-          <span class="font-mono text-xs text-brand-blue uppercase tracking-wider font-semibold">Developer Onboarding</span>
-          <h2 class="font-serif text-3xl sm:text-4xl font-normal text-ink mt-1">
-            Get started in <span class="italic text-brand-blue">five minutes.</span>
+          <span class="font-mono text-xs text-brand-blue dark:text-blue-400 uppercase tracking-wider font-semibold">Developer Onboarding</span>
+          <h2 class="font-serif text-3xl sm:text-4xl font-normal text-ink dark:text-white mt-1">
+            Get started in <span class="italic text-brand-blue dark:text-blue-400">five minutes.</span>
           </h2>
-          <p class="text-ink-secondary text-sm mt-2">
+          <p class="text-ink-secondary dark:text-slate-400 text-sm mt-2">
             Run the entire system locally with Python 3.11 or 3.12.
           </p>
         </div>
 
         <!-- OS Tab Switcher -->
-        <div class="flex items-center space-x-2 border-b border-border pb-3 mb-8 text-xs font-mono">
-          <span class="text-ink-muted mr-2">Environment:</span>
-          <button id="tab-btn-win" onclick="switchOsTab('win')" class="px-3.5 py-1.5 rounded-full bg-white text-brand-blue font-semibold border border-brand-blue shadow-sm focus:outline-none">
+        <div class="flex items-center space-x-2 border-b border-border dark:border-[#1F2430] pb-3 mb-8 text-xs font-mono">
+          <span class="text-ink-muted dark:text-slate-400 mr-2">Environment:</span>
+          <button id="tab-btn-win" onclick="switchOsTab('win')" class="px-3.5 py-1.5 rounded-full bg-white dark:bg-[#121622] text-brand-blue dark:text-blue-400 font-semibold border border-brand-blue dark:border-blue-500 shadow-sm focus:outline-none">
             Windows (PowerShell)
           </button>
-          <button id="tab-btn-nix" onclick="switchOsTab('nix')" class="px-3.5 py-1.5 rounded-full bg-neutral-100 text-ink-secondary hover:text-ink border border-neutral-200 focus:outline-none">
+          <button id="tab-btn-nix" onclick="switchOsTab('nix')" class="px-3.5 py-1.5 rounded-full bg-neutral-100 dark:bg-[#121622] text-ink-secondary dark:text-slate-400 hover:text-ink dark:hover:text-white border border-neutral-200 dark:border-[#21283B] focus:outline-none">
             macOS / Linux (Bash)
           </button>
         </div>
@@ -696,31 +759,31 @@
         <!-- Step-by-Step Guide -->
         <div class="space-y-6">
           
-          <div class="bg-white border border-border rounded-3xl p-6 shadow-sm">
+          <div class="bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-3xl p-6 shadow-sm">
             <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs font-bold text-brand-blue">01 · CLONE REPOSITORY</span>
-              <button onclick="copySnippet('code-clone')" class="text-xs font-mono text-ink-muted hover:text-brand-blue flex items-center space-x-1">
+              <span class="font-mono text-xs font-bold text-brand-blue dark:text-blue-400">01 · CLONE REPOSITORY</span>
+              <button onclick="copySnippet('code-clone')" class="text-xs font-mono text-ink-muted dark:text-slate-400 hover:text-brand-blue dark:hover:text-blue-400 flex items-center space-x-1">
                 <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                 <span id="label-clone">Copy</span>
               </button>
             </div>
-            <p class="text-xs text-ink-secondary mb-3">Clone the project repository to your development machine.</p>
-            <div class="bg-[#090B10] p-4 rounded-2xl font-mono text-xs text-slate-200 overflow-x-auto">
+            <p class="text-xs text-ink-secondary dark:text-slate-400 mb-3">Clone the project repository to your development machine.</p>
+            <div class="bg-[#090B10] p-4 rounded-2xl font-mono text-xs text-slate-200 overflow-x-auto border border-slate-800">
               <code id="code-clone">git clone https://github.com/jayeshtak/Codebase-Self-Evolving-Agent.git
 cd Codebase-Self-Evolving-Agent</code>
             </div>
           </div>
 
-          <div class="bg-white border border-border rounded-3xl p-6 shadow-sm">
+          <div class="bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-3xl p-6 shadow-sm">
             <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs font-bold text-brand-blue">02 · VIRTUAL ENVIRONMENT</span>
-              <button onclick="copySnippet('code-venv')" class="text-xs font-mono text-ink-muted hover:text-brand-blue flex items-center space-x-1">
+              <span class="font-mono text-xs font-bold text-brand-blue dark:text-blue-400">02 · VIRTUAL ENVIRONMENT</span>
+              <button onclick="copySnippet('code-venv')" class="text-xs font-mono text-ink-muted dark:text-slate-400 hover:text-brand-blue dark:hover:text-blue-400 flex items-center space-x-1">
                 <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                 <span id="label-venv">Copy</span>
               </button>
             </div>
-            <p class="text-xs text-ink-secondary mb-3">Initialize an isolated Python 3.12 virtual environment.</p>
-            <div class="bg-[#090B10] p-4 rounded-2xl font-mono text-xs text-slate-200 overflow-x-auto">
+            <p class="text-xs text-ink-secondary dark:text-slate-400 mb-3">Initialize an isolated Python 3.12 virtual environment.</p>
+            <div class="bg-[#090B10] p-4 rounded-2xl font-mono text-xs text-slate-200 overflow-x-auto border border-slate-800">
               <code id="code-venv-win">python -m venv venv
 .\venv\Scripts\Activate.ps1</code>
               <code id="code-venv-nix" class="hidden">python3 -m venv venv
@@ -728,34 +791,34 @@ source venv/bin/activate</code>
             </div>
           </div>
 
-          <div class="bg-white border border-border rounded-3xl p-6 shadow-sm">
+          <div class="bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-3xl p-6 shadow-sm">
             <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs font-bold text-brand-blue">03 · INSTALL DEPENDENCIES</span>
-              <button onclick="copySnippet('code-install')" class="text-xs font-mono text-ink-muted hover:text-brand-blue flex items-center space-x-1">
+              <span class="font-mono text-xs font-bold text-brand-blue dark:text-blue-400">03 · INSTALL DEPENDENCIES</span>
+              <button onclick="copySnippet('code-install')" class="text-xs font-mono text-ink-muted dark:text-slate-400 hover:text-brand-blue dark:hover:text-blue-400 flex items-center space-x-1">
                 <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                 <span id="label-install">Copy</span>
               </button>
             </div>
-            <p class="text-xs text-ink-secondary mb-3">Install all analysis engines and API server dependencies.</p>
-            <div class="bg-[#090B10] p-4 rounded-2xl font-mono text-xs text-slate-200 overflow-x-auto">
+            <p class="text-xs text-ink-secondary dark:text-slate-400 mb-3">Install all analysis engines and API server dependencies.</p>
+            <div class="bg-[#090B10] p-4 rounded-2xl font-mono text-xs text-slate-200 overflow-x-auto border border-slate-800">
               <code id="code-install">pip install -r requirements.txt</code>
             </div>
           </div>
 
-          <div class="bg-white border border-border rounded-3xl p-6 shadow-sm">
+          <div class="bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-3xl p-6 shadow-sm">
             <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs font-bold text-brand-blue">04 · LAUNCH SERVER</span>
-              <button onclick="copySnippet('code-run')" class="text-xs font-mono text-ink-muted hover:text-brand-blue flex items-center space-x-1">
+              <span class="font-mono text-xs font-bold text-brand-blue dark:text-blue-400">04 · LAUNCH SERVER</span>
+              <button onclick="copySnippet('code-run')" class="text-xs font-mono text-ink-muted dark:text-slate-400 hover:text-brand-blue dark:hover:text-blue-400 flex items-center space-x-1">
                 <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                 <span id="label-run">Copy</span>
               </button>
             </div>
-            <p class="text-xs text-ink-secondary mb-3">Start the FastAPI server on port 8000.</p>
-            <div class="bg-[#090B10] p-4 rounded-2xl font-mono text-xs text-slate-200 overflow-x-auto">
+            <p class="text-xs text-ink-secondary dark:text-slate-400 mb-3">Start the FastAPI server on port 8000.</p>
+            <div class="bg-[#090B10] p-4 rounded-2xl font-mono text-xs text-slate-200 overflow-x-auto border border-slate-800">
               <code id="code-run">python -m uvicorn ui.server:app --host 127.0.0.1 --port 8000</code>
             </div>
-            <div class="text-[11px] text-ink-muted mt-2 font-mono">
-              Then navigate to: <a href="/app" class="text-brand-blue font-semibold underline">http://127.0.0.1:8000/app</a>
+            <div class="text-[11px] text-ink-muted dark:text-slate-400 mt-2 font-mono">
+              Then navigate to: <a href="/app" class="text-brand-blue dark:text-blue-400 font-semibold underline">http://127.0.0.1:8000/app</a>
             </div>
           </div>
 
@@ -764,80 +827,80 @@ source venv/bin/activate</code>
       </div>
     </section>
 
-    <!-- ==================== ARCHITECTURE DIAGRAM (SECTION I) ==================== -->
-    <section id="architecture" class="py-16 md:py-24 border-b border-border bg-white">
+    <!-- ==================== ARCHITECTURE DIAGRAM ==================== -->
+    <section id="architecture" class="py-16 md:py-24 border-b border-border dark:border-[#1F2430] bg-white dark:bg-[#0A0D14] transition-colors">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div class="max-w-3xl mb-12">
-          <span class="font-mono text-xs text-brand-blue uppercase tracking-wider font-semibold">Engineering Blueprint</span>
-          <h2 class="font-serif text-3xl sm:text-4xl font-normal text-ink mt-1">
-            System architecture <span class="italic text-brand-blue">& data flow.</span>
+          <span class="font-mono text-xs text-brand-blue dark:text-blue-400 uppercase tracking-wider font-semibold">Engineering Blueprint</span>
+          <h2 class="font-serif text-3xl sm:text-4xl font-normal text-ink dark:text-white mt-1">
+            System architecture <span class="italic text-brand-blue dark:text-blue-400">& data flow.</span>
           </h2>
-          <p class="text-ink-secondary text-sm mt-2">
+          <p class="text-ink-secondary dark:text-slate-400 text-sm mt-2">
             A decoupled architecture uniting user interface, FastAPI server orchestrator, multi-agent core, and persistent memory stores.
           </p>
         </div>
 
-        <div class="bg-surface-warm border border-neutral-200/80 rounded-3xl p-6 sm:p-8">
+        <div class="bg-surface-warm dark:bg-[#0E121B] border border-neutral-200/80 dark:border-[#1F2637] rounded-3xl p-6 sm:p-8">
           <div class="w-full overflow-x-auto">
             <svg class="min-w-[700px] w-full" height="340" viewBox="0 0 800 340" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="20" y="20" width="220" height="90" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+              <rect x="20" y="20" width="220" height="90" rx="8" class="arch-card" stroke-width="1.5"/>
               <text x="35" y="45" fill="#1D4ED8" font-family="JetBrains Mono" font-size="11" font-weight="bold">CLIENT INTERFACE</text>
-              <text x="35" y="70" fill="#0F172A" font-family="Plus Jakarta Sans" font-size="13" font-weight="700">Developer Command Center</text>
-              <text x="35" y="90" fill="#64748B" font-family="JetBrains Mono" font-size="10">HTML5 · Tailwind · Lucide SPA</text>
+              <text x="35" y="70" class="arch-text-title" font-family="Plus Jakarta Sans" font-size="13" font-weight="700">Developer Command Center</text>
+              <text x="35" y="90" class="arch-text-sub" font-family="JetBrains Mono" font-size="10">HTML5 · Tailwind · Lucide SPA</text>
 
               <path d="M240 65 L290 65" stroke="#1D4ED8" stroke-width="1.5" stroke-dasharray="4 4"/>
               <polygon points="290,62 297,65 290,68" fill="#1D4ED8"/>
 
-              <rect x="297" y="20" width="230" height="90" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+              <rect x="297" y="20" width="230" height="90" rx="8" class="arch-card" stroke-width="1.5"/>
               <text x="312" y="45" fill="#1D4ED8" font-family="JetBrains Mono" font-size="11" font-weight="bold">SERVER ORCHESTRATOR</text>
-              <text x="312" y="70" fill="#0F172A" font-family="Plus Jakarta Sans" font-size="13" font-weight="700">FastAPI Backend (:8000)</text>
-              <text x="312" y="90" fill="#64748B" font-family="JetBrains Mono" font-size="10">REST API · Concurrency Locks</text>
+              <text x="312" y="70" class="arch-text-title" font-family="Plus Jakarta Sans" font-size="13" font-weight="700">FastAPI Backend (:8000)</text>
+              <text x="312" y="90" class="arch-text-sub" font-family="JetBrains Mono" font-size="10">REST API · Concurrency Locks</text>
 
               <path d="M412 110 L412 160" stroke="#1D4ED8" stroke-width="1.5"/>
               <polygon points="409,160 412,167 415,160" fill="#1D4ED8"/>
 
-              <rect x="20" y="167" width="507" height="150" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+              <rect x="20" y="167" width="507" height="150" rx="8" class="arch-card" stroke-width="1.5"/>
               <text x="35" y="192" fill="#1D4ED8" font-family="JetBrains Mono" font-size="11" font-weight="bold">AUTONOMOUS MULTI-AGENT ENGINE</text>
               
-              <rect x="35" y="205" width="105" height="90" rx="6" fill="#F8FAFC" stroke="#E2E8F0"/>
-              <text x="45" y="225" fill="#0F172A" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">Scanner</text>
-              <text x="45" y="245" fill="#64748B" font-family="JetBrains Mono" font-size="9">Tree-sitter</text>
-              <text x="45" y="260" fill="#64748B" font-family="JetBrains Mono" font-size="9">Radon</text>
-              <text x="45" y="275" fill="#64748B" font-family="JetBrains Mono" font-size="9">Bandit</text>
+              <rect x="35" y="205" width="105" height="90" rx="6" class="arch-sub-card"/>
+              <text x="45" y="225" class="arch-text-title" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">Scanner</text>
+              <text x="45" y="245" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Tree-sitter</text>
+              <text x="45" y="260" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Radon</text>
+              <text x="45" y="275" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Bandit</text>
 
-              <rect x="150" y="205" width="105" height="90" rx="6" fill="#F8FAFC" stroke="#E2E8F0"/>
-              <text x="160" y="225" fill="#0F172A" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">Planner</text>
-              <text x="160" y="245" fill="#64748B" font-family="JetBrains Mono" font-size="9">NetworkX</text>
-              <text x="160" y="260" fill="#64748B" font-family="JetBrains Mono" font-size="9">Scoring</text>
-              <text x="160" y="275" fill="#64748B" font-family="JetBrains Mono" font-size="9">Clusters</text>
+              <rect x="150" y="205" width="105" height="90" rx="6" class="arch-sub-card"/>
+              <text x="160" y="225" class="arch-text-title" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">Planner</text>
+              <text x="160" y="245" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">NetworkX</text>
+              <text x="160" y="260" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Scoring</text>
+              <text x="160" y="275" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Clusters</text>
 
-              <rect x="265" y="205" width="115" height="90" rx="6" fill="#F8FAFC" stroke="#E2E8F0"/>
-              <text x="275" y="225" fill="#0F172A" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">Coder (LLM)</text>
-              <text x="275" y="245" fill="#64748B" font-family="JetBrains Mono" font-size="9">Gemini Flash</text>
-              <text x="275" y="260" fill="#64748B" font-family="JetBrains Mono" font-size="9">Few-Shot</text>
-              <text x="275" y="275" fill="#64748B" font-family="JetBrains Mono" font-size="9">libcst AST</text>
+              <rect x="265" y="205" width="115" height="90" rx="6" class="arch-sub-card"/>
+              <text x="275" y="225" class="arch-text-title" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">Coder (LLM)</text>
+              <text x="275" y="245" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Gemini Flash</text>
+              <text x="275" y="260" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Few-Shot</text>
+              <text x="275" y="275" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">libcst AST</text>
 
-              <rect x="390" y="205" width="120" height="90" rx="6" fill="#F8FAFC" stroke="#E2E8F0"/>
-              <text x="400" y="225" fill="#0F172A" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">Reviewer & Test</text>
-              <text x="400" y="245" fill="#64748B" font-family="JetBrains Mono" font-size="9">Groq Llama</text>
-              <text x="400" y="260" fill="#64748B" font-family="JetBrains Mono" font-size="9">Pytest Loop</text>
-              <text x="400" y="275" fill="#64748B" font-family="JetBrains Mono" font-size="9">Self-Healing</text>
+              <rect x="390" y="205" width="120" height="90" rx="6" class="arch-sub-card"/>
+              <text x="400" y="225" class="arch-text-title" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">Reviewer & Test</text>
+              <text x="400" y="245" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Groq Llama</text>
+              <text x="400" y="260" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Pytest Loop</text>
+              <text x="400" y="275" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Self-Healing</text>
 
-              <rect x="560" y="20" width="220" height="297" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+              <rect x="560" y="20" width="220" height="297" rx="8" class="arch-card" stroke-width="1.5"/>
               <text x="580" y="45" fill="#1D4ED8" font-family="JetBrains Mono" font-size="11" font-weight="bold">PERSISTENCE LAYER</text>
               
-              <rect x="580" y="65" width="180" height="65" rx="6" fill="#F8FAFC" stroke="#E2E8F0"/>
-              <text x="592" y="88" fill="#0F172A" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">SQLite (memory.db)</text>
-              <text x="592" y="105" fill="#64748B" font-family="JetBrains Mono" font-size="9">Decisions, Issues, History</text>
+              <rect x="580" y="65" width="180" height="65" rx="6" class="arch-sub-card"/>
+              <text x="592" y="88" class="arch-text-title" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">SQLite (memory.db)</text>
+              <text x="592" y="105" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Decisions, Issues, History</text>
 
-              <rect x="580" y="145" width="180" height="65" rx="6" fill="#F8FAFC" stroke="#E2E8F0"/>
-              <text x="592" y="168" fill="#0F172A" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">ChromaDB Vector Store</text>
-              <text x="592" y="185" fill="#64748B" font-family="JetBrains Mono" font-size="9">Embeddings & Semantic RAG</text>
+              <rect x="580" y="145" width="180" height="65" rx="6" class="arch-sub-card"/>
+              <text x="592" y="168" class="arch-text-title" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">ChromaDB Vector Store</text>
+              <text x="592" y="185" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Embeddings & Semantic RAG</text>
 
-              <rect x="580" y="225" width="180" height="65" rx="6" fill="#F8FAFC" stroke="#E2E8F0"/>
-              <text x="592" y="248" fill="#0F172A" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">Git Workspace</text>
-              <text x="592" y="265" fill="#64748B" font-family="JetBrains Mono" font-size="9">agent-fix-* Branches & Rollback</text>
+              <rect x="580" y="225" width="180" height="65" rx="6" class="arch-sub-card"/>
+              <text x="592" y="248" class="arch-text-title" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">Git Workspace</text>
+              <text x="592" y="265" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">agent-fix-* Branches & Rollback</text>
 
               <path d="M527 240 L560 240" stroke="#1D4ED8" stroke-width="1.5"/>
               <polygon points="553,237 560,240 553,243" fill="#1D4ED8"/>
@@ -848,59 +911,59 @@ source venv/bin/activate</code>
       </div>
     </section>
 
-    <!-- ==================== FREQUENTLY ASKED QUESTIONS (TECHPULSE ACCORDION) ==================== -->
-    <section id="faq" class="py-16 md:py-24 border-b border-border bg-canvas">
+    <!-- ==================== FREQUENTLY ASKED QUESTIONS ==================== -->
+    <section id="faq" class="py-16 md:py-24 border-b border-border dark:border-[#1F2430] bg-canvas dark:bg-[#080808] transition-colors">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div class="max-w-2xl mb-12">
-          <span class="font-mono text-xs text-brand-blue uppercase tracking-wider font-semibold">Questions & Clarifications</span>
-          <h2 class="font-serif text-3xl sm:text-4xl font-normal text-ink mt-1">
-            Frequently <span class="italic text-brand-blue">asked.</span>
+          <span class="font-mono text-xs text-brand-blue dark:text-blue-400 uppercase tracking-wider font-semibold">Questions & Clarifications</span>
+          <h2 class="font-serif text-3xl sm:text-4xl font-normal text-ink dark:text-white mt-1">
+            Frequently <span class="italic text-brand-blue dark:text-blue-400">asked.</span>
           </h2>
-          <p class="text-ink-secondary text-sm mt-2">
+          <p class="text-ink-secondary dark:text-slate-400 text-sm mt-2">
             Clear, honest answers about safety boundaries and operational constraints.
           </p>
         </div>
 
         <div class="space-y-4 font-sans text-xs">
           
-          <details class="group bg-white border border-border rounded-2xl p-5 open:border-brand-blue transition">
-            <summary class="font-bold text-sm text-ink cursor-pointer list-none flex items-center justify-between">
+          <details class="group bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-2xl p-5 open:border-brand-blue dark:open:border-blue-500 transition">
+            <summary class="font-bold text-sm text-ink dark:text-white cursor-pointer list-none flex items-center justify-between">
               <span>How does the agent avoid breaking working code?</span>
-              <span class="text-brand-blue text-lg transition-transform group-open:rotate-45">+</span>
+              <span class="text-brand-blue dark:text-blue-400 text-lg transition-transform group-open:rotate-45">+</span>
             </summary>
-            <p class="text-ink-secondary mt-3 leading-relaxed">
-              Fixes are never committed to your active branch. The system creates isolated <code class="text-brand-blue font-mono">agent-fix-*</code> branches, runs your test suites (pytest), critiques the diff through a second independent model (Groq Llama 3.3 70B), and forces an immediate rollback to clean HEAD if tests fail.
+            <p class="text-ink-secondary dark:text-slate-400 mt-3 leading-relaxed">
+              Fixes are never committed to your active branch. The system creates isolated <code class="text-brand-blue dark:text-blue-400 font-mono">agent-fix-*</code> branches, runs your test suites (pytest), critiques the diff through a second independent model (Groq Llama 3.3 70B), and forces an immediate rollback to clean HEAD if tests fail.
             </p>
           </details>
 
-          <details class="group bg-white border border-border rounded-2xl p-5 open:border-brand-blue transition">
-            <summary class="font-bold text-sm text-ink cursor-pointer list-none flex items-center justify-between">
+          <details class="group bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-2xl p-5 open:border-brand-blue dark:open:border-blue-500 transition">
+            <summary class="font-bold text-sm text-ink dark:text-white cursor-pointer list-none flex items-center justify-between">
               <span>Do I need to pay for API keys to run the agent?</span>
-              <span class="text-brand-blue text-lg transition-transform group-open:rotate-45">+</span>
+              <span class="text-brand-blue dark:text-blue-400 text-lg transition-transform group-open:rotate-45">+</span>
             </summary>
-            <p class="text-ink-secondary mt-3 leading-relaxed">
+            <p class="text-ink-secondary dark:text-slate-400 mt-3 leading-relaxed">
               No. The core AST static analysis, Radon complexity scoring, Vulture dead-code discovery, Bandit security audit, and NetworkX dependency graph run 100% offline with zero API keys. API keys (Gemini or Groq) are only optional when activating the generative patch synthesis loop.
             </p>
           </details>
 
-          <details class="group bg-white border border-border rounded-2xl p-5 open:border-brand-blue transition">
-            <summary class="font-bold text-sm text-ink cursor-pointer list-none flex items-center justify-between">
+          <details class="group bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-2xl p-5 open:border-brand-blue dark:open:border-blue-500 transition">
+            <summary class="font-bold text-sm text-ink dark:text-white cursor-pointer list-none flex items-center justify-between">
               <span>Can it run against remote repositories?</span>
-              <span class="text-brand-blue text-lg transition-transform group-open:rotate-45">+</span>
+              <span class="text-brand-blue dark:text-blue-400 text-lg transition-transform group-open:rotate-45">+</span>
             </summary>
-            <p class="text-ink-secondary mt-3 leading-relaxed">
-              Yes. You can paste any public Git URL into the Workspace Input. The application clones the repository into an isolated sandbox in <code class="text-brand-blue font-mono">/tmp</code>, establishes branch references, and indexes ASTs without polluting your local working directory.
+            <p class="text-ink-secondary dark:text-slate-400 mt-3 leading-relaxed">
+              Yes. You can paste any public Git URL into the Workspace Input. The application clones the repository into an isolated sandbox in <code class="text-brand-blue dark:text-blue-400 font-mono">/tmp</code>, establishes branch references, and indexes ASTs without polluting your local working directory.
             </p>
           </details>
 
-          <details class="group bg-white border border-border rounded-2xl p-5 open:border-brand-blue transition">
-            <summary class="font-bold text-sm text-ink cursor-pointer list-none flex items-center justify-between">
+          <details class="group bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-2xl p-5 open:border-brand-blue dark:open:border-blue-500 transition">
+            <summary class="font-bold text-sm text-ink dark:text-white cursor-pointer list-none flex items-center justify-between">
               <span>How does the decision memory prevent repeated bad suggestions?</span>
-              <span class="text-brand-blue text-lg transition-transform group-open:rotate-45">+</span>
+              <span class="text-brand-blue dark:text-blue-400 text-lg transition-transform group-open:rotate-45">+</span>
             </summary>
-            <p class="text-ink-secondary mt-3 leading-relaxed">
-              When you reject a proposed change, the rejection rationale and code slice are stored in SQLite <code class="text-brand-blue font-mono">memory.db</code>. When synthesizing future patches for related files, the Coder agent queries past rejections and explicitly suppresses unwanted patterns.
+            <p class="text-ink-secondary dark:text-slate-400 mt-3 leading-relaxed">
+              When you reject a proposed change, the rejection rationale and code slice are stored in SQLite <code class="text-brand-blue dark:text-blue-400 font-mono">memory.db</code>. When synthesizing future patches for related files, the Coder agent queries past rejections and explicitly suppresses unwanted patterns.
             </p>
           </details>
 
@@ -910,12 +973,12 @@ source venv/bin/activate</code>
     </section>
 
     <!-- ==================== FINAL CALL TO ACTION ==================== -->
-    <section class="py-20 border-b border-border bg-white text-center">
+    <section class="py-20 border-b border-border dark:border-[#1F2430] bg-white dark:bg-[#090B10] text-center transition-colors">
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        <h2 class="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal text-ink tracking-tight">
-          Give your codebase a <span class="italic text-brand-blue">clearer path forward.</span>
+        <h2 class="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal text-ink dark:text-white tracking-tight">
+          Give your codebase a <span class="italic text-brand-blue dark:text-blue-400">clearer path forward.</span>
         </h2>
-        <p class="text-ink-secondary text-sm sm:text-base leading-relaxed max-w-xl mx-auto">
+        <p class="text-ink-secondary dark:text-slate-400 text-sm sm:text-base leading-relaxed max-w-xl mx-auto">
           Explore the workflow, understand the architecture, and run the agent against a repository you control.
         </p>
         <div class="flex flex-wrap justify-center gap-4 pt-2">
@@ -923,7 +986,7 @@ source venv/bin/activate</code>
             <span>Launch Developer Console</span>
             <i data-lucide="arrow-right" class="w-4 h-4"></i>
           </a>
-          <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="bg-surface-subtle hover:bg-neutral-200/70 text-ink border border-border text-sm font-medium px-6 py-3 rounded-full transition flex items-center space-x-2">
+          <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="bg-surface-subtle dark:bg-[#121622] hover:bg-neutral-200/70 dark:hover:bg-[#181F30] text-ink dark:text-white border border-border dark:border-[#21283B] text-sm font-medium px-6 py-3 rounded-full transition flex items-center space-x-2">
             <i data-lucide="github" class="w-4 h-4"></i>
             <span>Explore on GitHub</span>
           </a>
@@ -933,46 +996,46 @@ source venv/bin/activate</code>
 
   </main>
 
-  <!-- ==================== GRAND TECHPULSE-STYLE FOOTER ==================== -->
-  <footer class="bg-white pt-16 pb-12 border-t border-border">
+  <!-- ==================== GRAND FOOTER ==================== -->
+  <footer class="bg-white dark:bg-[#080808] pt-16 pb-12 border-t border-border dark:border-[#1F2430] transition-colors">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
       
-      <!-- Massive Editorial Brand Title (Like TechPulse. in Reference Screenshot) -->
-      <div class="pb-8 border-b border-border-subtle">
-        <h2 class="font-serif text-6xl sm:text-8xl lg:text-9xl font-bold tracking-tight text-ink select-none leading-none">
-          Codebase Agent<span class="text-brand-blue">.</span>
+      <!-- Massive Editorial Brand Title -->
+      <div class="pb-8 border-b border-border-subtle dark:border-[#1F2430]">
+        <h2 class="font-serif text-6xl sm:text-8xl lg:text-9xl font-bold tracking-tight text-ink dark:text-white select-none leading-none">
+          Codebase Agent<span class="text-brand-blue dark:text-blue-500">.</span>
         </h2>
       </div>
 
       <!-- Footer Multi-Column Links -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-xs font-sans">
         <div class="space-y-3">
-          <div class="font-serif text-base font-bold text-ink">Overview</div>
-          <p class="text-ink-secondary leading-relaxed text-[11px]">
+          <div class="font-serif text-base font-bold text-ink dark:text-white">Overview</div>
+          <p class="text-ink-secondary dark:text-slate-400 leading-relaxed text-[11px]">
             Autonomous multi-agent system for continuous technical debt remediation, AST refactoring, and regression testing.
           </p>
         </div>
         <div class="space-y-2">
-          <div class="font-serif text-sm font-bold text-ink">Application</div>
-          <ul class="space-y-1.5 text-ink-muted text-[11px]">
-            <li><a href="/app" class="hover:text-brand-blue transition">Developer Console</a></li>
-            <li><a href="#pipeline" class="hover:text-brand-blue transition">Pipeline Workflow</a></li>
-            <li><a href="#example" class="hover:text-brand-blue transition">Diff Inspection</a></li>
-            <li><a href="#architecture" class="hover:text-brand-blue transition">System Architecture</a></li>
+          <div class="font-serif text-sm font-bold text-ink dark:text-white">Application</div>
+          <ul class="space-y-1.5 text-ink-muted dark:text-slate-400 text-[11px]">
+            <li><a href="/app" class="hover:text-brand-blue dark:hover:text-blue-400 transition">Developer Console</a></li>
+            <li><a href="#pipeline" class="hover:text-brand-blue dark:hover:text-blue-400 transition">Pipeline Workflow</a></li>
+            <li><a href="#example" class="hover:text-brand-blue dark:hover:text-blue-400 transition">Diff Inspection</a></li>
+            <li><a href="#architecture" class="hover:text-brand-blue dark:hover:text-blue-400 transition">System Architecture</a></li>
           </ul>
         </div>
         <div class="space-y-2">
-          <div class="font-serif text-sm font-bold text-ink">Getting Started</div>
-          <ul class="space-y-1.5 text-ink-muted text-[11px]">
-            <li><a href="#quickstart" class="hover:text-brand-blue transition">PowerShell Setup</a></li>
-            <li><a href="#quickstart" class="hover:text-brand-blue transition">Bash Setup</a></li>
-            <li><a href="#faq" class="hover:text-brand-blue transition">FAQ & Security</a></li>
-            <li><a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="hover:text-brand-blue transition">GitHub Repository</a></li>
+          <div class="font-serif text-sm font-bold text-ink dark:text-white">Getting Started</div>
+          <ul class="space-y-1.5 text-ink-muted dark:text-slate-400 text-[11px]">
+            <li><a href="#quickstart" class="hover:text-brand-blue dark:hover:text-blue-400 transition">PowerShell Setup</a></li>
+            <li><a href="#quickstart" class="hover:text-brand-blue dark:hover:text-blue-400 transition">Bash Setup</a></li>
+            <li><a href="#faq" class="hover:text-brand-blue dark:hover:text-blue-400 transition">FAQ & Security</a></li>
+            <li><a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="hover:text-brand-blue dark:hover:text-blue-400 transition">GitHub Repository</a></li>
           </ul>
         </div>
         <div class="space-y-2">
-          <div class="font-serif text-sm font-bold text-ink">Technology Stack</div>
-          <ul class="space-y-1.5 text-ink-muted text-[11px]">
+          <div class="font-serif text-sm font-bold text-ink dark:text-white">Technology Stack</div>
+          <ul class="space-y-1.5 text-ink-muted dark:text-slate-400 text-[11px]">
             <li>Python 3.12 · FastAPI</li>
             <li>Tree-sitter · Radon · Bandit</li>
             <li>ChromaDB · SQLite</li>
@@ -982,9 +1045,9 @@ source venv/bin/activate</code>
       </div>
 
       <!-- Copyright & Disclaimer -->
-      <div class="pt-6 border-t border-border-subtle flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-[11px] text-ink-muted font-mono">
+      <div class="pt-6 border-t border-border-subtle dark:border-[#1F2430] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-[11px] text-ink-muted dark:text-slate-500 font-mono">
         <div>
-          Licensed under <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="underline hover:text-ink">MIT License</a>. Open source project.
+          Licensed under <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="underline hover:text-ink dark:hover:text-white">MIT License</a>. Open source project.
         </div>
         <div>
           Human-governed code review · Zero unreviewed merges
@@ -999,6 +1062,21 @@ source venv/bin/activate</code>
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
     });
+
+    // Theme Toggle Functionality with LocalStorage persistence
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.contains('dark');
+      if (isDark) {
+        document.documentElement.classList.remove('dark');
+        localStorage.theme = 'light';
+      } else {
+        document.documentElement.classList.add('dark');
+        localStorage.theme = 'dark';
+      }
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
 
     // Mobile menu toggle
     const menuBtn = document.getElementById('mobile-menu-btn');
@@ -1160,13 +1238,13 @@ source venv/bin/activate</code>
       const venvNix = document.getElementById('code-venv-nix');
 
       if (os === 'win') {
-        btnWin.className = 'px-3.5 py-1.5 rounded-full bg-white text-brand-blue font-semibold border border-brand-blue shadow-sm focus:outline-none';
-        btnNix.className = 'px-3.5 py-1.5 rounded-full bg-neutral-100 text-ink-secondary hover:text-ink border border-neutral-200 focus:outline-none';
+        btnWin.className = 'px-3.5 py-1.5 rounded-full bg-white dark:bg-[#121622] text-brand-blue dark:text-blue-400 font-semibold border border-brand-blue dark:border-blue-500 shadow-sm focus:outline-none';
+        btnNix.className = 'px-3.5 py-1.5 rounded-full bg-neutral-100 dark:bg-[#121622] text-ink-secondary dark:text-slate-400 hover:text-ink dark:hover:text-white border border-neutral-200 dark:border-[#21283B] focus:outline-none';
         venvWin.classList.remove('hidden');
         venvNix.classList.add('hidden');
       } else {
-        btnNix.className = 'px-3.5 py-1.5 rounded-full bg-white text-brand-blue font-semibold border border-brand-blue shadow-sm focus:outline-none';
-        btnWin.className = 'px-3.5 py-1.5 rounded-full bg-neutral-100 text-ink-secondary hover:text-ink border border-neutral-200 focus:outline-none';
+        btnNix.className = 'px-3.5 py-1.5 rounded-full bg-white dark:bg-[#121622] text-brand-blue dark:text-blue-400 font-semibold border border-brand-blue dark:border-blue-500 shadow-sm focus:outline-none';
+        btnWin.className = 'px-3.5 py-1.5 rounded-full bg-neutral-100 dark:bg-[#121622] text-ink-secondary dark:text-slate-400 hover:text-ink dark:hover:text-white border border-neutral-200 dark:border-[#21283B] focus:outline-none';
         venvNix.classList.remove('hidden');
         venvWin.classList.add('hidden');
       }
@@ -1203,10 +1281,10 @@ source venv/bin/activate</code>
 
       toast.classList.remove('hidden');
       if (action === 'approve') {
-        toast.className = 'px-5 py-3 font-mono text-xs border-t border-emerald-500/30 bg-emerald-500/10 text-emerald-300';
+        toast.className = 'px-5 py-3 font-mono text-xs border-t border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300';
         toast.innerHTML = '<strong>[Demo Approved]</strong> In the actual product, this action creates a safe <code>agent-fix-*</code> branch commit, applies the AST change, and logs the approved strategy into SQLite <code>memory.db</code>.';
       } else {
-        toast.className = 'px-5 py-3 font-mono text-xs border-t border-red-500/30 bg-red-500/10 text-red-300';
+        toast.className = 'px-5 py-3 font-mono text-xs border-t border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300';
         toast.innerHTML = '<strong>[Demo Rejected]</strong> In the actual product, the working tree immediately rolls back to clean HEAD. A rejection record is logged to <code>memory.db</code> so the agent never repeats this proposal.';
       }
     }
