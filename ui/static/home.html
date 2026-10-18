@@ -10,14 +10,14 @@
   <script src="/static/tailwind.js"></script>
   <script src="/static/lucide.min.js"></script>
 
-  <!-- Typography: DM Sans + Geist Mono (Rixel Font Stack) -->
+  <!-- Typography: Plus Jakarta Sans + DM Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..800;1,9..40,300..800&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,400..700&display=swap" rel="stylesheet">
 
   <script>
-    // Initialize Theme immediately to prevent flash
-    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    // Initialize Theme: Default to light theme unless explicitly chosen 'dark' by user
+    if (localStorage.theme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
@@ -40,9 +40,9 @@
             'ink-muted': '#71717A'
           },
           fontFamily: {
-            heading: ['"DM Sans"', 'system-ui', '-apple-system', 'sans-serif'],
-            sans: ['"DM Sans"', 'system-ui', '-apple-system', 'sans-serif'],
-            mono: ['"Geist Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
+            heading: ['"Plus Jakarta Sans"', '"DM Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+            sans: ['"Plus Jakarta Sans"', '"DM Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['"Plus Jakarta Sans"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
           },
           letterSpacing: {
             tighter: '-0.035em',
@@ -58,7 +58,7 @@
     body {
       background-color: #FAFAFA;
       color: #09090B;
-      font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       text-rendering: optimizeLegibility;
       -webkit-font-smoothing: antialiased;
       transition: background-color 0.2s ease, color 0.2s ease;
@@ -304,7 +304,7 @@
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
             
             <div class="lg:col-span-6 space-y-3 sm:space-y-4">
-              <div class="flex flex-wrap items-center gap-2">
+              <div class="flex items-center gap-2 overflow-x-auto no-scrollbar whitespace-nowrap">
                 <span class="inline-flex items-center whitespace-nowrap shrink-0 font-mono text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
                   01 · REPOSITORY
                 </span>
@@ -366,7 +366,7 @@
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
             
             <div class="lg:col-span-6 space-y-3 sm:space-y-4">
-              <div class="flex flex-wrap items-center gap-2">
+              <div class="flex items-center gap-2 overflow-x-auto no-scrollbar whitespace-nowrap">
                 <span class="inline-flex items-center whitespace-nowrap shrink-0 font-mono text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
                   02 · SCANNER
                 </span>
@@ -425,7 +425,7 @@
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
             
             <div class="lg:col-span-6 space-y-3 sm:space-y-4">
-              <div class="flex flex-wrap items-center gap-2">
+              <div class="flex items-center gap-2 overflow-x-auto no-scrollbar whitespace-nowrap">
                 <span class="inline-flex items-center whitespace-nowrap shrink-0 font-mono text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
                   03 · PLANNER
                 </span>
@@ -487,7 +487,7 @@
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
             
             <div class="lg:col-span-6 space-y-3 sm:space-y-4">
-              <div class="flex flex-wrap items-center gap-2">
+              <div class="flex items-center gap-2 overflow-x-auto no-scrollbar whitespace-nowrap">
                 <span class="inline-flex items-center whitespace-nowrap shrink-0 font-mono text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
                   04 · CODER
                 </span>
@@ -548,7 +548,7 @@
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
             
             <div class="lg:col-span-6 space-y-3 sm:space-y-4">
-              <div class="flex flex-wrap items-center gap-2">
+              <div class="flex items-center gap-2 overflow-x-auto no-scrollbar whitespace-nowrap">
                 <span class="inline-flex items-center whitespace-nowrap shrink-0 font-mono text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
                   05 · REVIEWER
                 </span>
@@ -609,7 +609,7 @@ Reviewer Critique (Groq Llama 3.3):
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
             
             <div class="lg:col-span-6 space-y-3 sm:space-y-4">
-              <div class="flex flex-wrap items-center gap-2">
+              <div class="flex items-center gap-2 overflow-x-auto no-scrollbar whitespace-nowrap">
                 <span class="inline-flex items-center whitespace-nowrap shrink-0 font-mono text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-400 font-semibold border border-emerald-200 dark:border-emerald-900">
                   06 · APPROVAL
                 </span>
