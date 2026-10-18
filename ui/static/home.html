@@ -70,26 +70,33 @@
       color: #FAFAFA;
     }
 
-    /* Custom thin scrollbar */
-    ::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
+    /* Completely hide scrollbars from all cards, code pre blocks, and inner containers */
+    .stack-card pre,
+    .stack-card div,
+    pre,
+    .no-scrollbar {
+      -ms-overflow-style: none !important;
+      scrollbar-width: none !important;
     }
-    ::-webkit-scrollbar-thumb {
+    .stack-card pre::-webkit-scrollbar,
+    .stack-card div::-webkit-scrollbar,
+    pre::-webkit-scrollbar,
+    .no-scrollbar::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+
+    /* Only style the main document vertical scrollbar */
+    html::-webkit-scrollbar {
+      width: 5px;
+    }
+    html::-webkit-scrollbar-thumb {
       background: #D4D4D8;
       border-radius: 4px;
     }
-    .dark ::-webkit-scrollbar-thumb {
+    .dark html::-webkit-scrollbar-thumb {
       background: #27272A;
-    }
-
-    /* Hide scrollbar utility */
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
     }
 
     /* Stacking card styles with natural vertical scale & elevation */
@@ -339,7 +346,7 @@
                     <span>READY</span>
                   </div>
                 </div>
-                <pre class="text-[10px] sm:text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[140px] p-2.5 sm:p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono whitespace-pre w-full">{
+                <pre class="no-scrollbar text-[10px] sm:text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[140px] p-2.5 sm:p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono whitespace-pre w-full">{
   "action": "initialize_workspace",
   "target_path": "./my-project",
   "git_branch": "main",
@@ -401,7 +408,7 @@
                     <span>COMPLETED</span>
                   </div>
                 </div>
-                <pre class="text-[10px] sm:text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[140px] p-2.5 sm:p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono whitespace-pre w-full">$ python -m agents.scanner --target .
+                <pre class="no-scrollbar text-[10px] sm:text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[140px] p-2.5 sm:p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono whitespace-pre w-full">$ python -m agents.scanner --target .
 [Scanner] Indexing AST nodes via Tree-sitter... (84 modules)
 [Scanner] Radon: 3 functions exceeded complexity threshold
 [Scanner] Bandit: 1 insecure MD5 token hash (auth/hasher.py:14)
@@ -460,7 +467,7 @@
                     <span>GRAPH_RESOLVED</span>
                   </div>
                 </div>
-                <pre class="text-[10px] sm:text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[140px] p-2.5 sm:p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono whitespace-pre w-full">{
+                <pre class="no-scrollbar text-[10px] sm:text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[140px] p-2.5 sm:p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono whitespace-pre w-full">{
   "target_function": "hash_user_token",
   "file": "auth/hasher.py",
   "direct_callers": ["api/routes.py", "auth/tokens.py"],
@@ -522,7 +529,7 @@
                     <span>CANDIDATE_READY</span>
                   </div>
                 </div>
-                <pre class="text-[10px] sm:text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[140px] p-2.5 sm:p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono whitespace-pre w-full">--- a/auth/hasher.py
+                <pre class="no-scrollbar text-[10px] sm:text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[140px] p-2.5 sm:p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono whitespace-pre w-full">--- a/auth/hasher.py
 +++ b/auth/hasher.py
 @@ -12,4 +12,4 @@
  def hash_user_token(raw_token: str) -> str:
@@ -583,7 +590,7 @@
                     <span>TESTS_PASSED</span>
                   </div>
                 </div>
-                <pre class="text-[10px] sm:text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[140px] p-2.5 sm:p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono whitespace-pre w-full">$ pytest tests/test_hasher.py -v
+                <pre class="no-scrollbar text-[10px] sm:text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[140px] p-2.5 sm:p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono whitespace-pre w-full">$ pytest tests/test_hasher.py -v
 tests/test_hasher.py::test_hash_user_token PASSED        [ 50%]
 tests/test_hasher.py::test_token_entropy PASSED          [100%]
 ====================== 2 passed in 0.08s =======================
@@ -644,7 +651,7 @@ Reviewer Critique (Groq Llama 3.3):
                     <span>MERGED</span>
                   </div>
                 </div>
-                <pre class="text-[10px] sm:text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[140px] p-2.5 sm:p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono whitespace-pre w-full">{
+                <pre class="no-scrollbar text-[10px] sm:text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[140px] p-2.5 sm:p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono whitespace-pre w-full">{
   "developer_decision": "APPROVED",
   "target_branch": "agent-fix-token-hash",
   "merge_status": "MERGE_COMPLETED",
