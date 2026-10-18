@@ -781,13 +781,31 @@ Reviewer Critique (Groq Llama 3.3):
       // Update tracker pill active state
       pills.forEach((pill, idx) => {
         if (idx === activeIndex) {
+          const wasActive = pill.classList.contains('active');
           pill.classList.add('active');
-          // Smoothly scroll active pill into view on mobile
-          pill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          // Smoothly scroll active pill horizontally within its container without moving the window
+          const container = pill.parentElement;
+          if (!wasActive && container && container.scrollWidth > container.clientWidth) {
+            const pillLeft = pill.offsetLeft;
+            const pillWidth = pill.offsetWidth;
+            const containerWidth = container.clientWidth;
+            container.scrollTo({
+              left: pillLeft - (containerWidth / 2) + (pillWidth / 2),
+              behavior: 'smooth'
+            });
+          }
         } else {
           pill.classList.remove('active');
         }
       });
+    }
+
+    // Ensure the page always starts at top on initial load or browser refresh (unless an anchor hash is requested)
+    if (!window.location.hash) {
+      if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+      }
+      window.scrollTo(0, 0);
     }
 
     // Theme Toggle Functionality with LocalStorage persistence
@@ -807,9 +825,18 @@ Reviewer Critique (Groq Llama 3.3):
 
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', () => {
+      if (!window.location.hash) {
+        window.scrollTo(0, 0);
+      }
       lucide.createIcons();
       window.addEventListener('scroll', updateCardStack, { passive: true });
       updateCardStack();
+    });
+
+    window.addEventListener('load', () => {
+      if (!window.location.hash) {
+        window.scrollTo(0, 0);
+      }
     });
   </script>
 
