@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: codebase-self-evolving-agent
+    runtime: docker
+    plan: free
+    region: oregon
+    envVars:
+      - key: DEMO_MODE
+        value: "false"
+      - key: LOW_MEMORY
+        value: "true"
+      - key: DISABLE_LOCAL_EMBEDDINGS
+        value: "true"
+      - key: WEB_CONCURRENCY
+        value: "1"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
