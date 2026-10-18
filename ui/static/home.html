@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Codebase Agent · Your Codebase. Understood. Improved. Evolving.</title>
-  <meta name="description" content="A simple, developer-governed guide to the Codebase Self-Evolving Agent: what it is, how it works, and how it safely scans and improves code.">
+  <meta name="description" content="A simple, developer-governed guide to Codebase Self-Evolving Agent: what it is, how it works, and its 6-stage stacking card architecture.">
 
   <!-- Local Tailwind CSS & Lucide Icons -->
   <script src="/static/tailwind.js"></script>
   <script src="/static/lucide.min.js"></script>
 
-  <!-- Typography: DM Sans (Rixel Headings & Sans) + Geist Mono (Rixel Code & Monospace) -->
+  <!-- Typography: DM Sans + Geist Mono (Rixel Font Stack) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -28,34 +28,21 @@
       theme: {
         extend: {
           colors: {
-            // Rixel Zinc Palette
             canvas: '#FAFAFA',
             surface: '#FFFFFF',
             'surface-nested': '#F4F4F5',
             border: '#E4E4E7',
-            'border-subtle': '#EEEEF0',
-            primary: '#09090B',
-            'primary-foreground': '#FAFAFA',
             'brand-blue': '#2563EB',
             'brand-blue-hover': '#1D4ED8',
             'brand-blue-light': '#EFF6FF',
             ink: '#09090B',
             'ink-secondary': '#52525B',
-            'ink-muted': '#71717A',
-            // Dark mode overrides
-            dark: {
-              canvas: '#09090B',
-              surface: '#111114',
-              'surface-nested': '#18181B',
-              border: '#27272A',
-              primary: '#FAFAFA',
-              'primary-foreground': '#09090B'
-            }
+            'ink-muted': '#71717A'
           },
           fontFamily: {
             heading: ['"DM Sans"', 'system-ui', '-apple-system', 'sans-serif'],
             sans: ['"DM Sans"', 'system-ui', '-apple-system', 'sans-serif'],
-            mono: ['"Geist Mono"', 'JetBrains Mono', 'monospace']
+            mono: ['"Geist Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
           },
           letterSpacing: {
             tighter: '-0.035em',
@@ -75,22 +62,12 @@
       text-rendering: optimizeLegibility;
       -webkit-font-smoothing: antialiased;
       transition: background-color 0.2s ease, color 0.2s ease;
+      overflow-x: hidden;
     }
 
     .dark body {
       background-color: #09090B;
       color: #FAFAFA;
-    }
-
-    /* Rixel subtle grid background overlay */
-    .bg-grid-pattern {
-      background-size: 32px 32px;
-      background-image: linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
-                        linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
-    }
-    .dark .bg-grid-pattern {
-      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-                        linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
     }
 
     /* Custom thin scrollbar */
@@ -106,34 +83,49 @@
       background: #27272A;
     }
 
-    /* Active step pill state (Rixel style) */
-    .step-pill.active {
-      border-color: #2563EB;
-      background-color: #EFF6FF;
-      color: #2563EB;
-      box-shadow: 0 1px 4px rgba(37, 99, 235, 0.12);
-    }
-    .dark .step-pill.active {
-      border-color: #3B82F6;
-      background-color: #172554;
-      color: #93C5FD;
-      box-shadow: 0 1px 4px rgba(59, 130, 246, 0.2);
+    /* Stacking card styles with 3D depth */
+    .stack-card {
+      position: sticky;
+      top: 6.5rem;
+      transform-origin: center top;
+      will-change: transform, opacity, filter;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, filter 0.25s ease;
     }
 
-    /* Smooth animated card transition */
-    .fade-step {
-      animation: stepFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    /* Active tracker pill */
+    .tracker-pill.active {
+      background-color: #2563EB;
+      color: #FFFFFF;
+      border-color: #2563EB;
+      box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
     }
-    @keyframes stepFade {
-      from { opacity: 0; transform: translateY(4px); }
-      to { opacity: 1; transform: translateY(0); }
+    .dark .tracker-pill.active {
+      background-color: #3B82F6;
+      color: #09090B;
+      border-color: #3B82F6;
+      box-shadow: 0 2px 10px rgba(59, 130, 246, 0.35);
+    }
+
+    /* Subtle 3D perspective wrapper */
+    .perspective-container {
+      perspective: 1200px;
+    }
+
+    /* Diff coloring */
+    .diff-del {
+      background-color: rgba(239, 68, 68, 0.12);
+      color: #F87171;
+    }
+    .diff-add {
+      background-color: rgba(16, 185, 129, 0.12);
+      color: #34D399;
     }
   </style>
 </head>
 <body class="min-h-screen flex flex-col selection:bg-brand-blue selection:text-white transition-colors">
 
   <!-- ==================== RIXEL-STYLE FLOATING NAV ==================== -->
-  <header class="sticky top-0 z-50 pt-4 px-4 sm:px-6 transition-all">
+  <header class="sticky top-0 z-50 pt-3 px-4 sm:px-6 transition-all">
     <div class="max-w-4xl mx-auto h-14 px-4 sm:px-5 rounded-full border border-zinc-200/90 dark:border-zinc-800/90 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md shadow-xs flex items-center justify-between transition-colors">
       
       <!-- Brand Wordmark -->
@@ -180,18 +172,18 @@
   </header>
 
   <!-- ==================== MAIN CONTENT ==================== -->
-  <main class="flex-grow max-w-4xl mx-auto px-4 sm:px-6 py-12 md:py-16 space-y-20">
+  <main class="flex-grow max-w-4xl mx-auto px-4 sm:px-6 py-12 md:py-16 space-y-24">
 
     <!-- ==================== WHAT IS THIS? (HERO) ==================== -->
     <section id="what-is-this" class="text-center max-w-2xl mx-auto space-y-6 pt-4">
       
-      <!-- Rixel Status Badge with Pulsing Dot -->
+      <!-- Status Badge -->
       <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1 text-xs font-medium text-zinc-700 dark:text-zinc-300 shadow-xs">
         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
         <span class="font-mono text-[11px]">Developer Guide · 100% Offline Core</span>
       </div>
 
-      <!-- Headline: "Your Codebase. Understood. Improved. Evolving." with Rixel Modern Sans -->
+      <!-- Headline: "Your Codebase. Understood. Improved. Evolving." -->
       <h1 class="font-heading text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tighter text-zinc-950 dark:text-zinc-50 leading-[1.08] text-balance">
         Your Codebase.<br/>
         <span class="text-brand-blue dark:text-blue-400">Understood. Improved. Evolving.</span>
@@ -202,15 +194,15 @@
         <strong class="text-zinc-900 dark:text-zinc-100 font-medium">What is this?</strong> An open-source tool that scans your codebase for technical debt and security oversights, maps dependency impact, generates verified fixes on isolated Git branches, and asks for your review before anything merges.
       </p>
 
-      <!-- CTA Buttons (Rixel Style) -->
+      <!-- Action Buttons -->
       <div class="flex flex-wrap justify-center items-center gap-3 pt-2">
         <a href="/app" class="h-11 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 px-6 font-medium text-sm hover:bg-zinc-800 dark:hover:bg-zinc-200 transition shadow-sm flex items-center space-x-2">
           <span>Open Developer Console</span>
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </a>
         <a href="#how-it-works" class="h-11 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 text-zinc-800 dark:text-zinc-200 px-5 font-medium text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition flex items-center space-x-2">
-          <i data-lucide="play-circle" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
-          <span>See How It Works</span>
+          <i data-lucide="layers" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
+          <span>Scroll Stacking Guide</span>
         </a>
       </div>
 
@@ -249,120 +241,418 @@
 
     </section>
 
-    <!-- ==================== ANIMATED HOW IT WORKS ==================== -->
-    <section id="how-it-works" class="space-y-6 scroll-mt-24">
+    <!-- ==================== CRAZY STACKING CARDS ON SCROLL ==================== -->
+    <section id="how-it-works" class="space-y-6 scroll-mt-20">
       
+      <!-- Section Headline -->
       <div class="text-center max-w-xl mx-auto space-y-1.5">
         <span class="font-mono text-xs text-brand-blue dark:text-blue-400 font-semibold uppercase tracking-wider">How It Works</span>
         <h2 class="font-heading text-3xl sm:text-4xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
           From first scan to clean code.
         </h2>
-        <p class="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">
-          The flow advances automatically through each step. Click any pill to inspect it or pause the animation.
+        <p class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
+          Scroll down to watch the cards stack over each other as the agent advances through each stage.
         </p>
       </div>
 
-      <!-- Rixel-Style Clean Interactive Bento Container -->
-      <div class="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-6 sm:p-8 shadow-sm space-y-6">
-        
-        <!-- Controls Bar: Step Pills (01 to 06) + Play/Pause Button -->
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-3.5 pb-4 border-b border-zinc-100 dark:border-zinc-800">
-          
-          <!-- Stepper Pills (01 to 06) -->
-          <div class="flex flex-wrap items-center justify-center gap-1.5" id="step-pills-container">
-            <!-- Dynamically populated by JS -->
-          </div>
-
-          <!-- Play / Pause Button -->
-          <button id="autoplay-btn" onclick="toggleAutoPlay()" class="h-8 flex items-center space-x-1.5 text-xs font-mono px-3.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-600 transition flex-shrink-0">
-            <i data-lucide="pause" id="autoplay-icon" class="w-3 h-3 text-brand-blue"></i>
-            <span id="autoplay-text">Pause Flow</span>
+      <!-- Sticky Floating Step Tracker (Highlights as you scroll) -->
+      <div class="sticky top-20 z-40 flex justify-center py-2 pointer-events-none">
+        <div class="pointer-events-auto inline-flex items-center gap-1 sm:gap-1.5 p-1 rounded-full border border-zinc-200/90 dark:border-zinc-800/90 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md shadow-md text-xs font-mono">
+          <button onclick="scrollToStep(1)" class="tracker-pill active px-3 py-1 rounded-full transition border border-transparent font-medium" data-target="1">
+            01 Repo
+          </button>
+          <button onclick="scrollToStep(2)" class="tracker-pill px-3 py-1 rounded-full transition border border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white" data-target="2">
+            02 Scan
+          </button>
+          <button onclick="scrollToStep(3)" class="tracker-pill px-3 py-1 rounded-full transition border border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white" data-target="3">
+            03 Plan
+          </button>
+          <button onclick="scrollToStep(4)" class="tracker-pill px-3 py-1 rounded-full transition border border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white" data-target="4">
+            04 Code
+          </button>
+          <button onclick="scrollToStep(5)" class="tracker-pill px-3 py-1 rounded-full transition border border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white" data-target="5">
+            05 Review
+          </button>
+          <button onclick="scrollToStep(6)" class="tracker-pill px-3 py-1 rounded-full transition border border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white" data-target="6">
+            06 Approve
           </button>
         </div>
+      </div>
 
-        <!-- Spotlight Stage Area -->
-        <div id="stage-card-wrapper" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center fade-step">
-          
-          <!-- Left: Explanatory Content -->
-          <div class="lg:col-span-6 space-y-4">
-            <div class="flex items-center space-x-2">
-              <span id="spot-badge" class="font-mono text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
-                01 · SCAN
-              </span>
-              <span id="spot-engine" class="font-mono text-xs text-zinc-400">
-                Workspace Initializer
-              </span>
-            </div>
+      <!-- ==================== STACKING CARDS DECK ==================== -->
+      <div class="perspective-container relative space-y-24 sm:space-y-36 pb-20">
 
-            <h3 id="spot-title" class="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-              Point to Your Codebase
-            </h3>
-
-            <p id="spot-desc" class="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
-              Enter your local folder path or a GitHub repository link in the console. The agent indexes your project files without touching existing branches.
-            </p>
-
-            <div class="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs">
-              <div class="flex items-center space-x-1.5 font-mono text-zinc-700 dark:text-zinc-300 font-medium">
-                <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i>
-                <span>Safety Guarantee</span>
+        <!-- ===== CARD 01: REPOSITORY ===== -->
+        <div id="step-card-1" class="stack-card rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-xl shadow-zinc-950/5 dark:shadow-black/50" data-step="1">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            
+            <div class="lg:col-span-6 space-y-4">
+              <div class="flex items-center space-x-2">
+                <span class="font-mono text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
+                  01 · REPOSITORY
+                </span>
+                <span class="font-mono text-xs text-zinc-400">
+                  core/git_manager.py
+                </span>
               </div>
-              <p id="spot-safety" class="text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                Repository state is opened in read-only mode so no accidental file changes happen during workspace initialization.
+
+              <h3 class="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+                Point to Your Codebase
+              </h3>
+
+              <p class="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                Enter your local folder path or any public GitHub URL into the console. The agent indexes your project files without touching existing branches.
               </p>
-            </div>
-          </div>
 
-          <!-- Right: Rixel-Style Terminal / Visual Output -->
-          <div class="lg:col-span-6">
-            <div class="rounded-2xl border border-zinc-800 bg-[#09090B] p-4 font-mono text-xs shadow-inner space-y-3">
-              <div class="flex items-center justify-between pb-2 border-b border-zinc-800/80 text-[11px] text-zinc-400">
-                <div class="flex items-center space-x-2">
-                  <span class="w-2.5 h-2.5 rounded-full bg-zinc-700"></span>
-                  <span class="w-2.5 h-2.5 rounded-full bg-zinc-700"></span>
-                  <span class="w-2.5 h-2.5 rounded-full bg-zinc-700"></span>
-                  <span class="ml-1 text-zinc-300 font-medium" id="terminal-filename">01_workspace.json</span>
+              <div class="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs">
+                <div class="flex items-center space-x-1.5 font-mono text-zinc-700 dark:text-zinc-300 font-medium">
+                  <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i>
+                  <span>Safety Guarantee</span>
                 </div>
-                <div class="flex items-center space-x-1.5 text-emerald-400 text-[10px]">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span id="terminal-status">RUNNING</span>
-                </div>
-              </div>
-
-              <!-- Animated Content Terminal Output -->
-              <pre id="terminal-output" class="text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[175px] p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono"></pre>
-
-              <!-- Progress bar at bottom of card -->
-              <div class="w-full bg-zinc-800 rounded-full h-1 overflow-hidden mt-2">
-                <div id="stepper-progress-fill" class="bg-brand-blue h-1 transition-all duration-300" style="width: 16.66%;"></div>
+                <p class="text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                  Repository is opened in read-only sandbox mode. No accidental file modifications occur during initialization.
+                </p>
               </div>
             </div>
-          </div>
 
+            <div class="lg:col-span-6">
+              <div class="rounded-2xl border border-zinc-800 bg-[#09090B] p-4 font-mono text-xs shadow-inner space-y-3">
+                <div class="flex items-center justify-between pb-2 border-b border-zinc-800/80 text-[11px] text-zinc-400">
+                  <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+                    <span class="ml-1 text-zinc-300 font-medium">01_workspace_init.json</span>
+                  </div>
+                  <div class="flex items-center space-x-1.5 text-emerald-400 text-[10px]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>READY</span>
+                  </div>
+                </div>
+                <pre class="text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[160px] p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900">{
+  "action": "initialize_workspace",
+  "target_path": "./my-project",
+  "git_branch": "main",
+  "head_commit": "50a9c6d",
+  "files_discovered": 64,
+  "languages": ["Python", "JavaScript", "HTML"],
+  "status": "SANDBOX_READY"
+}</pre>
+              </div>
+            </div>
+
+          </div>
         </div>
 
-        <!-- Previous / Next Stepper Nav Buttons -->
-        <div class="flex items-center justify-between pt-4 border-t border-zinc-100 dark:border-zinc-800">
-          <button onclick="changeStage(-1)" class="h-8 px-3.5 rounded-full border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-600 flex items-center space-x-1.5 transition">
-            <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
-            <span>Previous</span>
-          </button>
-          
-          <span class="text-xs font-mono text-zinc-500 dark:text-zinc-400" id="step-number-text">
-            Step 1 of 6
-          </span>
+        <!-- ===== CARD 02: SCANNER ===== -->
+        <div id="step-card-2" class="stack-card rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-xl shadow-zinc-950/5 dark:shadow-black/50" data-step="2">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            
+            <div class="lg:col-span-6 space-y-4">
+              <div class="flex items-center space-x-2">
+                <span class="font-mono text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
+                  02 · SCANNER
+                </span>
+                <span class="font-mono text-xs text-zinc-400">
+                  agents/scanner.py
+                </span>
+              </div>
 
-          <button onclick="changeStage(1)" class="h-8 px-4 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 text-xs font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 flex items-center space-x-1.5 transition shadow-xs">
-            <span>Next</span>
-            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-          </button>
+              <h3 class="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+                Scan with Multi-Engine AST Tools
+              </h3>
+
+              <p class="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                The agent parses code using Tree-sitter for syntax analysis, Radon for cyclomatic complexity, Vulture for dead code, and Bandit for Python security vulnerabilities.
+              </p>
+
+              <div class="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs">
+                <div class="flex items-center space-x-1.5 font-mono text-zinc-700 dark:text-zinc-300 font-medium">
+                  <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i>
+                  <span>Safety Guarantee</span>
+                </div>
+                <p class="text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                  Runs 100% locally on your machine. Zero code or tokens are ever sent to any cloud server.
+                </p>
+              </div>
+            </div>
+
+            <div class="lg:col-span-6">
+              <div class="rounded-2xl border border-zinc-800 bg-[#09090B] p-4 font-mono text-xs shadow-inner space-y-3">
+                <div class="flex items-center justify-between pb-2 border-b border-zinc-800/80 text-[11px] text-zinc-400">
+                  <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+                    <span class="ml-1 text-zinc-300 font-medium">02_ast_scanner.log</span>
+                  </div>
+                  <div class="flex items-center space-x-1.5 text-emerald-400 text-[10px]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>COMPLETED</span>
+                  </div>
+                </div>
+                <pre class="text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[160px] p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900">$ python -m agents.scanner --target .
+[Scanner] Indexing AST nodes via Tree-sitter... (84 modules)
+[Scanner] Radon: 3 functions exceeded complexity threshold
+[Scanner] Bandit: 1 insecure MD5 token hash (auth/hasher.py:14)
+[Scanner] Vulture: 2 dead utility functions identified
+[Scanner] Total 6 candidate issues logged to memory.db</pre>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ===== CARD 03: PLANNER ===== -->
+        <div id="step-card-3" class="stack-card rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-xl shadow-zinc-950/5 dark:shadow-black/50" data-step="3">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            
+            <div class="lg:col-span-6 space-y-4">
+              <div class="flex items-center space-x-2">
+                <span class="font-mono text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
+                  03 · PLANNER
+                </span>
+                <span class="font-mono text-xs text-zinc-400">
+                  core/graph.py + NetworkX
+                </span>
+              </div>
+
+              <h3 class="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+                Map Call Graphs & Blast Radius
+              </h3>
+
+              <p class="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                Before proposing a change, the agent builds an import and caller graph with NetworkX. It calculates the blast radius of any modification so downstream functions never break.
+              </p>
+
+              <div class="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs">
+                <div class="flex items-center space-x-1.5 font-mono text-zinc-700 dark:text-zinc-300 font-medium">
+                  <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i>
+                  <span>Safety Guarantee</span>
+                </div>
+                <p class="text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                  High-risk changes with multiple callers are automatically flagged with warning scores and isolated.
+                </p>
+              </div>
+            </div>
+
+            <div class="lg:col-span-6">
+              <div class="rounded-2xl border border-zinc-800 bg-[#09090B] p-4 font-mono text-xs shadow-inner space-y-3">
+                <div class="flex items-center justify-between pb-2 border-b border-zinc-800/80 text-[11px] text-zinc-400">
+                  <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+                    <span class="ml-1 text-zinc-300 font-medium">03_blast_radius.json</span>
+                  </div>
+                  <div class="flex items-center space-x-1.5 text-blue-400 text-[10px]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                    <span>GRAPH_RESOLVED</span>
+                  </div>
+                </div>
+                <pre class="text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[160px] p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900">{
+  "target_function": "hash_user_token",
+  "file": "auth/hasher.py",
+  "direct_callers": ["api/routes.py", "auth/tokens.py"],
+  "total_impact_nodes": 2,
+  "blast_radius_score": 0.08,
+  "action": "PROCEED_SAFE",
+  "plan_priority": "P1_SECURITY_UPGRADE"
+}</pre>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ===== CARD 04: CODER ===== -->
+        <div id="step-card-4" class="stack-card rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-xl shadow-zinc-950/5 dark:shadow-black/50" data-step="4">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            
+            <div class="lg:col-span-6 space-y-4">
+              <div class="flex items-center space-x-2">
+                <span class="font-mono text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
+                  04 · CODER
+                </span>
+                <span class="font-mono text-xs text-zinc-400">
+                  core/patcher.py (LibCST)
+                </span>
+              </div>
+
+              <h3 class="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+                Generate Precise AST Patches
+              </h3>
+
+              <p class="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                The Coder agent generates targeted fixes. Instead of guessing text replacements, it uses LibCST to replace specific AST syntax nodes on an isolated <code class="text-brand-blue dark:text-blue-400 font-mono">agent-fix-*</code> candidate branch.
+              </p>
+
+              <div class="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs">
+                <div class="flex items-center space-x-1.5 font-mono text-zinc-700 dark:text-zinc-300 font-medium">
+                  <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i>
+                  <span>Safety Guarantee</span>
+                </div>
+                <p class="text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                  Modifications happen on temporary candidate branches. Your primary branch is completely untouched.
+                </p>
+              </div>
+            </div>
+
+            <div class="lg:col-span-6">
+              <div class="rounded-2xl border border-zinc-800 bg-[#09090B] p-4 font-mono text-xs shadow-inner space-y-3">
+                <div class="flex items-center justify-between pb-2 border-b border-zinc-800/80 text-[11px] text-zinc-400">
+                  <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+                    <span class="ml-1 text-zinc-300 font-medium">04_ast_patch.diff</span>
+                  </div>
+                  <div class="flex items-center space-x-1.5 text-emerald-400 text-[10px]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    <span>CANDIDATE_READY</span>
+                  </div>
+                </div>
+                <pre class="text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[160px] p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono">--- a/auth/hasher.py
++++ b/auth/hasher.py
+@@ -12,4 +12,4 @@
+ def hash_user_token(raw_token: str) -> str:
+<span class="diff-del block px-1">-    # Insecure MD5 hash</span>
+<span class="diff-del block px-1">-    return hashlib.md5(raw_token.encode()).hexdigest()</span>
+<span class="diff-add block px-1">+    # Upgraded to SHA-256 with UTF-8 byte encoding</span>
+<span class="diff-add block px-1">+    return hashlib.sha256(raw_token.encode('utf-8')).hexdigest()</span></pre>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ===== CARD 05: REVIEWER ===== -->
+        <div id="step-card-5" class="stack-card rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-xl shadow-zinc-950/5 dark:shadow-black/50" data-step="5">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            
+            <div class="lg:col-span-6 space-y-4">
+              <div class="flex items-center space-x-2">
+                <span class="font-mono text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
+                  05 · REVIEWER
+                </span>
+                <span class="font-mono text-xs text-zinc-400">
+                  agents/reviewer.py + Pytest
+                </span>
+              </div>
+
+              <h3 class="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+                Automated Review & Test Verification
+              </h3>
+
+              <p class="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                The agent executes your test suite with pytest on the candidate branch. A secondary reviewer model verifies the diff to ensure original caller signatures and types are preserved.
+              </p>
+
+              <div class="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs">
+                <div class="flex items-center space-x-1.5 font-mono text-zinc-700 dark:text-zinc-300 font-medium">
+                  <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i>
+                  <span>Safety Guarantee</span>
+                </div>
+                <p class="text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                  If any tests fail or syntax errors are detected, the candidate branch is automatically rolled back.
+                </p>
+              </div>
+            </div>
+
+            <div class="lg:col-span-6">
+              <div class="rounded-2xl border border-zinc-800 bg-[#09090B] p-4 font-mono text-xs shadow-inner space-y-3">
+                <div class="flex items-center justify-between pb-2 border-b border-zinc-800/80 text-[11px] text-zinc-400">
+                  <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+                    <span class="ml-1 text-zinc-300 font-medium">05_test_verification.log</span>
+                  </div>
+                  <div class="flex items-center space-x-1.5 text-emerald-400 text-[10px]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    <span>TESTS_PASSED</span>
+                  </div>
+                </div>
+                <pre class="text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[160px] p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900">$ pytest tests/test_hasher.py -v
+tests/test_hasher.py::test_hash_user_token PASSED        [ 50%]
+tests/test_hasher.py::test_token_entropy PASSED          [100%]
+====================== 2 passed in 0.08s =======================
+Reviewer Critique (Groq Llama 3.3):
+- Caller return type str preserved.
+- Hash collision vulnerability eliminated.
+- Ready for developer inspection.</pre>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ===== CARD 06: APPROVAL ===== -->
+        <div id="step-card-6" class="stack-card rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-xl shadow-zinc-950/5 dark:shadow-black/50" data-step="6">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            
+            <div class="lg:col-span-6 space-y-4">
+              <div class="flex items-center space-x-2">
+                <span class="font-mono text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-400 font-semibold border border-emerald-200 dark:border-emerald-900">
+                  06 · APPROVAL
+                </span>
+                <span class="font-mono text-xs text-zinc-400">
+                  ui/static/index.html + memory/sqlite.py
+                </span>
+              </div>
+
+              <h3 class="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+                You Inspect and Decide
+              </h3>
+
+              <p class="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                The candidate fix is presented in your browser console. You inspect the before-and-after diff and click Approve or Reject. Your decision is recorded in SQLite memory to guide future runs.
+              </p>
+
+              <div class="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs">
+                <div class="flex items-center space-x-1.5 font-mono text-zinc-700 dark:text-zinc-300 font-medium">
+                  <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i>
+                  <span>Safety Guarantee</span>
+                </div>
+                <p class="text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                  Zero silent merges. Nothing is merged into your project without your direct approval click.
+                </p>
+              </div>
+            </div>
+
+            <div class="lg:col-span-6">
+              <div class="rounded-2xl border border-zinc-800 bg-[#09090B] p-4 font-mono text-xs shadow-inner space-y-3">
+                <div class="flex items-center justify-between pb-2 border-b border-zinc-800/80 text-[11px] text-zinc-400">
+                  <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+                    <span class="ml-1 text-zinc-300 font-medium">06_decision_recorded.json</span>
+                  </div>
+                  <div class="flex items-center space-x-1.5 text-emerald-400 text-[10px]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    <span>MERGED</span>
+                  </div>
+                </div>
+                <pre class="text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[160px] p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900">{
+  "developer_decision": "APPROVED",
+  "target_branch": "agent-fix-token-hash",
+  "merge_status": "MERGE_COMPLETED",
+  "memory_recorded": true,
+  "sqlite_database": "data/memory.db",
+  "learning_feedback": "Decision recorded to guide future recommendations."
+}</pre>
+              </div>
+            </div>
+
+          </div>
         </div>
 
       </div>
 
     </section>
 
-    <!-- ==================== GET STARTED (COMPACT RIXEL STYLE) ==================== -->
+    <!-- ==================== GET STARTED SECTION ==================== -->
     <section id="get-started" class="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-6 sm:p-8 space-y-6">
       
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -423,206 +713,84 @@
     </div>
   </footer>
 
-  <!-- ==================== ANIMATED STEPPER JAVASCRIPT ==================== -->
+  <!-- ==================== JAVASCRIPT: CRAZY STACKING SCROLL & TILT ==================== -->
   <script>
-    // 6 Real Stages of the Agent Workflow
-    const stages = [
-      {
-        num: "01",
-        label: "Repository",
-        engine: "Workspace Initializer",
-        title: "Point to Your Codebase",
-        desc: "Enter your local project folder path or any public GitHub URL. The agent maps your directory structure and sets up an isolated workspace without modifying your active branches.",
-        safety: "Repository state is opened in read-only mode so no file changes can occur during initial setup.",
-        filename: "01_workspace_init.json",
-        code: `{
-  "action": "initialize_workspace",
-  "target_path": "./my-project",
-  "git_branch": "main",
-  "files_discovered": 64,
-  "status": "SANDBOX_READY"
-}`
-      },
-      {
-        num: "02",
-        label: "Scanner",
-        engine: "agents/scanner.py",
-        title: "Scan with Multi-Engine AST Tools",
-        desc: "The agent parses your code using Tree-sitter for syntax analysis, Radon for cyclomatic complexity, Vulture for dead functions, and Bandit for Python security vulnerabilities.",
-        safety: "Runs 100% locally on your machine. No source code or tokens are ever uploaded to cloud servers.",
-        filename: "02_ast_scanner.log",
-        code: `$ python -m agents.scanner
-[Scanner] Indexing AST nodes via Tree-sitter...
-[Scanner] Radon: 3 high-complexity functions detected
-[Scanner] Bandit: 1 insecure MD5 token hashing issue found
-[Scanner] Vulture: 2 dead utility functions identified`
-      },
-      {
-        num: "03",
-        label: "Planner",
-        engine: "core/graph.py + NetworkX",
-        title: "Map Call Graphs & Blast Radius",
-        desc: "Before suggesting changes, the agent builds an import and caller graph with NetworkX. It calculates the blast radius of any modification so downstream callers don't break.",
-        safety: "High-risk changes with multiple downstream callers are flagged with priority warnings.",
-        filename: "03_call_graph.json",
-        code: `{
-  "issue": "BANDIT_B303",
-  "file": "auth/hasher.py",
-  "affected_callers": ["api/routes.py", "auth/tokens.py"],
-  "blast_radius_score": 0.14,
-  "plan_priority": "P1_SECURITY"
-}`
-      },
-      {
-        num: "04",
-        label: "Coder",
-        engine: "core/patcher.py (LibCST)",
-        title: "Generate Precise AST Patches",
-        desc: "The Coder agent generates targeted fixes. Instead of guessing text replacements, it uses LibCST to replace specific AST syntax nodes on an isolated 'agent-fix-*' candidate branch.",
-        safety: "All changes happen on isolated Git branches. Your main branch remains completely untouched.",
-        filename: "04_ast_patch.diff",
-        code: `--- a/auth/hasher.py
-+++ b/auth/hasher.py
-@@ -14,3 +14,3 @@
--    # Insecure MD5 hash
--    return hashlib.md5(token.encode()).hexdigest()
-+    # Upgraded to SHA-256 with UTF-8 encoding
-+    return hashlib.sha256(token.encode('utf-8')).hexdigest()`
-      },
-      {
-        num: "05",
-        label: "Reviewer",
-        engine: "agents/reviewer.py + Pytest",
-        title: "Automated Review & Test Verification",
-        desc: "The agent executes your test suite with pytest on the candidate branch. A secondary reviewer model verifies the diff to ensure original function contracts are preserved.",
-        safety: "If any tests fail or syntax errors are detected, the candidate branch is automatically rolled back.",
-        filename: "05_verification.log",
-        code: `$ pytest tests/test_hasher.py
-====================== test session starts ======================
-tests/test_hasher.py::test_hash_token PASSED             [ 50%]
-tests/test_hasher.py::test_hash_reproducibility PASSED    [100%]
-====================== 2 passed in 0.12s ========================
-Reviewer: Caller signatures intact. Fix approved for human review.`
-      },
-      {
-        num: "06",
-        label: "Approval",
-        engine: "ui/static/index.html + memory/sqlite.py",
-        title: "You Inspect and Decide",
-        desc: "The candidate fix is presented in your browser console. You inspect the diff and click Approve or Reject. Your decision is recorded in SQLite memory to guide future runs.",
-        safety: "Zero silent merges. Nothing is merged into your project without your direct approval click.",
-        filename: "06_developer_decision.json",
-        code: `{
-  "developer_decision": "APPROVED",
-  "merged_to_branch": "agent-fix-token-hash",
-  "memory_recorded": true,
-  "sqlite_db": "data/memory.db",
-  "note": "Decision recorded to guide future runs."
-}`
+    // Smooth scroll to a specific step
+    function scrollToStep(stepNumber) {
+      const card = document.getElementById(`step-card-${stepNumber}`);
+      if (card) {
+        const yOffset = -120;
+        const y = card.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
       }
-    ];
-
-    let currentStageIndex = 0;
-    let isAutoPlaying = true;
-    let autoPlayTimer = null;
-    const AUTO_PLAY_INTERVAL = 4500; // 4.5 seconds per step
-
-    function renderStageTabs() {
-      const container = document.getElementById('step-pills-container');
-      container.innerHTML = stages.map((s, idx) => `
-        <button onclick="setStage(${idx})" class="step-pill ${idx === currentStageIndex ? 'active' : ''} text-xs font-mono font-medium px-3 py-1 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-600 transition flex items-center space-x-1.5 focus:outline-none">
-          <span class="font-bold text-[10px] opacity-75">${s.num}</span>
-          <span>${s.label}</span>
-        </button>
-      `).join('');
     }
 
-    function updateStageDisplay() {
-      const stage = stages[currentStageIndex];
+    // Scroll-driven stacking cards scale and blur calculations
+    function updateCardStack() {
+      const cards = document.querySelectorAll('.stack-card');
+      const pills = document.querySelectorAll('.tracker-pill');
+      const stickyThreshold = 140; // pixel distance to sticky point
+      let activeIndex = 0;
 
-      // Update text fields
-      document.getElementById('spot-badge').textContent = `${stage.num} · ${stage.label.toUpperCase()}`;
-      document.getElementById('spot-engine').textContent = stage.engine;
-      document.getElementById('spot-title').textContent = stage.title;
-      document.getElementById('spot-desc').textContent = stage.desc;
-      document.getElementById('spot-safety').textContent = stage.safety;
-      document.getElementById('step-number-text').textContent = `Step ${currentStageIndex + 1} of 06`;
+      cards.forEach((card, index) => {
+        const rect = card.getBoundingClientRect();
+        
+        // If this card is reaching or has reached the sticky header
+        if (rect.top <= stickyThreshold) {
+          activeIndex = index;
+        }
 
-      // Update terminal
-      document.getElementById('terminal-filename').textContent = stage.filename;
-      document.getElementById('terminal-output').textContent = stage.code;
-
-      // Update progress bar
-      const pct = ((currentStageIndex + 1) / stages.length) * 100;
-      document.getElementById('stepper-progress-fill').style.width = `${pct}%`;
-
-      // Update pill classes
-      const pills = document.querySelectorAll('.step-pill');
-      pills.forEach((p, idx) => {
-        if (idx === currentStageIndex) {
-          p.classList.add('active');
-        } else {
-          p.classList.remove('active');
+        // Apply scale down to cards that are covered by subsequent cards
+        if (index < cards.length - 1) {
+          const nextCard = cards[index + 1];
+          const nextRect = nextCard.getBoundingClientRect();
+          
+          if (nextRect.top <= stickyThreshold + 100) {
+            // As next card scrolls up over this card, scale this card down smoothly
+            const progress = Math.min(1, Math.max(0, (stickyThreshold + 100 - nextRect.top) / 100));
+            const scale = 1 - progress * 0.05; // scales down to 0.95
+            const brightness = 1 - progress * 0.15; // slightly dims covered card
+            card.style.transform = `scale(${scale})`;
+            card.style.filter = `brightness(${brightness})`;
+          } else {
+            card.style.transform = 'scale(1)';
+            card.style.filter = 'brightness(1)';
+          }
         }
       });
 
-      // Trigger subtle animation
-      const card = document.getElementById('stage-card-wrapper');
-      card.classList.remove('fade-step');
-      void card.offsetWidth; // trigger reflow
-      card.classList.add('fade-step');
-
-      if (window.lucide) {
-        lucide.createIcons();
-      }
+      // Update tracker pill active state
+      pills.forEach((pill, idx) => {
+        if (idx === activeIndex) {
+          pill.classList.add('active');
+        } else {
+          pill.classList.remove('active');
+        }
+      });
     }
 
-    function setStage(idx) {
-      currentStageIndex = idx;
-      updateStageDisplay();
-      resetAutoPlayTimer();
-    }
+    // 3D Card Mouse Tilt Effect for crazy interactivity
+    function setup3DTilt() {
+      const cards = document.querySelectorAll('.stack-card');
+      cards.forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+          const rect = card.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          
+          const centerX = rect.width / 2;
+          const centerY = rect.height / 2;
+          
+          const rotateX = ((y - centerY) / centerY) * -3; // max 3deg tilt
+          const rotateY = ((x - centerX) / centerX) * 3;
+          
+          card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        });
 
-    function changeStage(delta) {
-      currentStageIndex = (currentStageIndex + delta + stages.length) % stages.length;
-      updateStageDisplay();
-      resetAutoPlayTimer();
-    }
-
-    function toggleAutoPlay() {
-      isAutoPlaying = !isAutoPlaying;
-      const text = document.getElementById('autoplay-text');
-      if (isAutoPlaying) {
-        text.textContent = 'Pause Flow';
-        startAutoPlay();
-      } else {
-        text.textContent = 'Play Flow';
-        stopAutoPlay();
-      }
-      if (window.lucide) {
-        lucide.createIcons();
-      }
-    }
-
-    function startAutoPlay() {
-      stopAutoPlay();
-      autoPlayTimer = setInterval(() => {
-        currentStageIndex = (currentStageIndex + 1) % stages.length;
-        updateStageDisplay();
-      }, AUTO_PLAY_INTERVAL);
-    }
-
-    function stopAutoPlay() {
-      if (autoPlayTimer) {
-        clearInterval(autoPlayTimer);
-        autoPlayTimer = null;
-      }
-    }
-
-    function resetAutoPlayTimer() {
-      if (isAutoPlaying) {
-        startAutoPlay();
-      }
+        card.addEventListener('mouseleave', () => {
+          updateCardStack(); // restore natural stacking scale
+        });
+      });
     }
 
     // Theme Toggle Functionality with LocalStorage persistence
@@ -643,9 +811,9 @@ Reviewer: Caller signatures intact. Fix approved for human review.`
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
-      renderStageTabs();
-      updateStageDisplay();
-      startAutoPlay();
+      setup3DTilt();
+      window.addEventListener('scroll', updateCardStack, { passive: true });
+      updateCardStack();
     });
   </script>
 
