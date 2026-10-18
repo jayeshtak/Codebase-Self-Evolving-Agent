@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Codebase Self-Evolving Agent | Your Codebase. Understood. Improved. Evolving.</title>
-  <meta name="description" content="An autonomous multi-agent AI system for continuous codebase evolution, AST refactoring, automated security auditing, and test-driven verification.">
+  <title>Codebase Agent | Your Codebase. Understood. Improved. Evolving.</title>
+  <meta name="description" content="A simple, developer-governed guide to the Codebase Self-Evolving Agent: what it is, how it works, and how it safely analyzes and improves code.">
 
   <!-- Local Tailwind CSS & Lucide Icons -->
   <script src="/static/tailwind.js"></script>
   <script src="/static/lucide.min.js"></script>
 
-  <!-- Typography: Playfair Display (Luxury Editorial Serif) + Plus Jakarta Sans + JetBrains Mono -->
+  <!-- Typography: Playfair Display + Plus Jakarta Sans + JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <script>
     // Initialize Theme immediately to prevent flash
@@ -31,19 +31,13 @@
             canvas: '#FBFBFB',
             surface: '#FFFFFF',
             'surface-subtle': '#F4F4F6',
-            'surface-warm': '#F6F5F2',
             border: '#E7E7EA',
-            'border-subtle': '#EFEFEF',
             'brand-blue': '#1D4ED8',
             'brand-blue-hover': '#1E40AF',
             'brand-blue-light': '#EFF6FF',
-            'brand-blue-glow': 'rgba(29, 78, 216, 0.10)',
             ink: '#0F172A',
             'ink-secondary': '#475569',
-            'ink-muted': '#64748B',
-            success: '#059669',
-            warning: '#D97706',
-            destructive: '#DC2626'
+            'ink-muted': '#64748B'
           },
           fontFamily: {
             serif: ['Playfair Display', 'Georgia', 'serif'],
@@ -70,13 +64,9 @@
       color: #F8FAFC;
     }
 
-    /* Custom thin scrollbar */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: transparent;
     }
     ::-webkit-scrollbar-thumb {
       background: #D4D4D8;
@@ -86,84 +76,39 @@
       background: #27272A;
     }
 
-    /* Stage selector pill active states */
-    .stage-card.active {
+    /* Active stage tab pill styling */
+    .step-pill.active {
       border-color: #1D4ED8;
       background-color: #EFF6FF;
-      box-shadow: 0 4px 14px rgba(29, 78, 216, 0.08);
+      color: #1D4ED8;
+      box-shadow: 0 2px 8px rgba(29, 78, 216, 0.12);
     }
-    .stage-card.active .stage-num {
-      background-color: #1D4ED8;
-      color: #FFFFFF;
-    }
-
-    .dark .stage-card {
-      background-color: #10141D;
-      border-color: #1F2430;
-    }
-    .dark .stage-card .stage-num {
-      background-color: #1A202C;
-      color: #94A3B8;
-    }
-    .dark .stage-card:hover {
-      border-color: #3B82F6;
-    }
-    .dark .stage-card.active {
+    .dark .step-pill.active {
       border-color: #3B82F6;
       background-color: #121A2E;
-      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.15);
-    }
-    .dark .stage-card.active .stage-num {
-      background-color: #3B82F6;
-      color: #FFFFFF;
+      color: #60A5FA;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
     }
 
-    /* Code diff styling */
-    .diff-del {
-      background-color: rgba(239, 68, 68, 0.08);
-      color: #B91C1C;
-      border-left: 2px solid #EF4444;
+    /* Animated transition on stage card change */
+    .fade-in {
+      animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
-    .dark .diff-del {
-      background-color: rgba(239, 68, 68, 0.15);
-      color: #FCA5A5;
-    }
-    .diff-add {
-      background-color: rgba(16, 185, 129, 0.08);
-      color: #047857;
-      border-left: 2px solid #10B981;
-    }
-    .dark .diff-add {
-      background-color: rgba(16, 185, 129, 0.15);
-      color: #6EE7B7;
-    }
-
-    /* Architecture diagram styling for light/dark */
-    .arch-card { fill: #FFFFFF; stroke: #E2E8F0; }
-    .arch-sub-card { fill: #F8FAFC; stroke: #E2E8F0; }
-    .arch-text-title { fill: #0F172A; }
-    .arch-text-sub { fill: #64748B; }
-    .dark .arch-card { fill: #10141D; stroke: #21283B; }
-    .dark .arch-sub-card { fill: #151924; stroke: #21283B; }
-    .dark .arch-text-title { fill: #F8FAFC; }
-    .dark .arch-text-sub { fill: #94A3B8; }
-
-    /* Focus rings */
-    a:focus-visible, button:focus-visible {
-      outline: 2px solid #1D4ED8;
-      outline-offset: 2px;
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col selection:bg-brand-blue selection:text-white bg-canvas dark:bg-[#080808]">
+<body class="min-h-screen flex flex-col bg-canvas dark:bg-[#080808] text-ink dark:text-slate-100 selection:bg-brand-blue selection:text-white transition-colors">
 
-  <!-- ==================== NAVIGATION ==================== -->
+  <!-- ==================== CLEAN TOP NAVIGATION ==================== -->
   <header class="sticky top-0 z-50 bg-white/90 dark:bg-[#090B10]/90 backdrop-blur-md border-b border-border dark:border-[#1F2430] transition-colors">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 py-3.5 flex items-center justify-between">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
       
-      <!-- Brand Logo / Wordmark -->
-      <a href="/" class="flex items-center space-x-3 group">
-        <div class="w-8 h-8 rounded-full bg-brand-blue flex items-center justify-center text-white shadow-sm transition transform group-hover:scale-105">
+      <!-- Brand Logo -->
+      <a href="/" class="flex items-center space-x-2.5 group">
+        <div class="w-8 h-8 rounded-full bg-brand-blue flex items-center justify-center text-white shadow-xs transition transform group-hover:scale-105">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="m18 16 4-4-4-4"/>
             <path d="m6 8-4 4 4 4"/>
@@ -176,948 +121,473 @@
         </div>
       </a>
 
-      <!-- Desktop Nav Links -->
-      <nav class="hidden md:flex items-center space-x-7 text-xs font-medium text-ink-secondary dark:text-slate-400">
-        <a href="#problem-solution" class="hover:text-ink dark:hover:text-white transition">Overview</a>
-        <a href="#pipeline" class="hover:text-ink dark:hover:text-white transition">How It Works</a>
-        <a href="#features" class="hover:text-ink dark:hover:text-white transition">Capabilities</a>
-        <a href="#example" class="hover:text-ink dark:hover:text-white transition">Live Inspection</a>
-        <a href="#quickstart" class="hover:text-ink dark:hover:text-white transition">Quick Start</a>
-        <a href="#architecture" class="hover:text-ink dark:hover:text-white transition">Architecture</a>
-        <a href="#faq" class="hover:text-ink dark:hover:text-white transition">FAQ</a>
-        <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="hover:text-ink dark:hover:text-white flex items-center space-x-1.5 transition">
-          <i data-lucide="github" class="w-3.5 h-3.5"></i>
-          <span>GitHub</span>
-        </a>
-      </nav>
-
-      <!-- Primary Action & Theme Toggle -->
+      <!-- Quick Actions & Theme Switcher -->
       <div class="flex items-center space-x-3">
-        <!-- Theme Toggle Button -->
-        <button onclick="toggleTheme()" class="p-2 rounded-full border border-border dark:border-[#2A3447] bg-white dark:bg-[#121622] text-ink-secondary dark:text-slate-300 hover:text-ink dark:hover:text-white transition flex items-center justify-center shadow-xs" aria-label="Toggle theme" title="Toggle Light/Dark Theme">
+        <!-- Theme Toggle -->
+        <button onclick="toggleTheme()" class="p-2 rounded-full border border-border dark:border-[#2A3447] bg-white dark:bg-[#121622] text-ink-secondary dark:text-slate-300 hover:text-ink dark:hover:text-white transition flex items-center justify-center" aria-label="Toggle theme" title="Toggle Light/Dark Theme">
           <i data-lucide="sun" class="w-4 h-4 hidden dark:block text-amber-400"></i>
           <i data-lucide="moon" class="w-4 h-4 block dark:hidden text-slate-700"></i>
         </button>
 
-        <a href="/app" class="hidden sm:flex bg-brand-blue hover:bg-brand-blue-hover text-white text-xs font-semibold px-4 py-2 rounded-full transition shadow-sm items-center space-x-2">
+        <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="hidden sm:flex text-ink-secondary dark:text-slate-400 hover:text-ink dark:hover:text-white text-xs font-mono font-medium px-3 py-1.5 transition items-center space-x-1.5">
+          <i data-lucide="github" class="w-4 h-4"></i>
+          <span>GitHub</span>
+        </a>
+
+        <!-- Launch Console CTA -->
+        <a href="/app" class="bg-brand-blue hover:bg-brand-blue-hover text-white text-xs font-semibold px-4 py-2 rounded-full transition shadow-sm flex items-center space-x-1.5">
           <span>Launch Console</span>
           <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
         </a>
-
-        <!-- Mobile Menu Toggle -->
-        <button id="mobile-menu-btn" class="md:hidden text-ink-secondary dark:text-slate-400 hover:text-ink dark:hover:text-white p-1.5 focus:outline-none" aria-label="Toggle Menu">
-          <i data-lucide="menu" class="w-5 h-5"></i>
-        </button>
       </div>
 
-    </div>
-
-    <!-- Mobile Drawer -->
-    <div id="mobile-menu" class="hidden md:hidden border-b border-border dark:border-[#1F2430] bg-white dark:bg-[#0E121B] px-5 py-4 space-y-3 text-xs font-medium text-ink-secondary dark:text-slate-400">
-      <a href="#problem-solution" class="block hover:text-ink dark:hover:text-white py-1">Overview & Problem</a>
-      <a href="#pipeline" class="block hover:text-ink dark:hover:text-white py-1">How It Works</a>
-      <a href="#features" class="block hover:text-ink dark:hover:text-white py-1">Capabilities</a>
-      <a href="#example" class="block hover:text-ink dark:hover:text-white py-1">Live Inspection</a>
-      <a href="#quickstart" class="block hover:text-ink dark:hover:text-white py-1">Quick Start</a>
-      <a href="#architecture" class="block hover:text-ink dark:hover:text-white py-1">Architecture</a>
-      <a href="#faq" class="block hover:text-ink dark:hover:text-white py-1">FAQ</a>
-      <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="block hover:text-ink dark:hover:text-white py-1 flex items-center space-x-2">
-        <i data-lucide="github" class="w-4 h-4"></i>
-        <span>GitHub Repository</span>
-      </a>
-      <div class="pt-2 border-t border-border dark:border-[#1F2430] flex items-center justify-between">
-        <span class="text-xs text-ink-muted dark:text-slate-500">Theme</span>
-        <button onclick="toggleTheme()" class="px-3 py-1.5 rounded-full border border-border dark:border-[#2A3447] text-xs font-mono flex items-center space-x-1.5 text-ink dark:text-white">
-          <i data-lucide="sun" class="w-3.5 h-3.5 hidden dark:block text-amber-400"></i>
-          <i data-lucide="moon" class="w-3.5 h-3.5 block dark:hidden text-slate-700"></i>
-          <span class="dark:hidden">Dark Mode</span>
-          <span class="hidden dark:inline">Light Mode</span>
-        </button>
-      </div>
-      <div class="pt-1">
-        <a href="/app" class="block w-full text-center bg-brand-blue hover:bg-brand-blue-hover text-white font-semibold py-2.5 rounded-full">
-          Launch Developer Console
-        </a>
-      </div>
     </div>
   </header>
 
-  <main class="flex-grow">
-    
-    <!-- ==================== HERO SECTION ==================== -->
-    <section class="relative pt-12 pb-16 md:pt-20 md:pb-24 border-b border-border dark:border-[#1F2430] bg-white dark:bg-[#090B10] overflow-hidden transition-colors">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          
-          <!-- Hero Copy Column (Left) -->
-          <div class="lg:col-span-7 space-y-6">
-            
-            <!-- Category Tag Pill -->
-            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-brand-blue-light dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 text-[11px] font-semibold text-brand-blue dark:text-blue-400">
-              <span class="w-1.5 h-1.5 rounded-full bg-brand-blue dark:bg-blue-400 animate-pulse"></span>
-              <span>Open-Source Development Agent · Python & FastAPI</span>
-            </div>
+  <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
+  <main class="flex-grow max-w-5xl mx-auto px-4 sm:px-6 py-12 md:py-16 space-y-16">
 
-            <!-- Headline in Editorial Serif with Italic Emphasis -->
-            <h1 class="font-serif text-5xl sm:text-6xl lg:text-7xl font-normal tracking-tight text-ink dark:text-white leading-[1.06]">
-              Your Codebase.<br/>
-              <span class="italic font-normal text-brand-blue dark:text-blue-400">Understood. Improved. Evolving.</span>
-            </h1>
+    <!-- ==================== WHAT IS THIS? (HERO) ==================== -->
+    <section class="text-center max-w-3xl mx-auto space-y-6">
+      
+      <!-- Pill Badge -->
+      <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-brand-blue-light dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 text-[11px] font-semibold text-brand-blue dark:text-blue-400">
+        <span class="w-1.5 h-1.5 rounded-full bg-brand-blue dark:bg-blue-400 animate-pulse"></span>
+        <span>A Simple Developer Guide</span>
+      </div>
 
-            <!-- Supporting Paragraph -->
-            <p class="text-ink-secondary dark:text-slate-400 text-base sm:text-lg max-w-xl leading-relaxed">
-              An AI-powered development agent that explores your codebase, identifies potential issues, proposes fixes, reviews changes, and learns from developer decisions to improve future workflows.
-            </p>
+      <!-- Main Requested Headline -->
+      <h1 class="font-serif text-5xl sm:text-6xl font-normal tracking-tight text-ink dark:text-white leading-[1.08]">
+        Your Codebase.<br/>
+        <span class="italic font-normal text-brand-blue dark:text-blue-400">Understood. Improved. Evolving.</span>
+      </h1>
 
-            <!-- CTA Button Strip -->
-            <div class="flex flex-wrap items-center gap-4 pt-2">
-              <a href="/app" class="bg-brand-blue hover:bg-brand-blue-hover text-white text-sm font-semibold px-6 py-3 rounded-full transition shadow-md hover:shadow-lg flex items-center space-x-2">
-                <span>Launch Console</span>
-                <i data-lucide="arrow-right" class="w-4 h-4"></i>
-              </a>
-              <a href="#pipeline" class="bg-surface-subtle dark:bg-[#121622] hover:bg-neutral-200/70 dark:hover:bg-[#181F30] text-ink dark:text-slate-200 text-sm font-medium px-5 py-3 rounded-full transition border border-border dark:border-[#21283B] flex items-center space-x-2">
-                <i data-lucide="layers" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
-                <span>Explore Workflow</span>
-              </a>
-              <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="text-ink-muted dark:text-slate-400 hover:text-ink dark:hover:text-white text-xs font-mono font-medium px-3 py-2 transition flex items-center space-x-1.5">
-                <i data-lucide="github" class="w-4 h-4"></i>
-                <span>GitHub Repo</span>
-              </a>
-            </div>
+      <!-- Plain English "What is this?" Explanation -->
+      <div class="text-ink-secondary dark:text-slate-300 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto space-y-3">
+        <p>
+          <strong class="text-ink dark:text-white font-semibold">What is this project?</strong> It is an open-source development agent that inspects your software codebase, discovers bugs, dead code, and security vulnerabilities with local AST tools, proposes targeted fixes on isolated Git branches, and asks for your review before anything touches your code.
+        </p>
+      </div>
 
-            <!-- Verified Architectural Guarantees Strip (Real properties, zero fabricated metrics) -->
-            <div class="pt-8 border-t border-border-subtle dark:border-[#1F2430] grid grid-cols-3 gap-6 font-sans">
-              <div>
-                <div class="font-serif text-2xl sm:text-3xl font-bold text-ink dark:text-white tracking-tight">100%</div>
-                <div class="text-[11px] text-ink-muted dark:text-slate-400 font-medium mt-0.5">Offline-Capable Core (Zero API Keys Req.)</div>
-              </div>
-              <div>
-                <div class="font-serif text-2xl sm:text-3xl font-bold text-brand-blue dark:text-blue-400 tracking-tight">0</div>
-                <div class="text-[11px] text-ink-muted dark:text-slate-400 font-medium mt-0.5">Silent Merges (Developer Approval)</div>
-              </div>
-              <div>
-                <div class="font-serif text-2xl sm:text-3xl font-bold text-ink dark:text-white tracking-tight">Git</div>
-                <div class="text-[11px] text-ink-muted dark:text-slate-400 font-medium mt-0.5">Isolated Branch Sandboxing</div>
-              </div>
-            </div>
+      <!-- Action Buttons -->
+      <div class="flex flex-wrap justify-center items-center gap-4 pt-2">
+        <a href="/app" class="bg-brand-blue hover:bg-brand-blue-hover text-white text-sm font-semibold px-6 py-3 rounded-full transition shadow-md hover:shadow-lg flex items-center space-x-2">
+          <span>Open Developer Console</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </a>
+        <a href="#how-it-works" class="bg-surface-subtle dark:bg-[#121622] hover:bg-neutral-200/70 dark:hover:bg-[#181F30] text-ink dark:text-slate-200 text-sm font-medium px-5 py-3 rounded-full transition border border-border dark:border-[#21283B] flex items-center space-x-2">
+          <i data-lucide="play-circle" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
+          <span>See How It Works</span>
+        </a>
+      </div>
 
+      <!-- 3 Real Guarantees (No fake statistics) -->
+      <div class="pt-8 border-t border-neutral-200/60 dark:border-[#1F2430] grid grid-cols-1 sm:grid-cols-3 gap-4 text-left font-sans">
+        <div class="p-3.5 rounded-2xl bg-white dark:bg-[#0E121B] border border-border dark:border-[#1F2430]">
+          <div class="font-mono text-xs font-bold text-ink dark:text-white flex items-center space-x-1.5">
+            <i data-lucide="shield-check" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
+            <span>100% Offline Core</span>
           </div>
-
-          <!-- Hero Visual Feature Card (Right) -->
-          <div class="lg:col-span-5">
-            <div class="relative bg-surface-warm dark:bg-[#10141F] border border-neutral-200/80 dark:border-[#1F2637] rounded-3xl p-6 sm:p-8 shadow-sm">
-              <div class="flex items-center justify-between pb-4 border-b border-neutral-200/60 dark:border-[#1F2637] mb-6">
-                <div class="flex items-center space-x-2">
-                  <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                  <span class="font-mono text-xs font-semibold text-ink dark:text-slate-200 uppercase tracking-wider">Verified Agent Pipeline</span>
-                </div>
-                <span class="font-mono text-[10px] text-ink-muted dark:text-slate-400 px-2 py-0.5 rounded bg-white dark:bg-[#161B29] border border-neutral-200 dark:border-[#21283B]">Tree-sitter AST</span>
-              </div>
-
-              <!-- Sleek Card Visual Inside -->
-              <div class="bg-white dark:bg-[#141824] rounded-2xl border border-neutral-200/80 dark:border-[#21283B] p-5 space-y-4 shadow-sm">
-                <div class="flex items-center justify-between text-xs">
-                  <span class="font-semibold text-ink dark:text-white flex items-center space-x-1.5">
-                    <i data-lucide="shield-check" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
-                    <span>Repository Integrity</span>
-                  </span>
-                  <span class="font-mono text-[11px] text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full font-bold">Sandboxed Worktree</span>
-                </div>
-
-                <div class="space-y-2 text-xs text-ink-secondary dark:text-slate-300">
-                  <div class="flex justify-between items-center py-1.5 border-b border-neutral-100 dark:border-[#1F2637]">
-                    <span class="text-ink-muted dark:text-slate-400">Target Framework</span>
-                    <span class="font-mono text-ink dark:text-white font-medium">Python 3.12 + FastAPI</span>
-                  </div>
-                  <div class="flex justify-between items-center py-1.5 border-b border-neutral-100 dark:border-[#1F2637]">
-                    <span class="text-ink-muted dark:text-slate-400">Static SAST Engines</span>
-                    <span class="font-mono text-ink dark:text-white font-medium">Radon · Bandit · Tree-sitter</span>
-                  </div>
-                  <div class="flex justify-between items-center py-1.5 border-b border-neutral-100 dark:border-[#1F2637]">
-                    <span class="text-ink-muted dark:text-slate-400">Dual-LLM Pipeline</span>
-                    <span class="font-mono text-ink dark:text-white font-medium">Gemini Pro + Groq Llama 3.3</span>
-                  </div>
-                  <div class="flex justify-between items-center py-1.5">
-                    <span class="text-ink-muted dark:text-slate-400">Memory Engine</span>
-                    <span class="font-mono text-brand-blue dark:text-blue-400 font-semibold">SQLite + ChromaDB RAG</span>
-                  </div>
-                </div>
-
-                <div class="bg-[#090B10] rounded-xl p-3.5 font-mono text-[11px] text-slate-300 border border-slate-800/80">
-                  <div class="flex items-center justify-between text-[10px] text-slate-500 pb-1.5 mb-1.5 border-b border-slate-800">
-                    <span>active_pipeline_status</span>
-                    <span class="text-emerald-400">● READY</span>
-                  </div>
-                  <div class="text-emerald-400">$ python main.py . --scan --plan</div>
-                  <div class="text-slate-400 mt-1">✓ AST tree indexed (Tree-sitter)</div>
-                  <div class="text-slate-400">✓ Call graph resolved (NetworkX)</div>
-                  <div class="text-blue-400">✓ Isolated fix branch: agent-fix-cand</div>
-                </div>
-              </div>
-
-              <!-- Card Bottom Badge -->
-              <div class="mt-4 flex items-center justify-between text-xs text-ink-muted dark:text-slate-400 font-medium pt-2">
-                <span>Human-governed approval step</span>
-                <span class="text-brand-blue dark:text-blue-400 font-mono font-semibold">Zero Unreviewed Merges</span>
-              </div>
-            </div>
+          <div class="text-[11px] text-ink-muted dark:text-slate-400 mt-1">
+            AST parsing, Radon complexity, and Bandit SAST run locally with zero API keys required.
           </div>
-
         </div>
 
+        <div class="p-3.5 rounded-2xl bg-white dark:bg-[#0E121B] border border-border dark:border-[#1F2430]">
+          <div class="font-mono text-xs font-bold text-ink dark:text-white flex items-center space-x-1.5">
+            <i data-lucide="git-branch" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
+            <span>Isolated Git Branches</span>
+          </div>
+          <div class="text-[11px] text-ink-muted dark:text-slate-400 mt-1">
+            Fixes run on temporary <code class="text-brand-blue dark:text-blue-400">agent-fix-*</code> branches with automatic rollback on test failures.
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-white dark:bg-[#0E121B] border border-border dark:border-[#1F2430]">
+          <div class="font-mono text-xs font-bold text-ink dark:text-white flex items-center space-x-1.5">
+            <i data-lucide="check-circle" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
+            <span>Human-Governed</span>
+          </div>
+          <div class="text-[11px] text-ink-muted dark:text-slate-400 mt-1">
+            Zero silent merges. You review before-and-after diffs and click approve before anything is applied.
+          </div>
+        </div>
       </div>
+
     </section>
 
-    <!-- ==================== SIGNATURE INTERACTIVE PIPELINE ==================== -->
-    <section id="pipeline" class="py-16 md:py-24 border-b border-border dark:border-[#1F2430] bg-canvas dark:bg-[#080808] transition-colors">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- ==================== ANIMATED HOW IT WORKS ==================== -->
+    <section id="how-it-works" class="space-y-6 scroll-mt-24">
+      
+      <div class="text-center max-w-2xl mx-auto space-y-2">
+        <span class="font-mono text-xs text-brand-blue dark:text-blue-400 uppercase tracking-wider font-semibold">Interactive Walkthrough</span>
+        <h2 class="font-serif text-3xl sm:text-4xl font-normal text-ink dark:text-white">
+          How it works, <span class="italic text-brand-blue dark:text-blue-400">step by step.</span>
+        </h2>
+        <p class="text-xs sm:text-sm text-ink-secondary dark:text-slate-400">
+          Watch the automated workflow in action below. Click any step or pause the flow at any time.
+        </p>
+      </div>
+
+      <!-- The Main Interactive Animated Card -->
+      <div class="bg-white dark:bg-[#0E121B] border border-border dark:border-[#1F2430] rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
         
-        <div class="max-w-3xl mb-12">
-          <span class="font-mono text-xs text-brand-blue dark:text-blue-400 uppercase tracking-wider font-semibold">Interactive Architecture</span>
-          <h2 class="font-serif text-3xl sm:text-4xl font-normal text-ink dark:text-white mt-1">
-            The autonomous <span class="italic text-brand-blue dark:text-blue-400">multi-agent pipeline.</span>
-          </h2>
-          <p class="text-ink-secondary dark:text-slate-400 text-sm mt-2">
-            Click any stage in the sequence below to inspect what information it receives, its analysis logic, and the resulting contract.
-          </p>
-        </div>
-
-        <!-- Stage Navigation Pills (6 Stages) -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+        <!-- Controls Bar: Step Selection Tabs + Play/Pause Button -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-4 border-b border-border dark:border-[#1F2430]">
           
-          <button class="stage-card active text-left p-4 rounded-2xl bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] transition hover:border-brand-blue dark:hover:border-blue-500 focus:outline-none" onclick="selectStage(0)">
-            <div class="flex items-center justify-between mb-2">
-              <span class="stage-num font-mono text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold bg-neutral-100 dark:bg-slate-800 text-ink-muted dark:text-slate-400">01</span>
-              <i data-lucide="folder-git-2" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
-            </div>
-            <div class="font-bold text-xs text-ink dark:text-white">Repository</div>
-            <div class="text-[10px] text-ink-muted dark:text-slate-400 mt-0.5">Workspace Target</div>
-          </button>
+          <!-- Stepper Pills (01 to 06) -->
+          <div class="flex flex-wrap items-center justify-center gap-2" id="step-pills-container">
+            <!-- Dynamically populated by JS -->
+          </div>
 
-          <button class="stage-card text-left p-4 rounded-2xl bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] transition hover:border-brand-blue dark:hover:border-blue-500 focus:outline-none" onclick="selectStage(1)">
-            <div class="flex items-center justify-between mb-2">
-              <span class="stage-num font-mono text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold bg-neutral-100 dark:bg-slate-800 text-ink-muted dark:text-slate-400">02</span>
-              <i data-lucide="scan" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
-            </div>
-            <div class="font-bold text-xs text-ink dark:text-white">Scanner</div>
-            <div class="text-[10px] text-ink-muted dark:text-slate-400 mt-0.5">AST & Static Audit</div>
+          <!-- Play / Pause Button -->
+          <button id="autoplay-btn" onclick="toggleAutoPlay()" class="flex items-center space-x-1.5 text-xs font-mono px-3.5 py-1.5 rounded-full border border-border dark:border-[#21283B] bg-surface-subtle dark:bg-[#141824] text-ink dark:text-slate-300 hover:border-brand-blue transition flex-shrink-0">
+            <i data-lucide="pause" id="autoplay-icon" class="w-3.5 h-3.5 text-brand-blue"></i>
+            <span id="autoplay-text">Pause Animation</span>
           </button>
-
-          <button class="stage-card text-left p-4 rounded-2xl bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] transition hover:border-brand-blue dark:hover:border-blue-500 focus:outline-none" onclick="selectStage(2)">
-            <div class="flex items-center justify-between mb-2">
-              <span class="stage-num font-mono text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold bg-neutral-100 dark:bg-slate-800 text-ink-muted dark:text-slate-400">03</span>
-              <i data-lucide="git-commit" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
-            </div>
-            <div class="font-bold text-xs text-ink dark:text-white">Planner</div>
-            <div class="text-[10px] text-ink-muted dark:text-slate-400 mt-0.5">Impact Scoring</div>
-          </button>
-
-          <button class="stage-card text-left p-4 rounded-2xl bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] transition hover:border-brand-blue dark:hover:border-blue-500 focus:outline-none" onclick="selectStage(3)">
-            <div class="flex items-center justify-between mb-2">
-              <span class="stage-num font-mono text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold bg-neutral-100 dark:bg-slate-800 text-ink-muted dark:text-slate-400">04</span>
-              <i data-lucide="code" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
-            </div>
-            <div class="font-bold text-xs text-ink dark:text-white">Coder</div>
-            <div class="text-[10px] text-ink-muted dark:text-slate-400 mt-0.5">AST Patch Synthesis</div>
-          </button>
-
-          <button class="stage-card text-left p-4 rounded-2xl bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] transition hover:border-brand-blue dark:hover:border-blue-500 focus:outline-none" onclick="selectStage(4)">
-            <div class="flex items-center justify-between mb-2">
-              <span class="stage-num font-mono text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold bg-neutral-100 dark:bg-slate-800 text-ink-muted dark:text-slate-400">05</span>
-              <i data-lucide="check-circle" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
-            </div>
-            <div class="font-bold text-xs text-ink dark:text-white">Reviewer</div>
-            <div class="text-[10px] text-ink-muted dark:text-slate-400 mt-0.5">Critique & Test</div>
-          </button>
-
-          <button class="stage-card text-left p-4 rounded-2xl bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] transition hover:border-brand-blue dark:hover:border-blue-500 focus:outline-none" onclick="selectStage(5)">
-            <div class="flex items-center justify-between mb-2">
-              <span class="stage-num font-mono text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold bg-neutral-100 dark:bg-slate-800 text-ink-muted dark:text-slate-400">06</span>
-              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-            </div>
-            <div class="font-bold text-xs text-ink dark:text-white">Approval</div>
-            <div class="text-[10px] text-ink-muted dark:text-slate-400 mt-0.5">Human Governance</div>
-          </button>
-
         </div>
 
-        <!-- Inspector Display Container -->
-        <div class="bg-white dark:bg-[#0E121B] border border-border dark:border-[#1F2430] rounded-3xl p-6 sm:p-8 shadow-sm">
-          <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 pb-6 border-b border-border dark:border-[#1F2430]">
-            <div>
-              <div class="flex items-center space-x-2">
-                <span id="inspector-step-badge" class="font-mono text-[11px] uppercase px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/40 text-brand-blue dark:text-blue-400 font-bold border border-blue-200 dark:border-blue-900">Stage 01</span>
-                <span id="inspector-role-badge" class="font-mono text-[11px] text-ink-muted dark:text-slate-400 uppercase">Workspace Environment</span>
+        <!-- Animated Stage Spotlight -->
+        <div id="stage-card-wrapper" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center fade-in">
+          
+          <!-- Left: Explanatory Content -->
+          <div class="lg:col-span-6 space-y-4">
+            <div class="flex items-center space-x-2.5">
+              <span id="spot-badge" class="font-mono text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/60 text-brand-blue dark:text-blue-400 font-bold border border-blue-200 dark:border-blue-900">
+                Step 01 of 06
+              </span>
+              <span id="spot-engine" class="font-mono text-xs text-ink-muted dark:text-slate-400">
+                Workspace Target
+              </span>
+            </div>
+
+            <h3 id="spot-title" class="font-serif text-2xl sm:text-3xl font-bold text-ink dark:text-white">
+              Connect Repository
+            </h3>
+
+            <p id="spot-desc" class="text-sm text-ink-secondary dark:text-slate-300 leading-relaxed">
+              Enter your local folder path or any public GitHub URL into the developer console. The application initializes the working tree without modifying your primary branches.
+            </p>
+
+            <div class="p-4 rounded-2xl bg-surface-subtle dark:bg-[#121622] border border-neutral-200/60 dark:border-[#1F2637] space-y-1.5 text-xs">
+              <div class="flex items-center space-x-1.5 font-mono text-ink-muted dark:text-slate-400">
+                <i data-lucide="shield" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></i>
+                <span class="font-bold text-ink dark:text-slate-200">How Safety Is Maintained:</span>
               </div>
-              <h3 id="inspector-title" class="font-serif text-2xl font-bold text-ink dark:text-white mt-1">Repository Workspace</h3>
-              <p id="inspector-desc" class="text-ink-secondary dark:text-slate-400 text-sm mt-1 max-w-2xl leading-relaxed">
-                The entry point targets any local folder path or clones a remote Git repository into a protected sandbox. The system detects project structure and establishes working tree state.
+              <p id="spot-safety" class="text-ink-secondary dark:text-slate-400 font-sans leading-relaxed">
+                Repository state is opened in a sandboxed mode so your original commit tree remains untouched.
               </p>
             </div>
-            <span class="font-mono text-[10px] uppercase text-ink-muted dark:text-slate-400 px-2.5 py-1 rounded bg-neutral-100 dark:bg-[#151926] border border-neutral-200 dark:border-[#21283B]">
-              Interactive Simulation
-            </span>
           </div>
 
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
-            <!-- Left Metadata Cards -->
-            <div class="lg:col-span-5 space-y-4">
-              <div class="bg-surface-subtle dark:bg-[#121622] p-4 rounded-2xl border border-neutral-200/60 dark:border-[#1F2637]">
-                <div class="font-mono text-[11px] text-ink-muted dark:text-slate-400 uppercase flex items-center space-x-1.5 mb-1">
-                  <i data-lucide="arrow-down-left" class="w-3.5 h-3.5 text-brand-blue dark:text-blue-400"></i>
-                  <span>Input Data Received</span>
+          <!-- Right: Animated Terminal / Visual Simulation -->
+          <div class="lg:col-span-6">
+            <div class="bg-[#090B10] rounded-2xl p-5 border border-slate-800 shadow-inner font-mono text-xs space-y-3">
+              <div class="flex items-center justify-between pb-2 border-b border-slate-800 text-[11px] text-slate-500">
+                <div class="flex items-center space-x-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
+                  <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+                  <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+                  <span class="ml-2 text-slate-400 font-medium" id="terminal-filename">step_01_repo.json</span>
                 </div>
-                <div id="inspector-input" class="text-xs text-ink dark:text-slate-200 font-medium">
-                  Target repo path, Git tree, and environment configurations.
-                </div>
-              </div>
-
-              <div class="bg-surface-subtle dark:bg-[#121622] p-4 rounded-2xl border border-neutral-200/60 dark:border-[#1F2637]">
-                <div class="font-mono text-[11px] text-ink-muted dark:text-slate-400 uppercase flex items-center space-x-1.5 mb-1">
-                  <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></i>
-                  <span>Output Delivered</span>
-                </div>
-                <div id="inspector-output" class="text-xs text-ink dark:text-slate-200 font-medium">
-                  Normalized source file list, module boundary definitions, and Git HEAD commit reference.
+                <div class="flex items-center space-x-1.5 text-emerald-400 text-[10px]">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span id="terminal-status">RUNNING</span>
                 </div>
               </div>
 
-              <div class="bg-surface-subtle dark:bg-[#121622] p-4 rounded-2xl border border-neutral-200/60 dark:border-[#1F2637]">
-                <div class="font-mono text-[11px] text-ink-muted dark:text-slate-400 uppercase flex items-center space-x-1.5 mb-1">
-                  <i data-lucide="shield" class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400"></i>
-                  <span>Safety Governance Guarantee</span>
-                </div>
-                <div id="inspector-governance" class="text-xs text-ink-secondary dark:text-slate-400">
-                  Locks repository state to prevent concurrent file conflicts and ensures all modifications happen on isolated candidate branches.
-                </div>
+              <!-- Animated Content Terminal -->
+              <pre id="terminal-output" class="text-[11px] leading-relaxed text-slate-300 overflow-x-auto min-h-[175px] p-3 bg-[#050608] rounded-xl border border-slate-900 font-mono"></pre>
+
+              <!-- Animated Step Progress Bar -->
+              <div class="w-full bg-slate-800 rounded-full h-1 overflow-hidden mt-2">
+                <div id="stepper-progress-fill" class="bg-brand-blue h-1 transition-all duration-300" style="width: 16.66%;"></div>
               </div>
             </div>
-
-            <!-- Right Telemetry Terminal Box -->
-            <div class="lg:col-span-7 bg-[#090B10] rounded-2xl p-5 font-mono text-xs text-slate-300 overflow-x-auto shadow-inner border border-slate-800">
-              <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-800 text-[10px] text-slate-500">
-                <span id="inspector-telemetry-label">workspace_metadata.json</span>
-                <span class="text-brand-blue dark:text-blue-400 uppercase font-bold">Simulated Contract</span>
-              </div>
-              <pre id="inspector-payload" class="text-slate-300 leading-relaxed text-[11px]">
-{
-  "repository": "Codebase-Self-Evolving-Agent",
-  "branch": "main",
-  "head_commit": "50a9c6d",
-  "status": "ready_for_scan",
-  "file_count": 84,
-  "languages": ["Python", "HTML", "JavaScript"]
-}</pre>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- ==================== CONTRAST BANNER: LIVE DIFF REVIEW ==================== -->
-    <section id="example" class="py-16 md:py-24 border-b border-border dark:border-[#1F2430] bg-white dark:bg-[#0A0D14] transition-colors">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        <!-- Large Dark Rounded Container -->
-        <div class="bg-[#090B10] rounded-3xl border border-[#1A2234] p-6 sm:p-10 lg:p-12 text-white shadow-xl relative overflow-hidden">
-          
-          <div class="max-w-3xl mb-10">
-            <span class="font-mono text-xs text-blue-400 uppercase tracking-widest font-bold">Demonstration Interface</span>
-            <h2 class="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal text-white mt-2 leading-tight">
-              Review with <span class="italic text-blue-400">absolute certainty.</span>
-            </h2>
-            <p class="text-slate-400 text-sm sm:text-base mt-2">
-              Every fix candidate includes the original vulnerability, before-and-after AST diff, validation tests, and explicit developer approve/reject controls.
-            </p>
-          </div>
-
-          <!-- Inside Review Inspection Card -->
-          <div class="bg-[#121622] border border-[#21283B] rounded-2xl overflow-hidden">
-            
-            <!-- Card Header -->
-            <div class="px-5 py-4 border-b border-[#21283B] bg-[#0E111B] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div class="flex items-center space-x-3">
-                <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-red-500/15 text-red-400 font-bold border border-red-500/30">Bandit B303</span>
-                <span class="font-mono text-xs font-semibold text-white">auth/hasher.py</span>
-                <span class="text-slate-400 text-xs font-mono">L12-16</span>
-              </div>
-              <div class="flex items-center space-x-2">
-                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold">
-                  ✓ Pytest Passed (2/2)
-                </span>
-                <span class="text-[10px] font-mono text-slate-500 uppercase">Interactive Demo</span>
-              </div>
-            </div>
-
-            <!-- Finding & Critique -->
-            <div class="p-5 border-b border-[#21283B] grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
-              <div>
-                <span class="text-[10px] text-slate-500 uppercase block">Reported Finding</span>
-                <span class="text-slate-200 font-medium mt-0.5 block">Insecure MD5 hashing algorithm in token verification</span>
-              </div>
-              <div>
-                <span class="text-[10px] text-slate-500 uppercase block">Synthesized Remedy</span>
-                <span class="text-blue-400 font-medium mt-0.5 block">Upgraded to SHA-256 with UTF-8 byte encoding</span>
-              </div>
-              <div>
-                <span class="text-[10px] text-slate-500 uppercase block">Reviewer Model Feedback</span>
-                <span class="text-slate-400 mt-0.5 block">Groq Llama 3.3 approved: caller contract preserved</span>
-              </div>
-            </div>
-
-            <!-- Unified Diff View -->
-            <div class="p-4 font-mono text-xs overflow-x-auto leading-relaxed bg-[#0A0D15] border-b border-[#21283B]">
-              <div class="text-[10px] text-slate-500 pb-2 mb-2 border-b border-slate-800">diff --git a/auth/hasher.py b/auth/hasher.py</div>
-              <div class="text-slate-500 px-2 py-0.5">  import hashlib</div>
-              <div class="text-slate-500 px-2 py-0.5"> </div>
-              <div class="text-slate-500 px-2 py-0.5">  def hash_user_token(raw_token: str) -> str:</div>
-              <div class="diff-del px-2 py-0.5">-     # Weak MD5 hash vulnerable to collision attacks</div>
-              <div class="diff-del px-2 py-0.5">-     return hashlib.md5(raw_token.encode()).hexdigest()</div>
-              <div class="diff-add px-2 py-0.5">+     # Upgraded to collision-resistant SHA-256</div>
-              <div class="diff-add px-2 py-0.5">+     return hashlib.sha256(raw_token.encode('utf-8')).hexdigest()</div>
-            </div>
-
-            <!-- Decision Action Bar -->
-            <div class="p-4 bg-[#0E111B] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div class="text-xs text-slate-400 font-mono flex items-center space-x-2">
-                <i data-lucide="info" class="w-4 h-4 text-blue-400"></i>
-                <span>Test the decision memory mechanism below</span>
-              </div>
-              <div class="flex items-center space-x-3">
-                <button id="demo-reject-btn" onclick="triggerDemoAction('reject')" class="px-4 py-2 rounded-full bg-[#181D2B] border border-[#2B354C] hover:border-red-500 hover:text-red-400 text-slate-300 text-xs font-mono font-medium transition">
-                  Reject Suggestion
-                </button>
-                <button id="demo-approve-btn" onclick="triggerDemoAction('approve')" class="px-5 py-2 rounded-full bg-brand-blue hover:bg-brand-blue-hover text-white text-xs font-mono font-semibold transition flex items-center space-x-1.5 shadow-md">
-                  <i data-lucide="check" class="w-3.5 h-3.5"></i>
-                  <span>Approve & Merge Fix</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Live Simulated Feedback Toast -->
-            <div id="demo-feedback-toast" class="hidden px-5 py-3 font-mono text-xs border-t border-[#21283B]"></div>
           </div>
 
         </div>
 
-      </div>
-    </section>
-
-    <!-- ==================== CAPABILITIES GRID ==================== -->
-    <section id="features" class="py-16 md:py-24 border-b border-border dark:border-[#1F2430] bg-canvas dark:bg-[#080808] transition-colors">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        <div class="max-w-3xl mb-14">
-          <span class="font-mono text-xs text-brand-blue dark:text-blue-400 uppercase tracking-wider font-semibold">Verified Architecture</span>
-          <h2 class="font-serif text-3xl sm:text-4xl font-normal text-ink dark:text-white mt-1">
-            Engineered for developers who notice <span class="italic text-brand-blue dark:text-blue-400">the details.</span>
-          </h2>
-          <p class="text-ink-secondary dark:text-slate-400 text-sm mt-2">
-            Every feature here is verified and running in the current codebase. No mock capabilities or fabricated statistics.
-          </p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          
-          <div class="bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-3xl p-6 sm:p-7 space-y-4 hover:border-brand-blue dark:hover:border-blue-500 transition shadow-sm">
-            <div class="w-10 h-10 rounded-2xl bg-brand-blue-light dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 flex items-center justify-center text-brand-blue dark:text-blue-400">
-              <i data-lucide="scan-line" class="w-5 h-5"></i>
-            </div>
-            <h3 class="text-base font-bold text-ink dark:text-white">AST Codebase Scanning</h3>
-            <p class="text-xs text-ink-secondary dark:text-slate-400 leading-relaxed">
-              Combines Tree-sitter AST syntax parsing with Radon (complexity), Vulture (dead functions/variables), and Bandit (security vulnerabilities).
-            </p>
-            <div class="font-mono text-[10px] text-ink-muted dark:text-slate-400">agents/scanner.py</div>
-          </div>
-
-          <div class="bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-3xl p-6 sm:p-7 space-y-4 hover:border-brand-blue dark:hover:border-blue-500 transition shadow-sm">
-            <div class="w-10 h-10 rounded-2xl bg-brand-blue-light dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 flex items-center justify-center text-brand-blue dark:text-blue-400">
-              <i data-lucide="network" class="w-5 h-5"></i>
-            </div>
-            <h3 class="text-base font-bold text-ink dark:text-white">Dependency Graph Intelligence</h3>
-            <p class="text-xs text-ink-secondary dark:text-slate-400 leading-relaxed">
-              Maps module imports and caller hierarchies with NetworkX. Computes blast radius before modifications so no downstream callers break.
-            </p>
-            <div class="font-mono text-[10px] text-ink-muted dark:text-slate-400">core/graph.py</div>
-          </div>
-
-          <div class="bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-3xl p-6 sm:p-7 space-y-4 hover:border-brand-blue dark:hover:border-blue-500 transition shadow-sm">
-            <div class="w-10 h-10 rounded-2xl bg-brand-blue-light dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 flex items-center justify-center text-brand-blue dark:text-blue-400">
-              <i data-lucide="git-pull-request" class="w-5 h-5"></i>
-            </div>
-            <h3 class="text-base font-bold text-ink dark:text-white">Interactive Fix Review Studio</h3>
-            <p class="text-xs text-ink-secondary dark:text-slate-400 leading-relaxed">
-              Presents candidate fixes in unified side-by-side diff viewers with test feedback and explicit developer Approve and Reject actions.
-            </p>
-            <div class="font-mono text-[10px] text-ink-muted dark:text-slate-400">ui/static/index.html</div>
-          </div>
-
-          <div class="bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-3xl p-6 sm:p-7 space-y-4 hover:border-brand-blue dark:hover:border-blue-500 transition shadow-sm">
-            <div class="w-10 h-10 rounded-2xl bg-brand-blue-light dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 flex items-center justify-center text-brand-blue dark:text-blue-400">
-              <i data-lucide="search" class="w-5 h-5"></i>
-            </div>
-            <h3 class="text-base font-bold text-ink dark:text-white">Semantic Vector Search</h3>
-            <p class="text-xs text-ink-secondary dark:text-slate-400 leading-relaxed">
-              Embeds codebase functions into ChromaDB vector store. Search natural language concepts (e.g. "find database rollback handlers").
-            </p>
-            <div class="font-mono text-[10px] text-ink-muted dark:text-slate-400">memory/chroma.py</div>
-          </div>
-
-          <div class="bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-3xl p-6 sm:p-7 space-y-4 hover:border-brand-blue dark:hover:border-blue-500 transition shadow-sm">
-            <div class="w-10 h-10 rounded-2xl bg-brand-blue-light dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 flex items-center justify-center text-brand-blue dark:text-blue-400">
-              <i data-lucide="brain" class="w-5 h-5"></i>
-            </div>
-            <h3 class="text-base font-bold text-ink dark:text-white">Developer Decision Memory</h3>
-            <p class="text-xs text-ink-secondary dark:text-slate-400 leading-relaxed">
-              Stores approvals and rejections in SQLite. The prompt synthesizers query past rejections to avoid repeating unwanted patch patterns.
-            </p>
-            <div class="font-mono text-[10px] text-ink-muted dark:text-slate-400">memory/sqlite.py</div>
-          </div>
-
-          <div class="bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-3xl p-6 sm:p-7 space-y-4 hover:border-brand-blue dark:hover:border-blue-500 transition shadow-sm">
-            <div class="w-10 h-10 rounded-2xl bg-brand-blue-light dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 flex items-center justify-center text-brand-blue dark:text-blue-400">
-              <i data-lucide="git-branch" class="w-5 h-5"></i>
-            </div>
-            <h3 class="text-base font-bold text-ink dark:text-white">Isolated Branch Sandbox</h3>
-            <p class="text-xs text-ink-secondary dark:text-slate-400 leading-relaxed">
-              Never mutates your primary branch directly. Generates changes on isolated <code class="text-brand-blue dark:text-blue-400 font-mono">agent-fix-*</code> branches with automatic force-rollback on test failure.
-            </p>
-            <div class="font-mono text-[10px] text-ink-muted dark:text-slate-400">core/git_manager.py</div>
-          </div>
-
-        </div>
-
-      </div>
-    </section>
-
-    <!-- ==================== THE PROBLEM & THE SOLUTION ==================== -->
-    <section id="problem-solution" class="py-16 md:py-24 border-b border-border dark:border-[#1F2430] bg-white dark:bg-[#0A0D14] transition-colors">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        <div class="max-w-3xl mb-14">
-          <span class="font-mono text-xs text-brand-blue dark:text-blue-400 uppercase tracking-wider font-semibold">The Reality of Code Maintenance</span>
-          <h2 class="font-serif text-3xl sm:text-4xl font-normal text-ink dark:text-white mt-1">
-            Grounded assistance for <span class="italic text-brand-blue dark:text-blue-400">real codebases.</span>
-          </h2>
-          <p class="text-ink-secondary dark:text-slate-400 text-sm mt-2">
-            No exaggerated claims of "fully autonomous replacement." This agent is built around pragmatic software engineering: discovering verified debt with local ASTs and keeping developers firmly in control.
-          </p>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
-          <!-- Column 1: The Problem -->
-          <div class="bg-surface-subtle dark:bg-[#10141F] p-8 rounded-3xl border border-neutral-200/80 dark:border-[#1F2637] space-y-6">
-            <div class="flex items-center space-x-3">
-              <div class="w-8 h-8 rounded-full bg-red-100 dark:bg-red-950/50 flex items-center justify-center text-red-600 dark:text-red-400 font-bold font-mono text-xs">
-                ✕
-              </div>
-              <div>
-                <h3 class="font-serif text-xl font-bold text-ink dark:text-white">The Common Problems</h3>
-                <p class="text-[11px] text-ink-muted dark:text-slate-400">What slows down engineering teams in growing codebases</p>
-              </div>
-            </div>
-
-            <ul class="space-y-4 text-xs text-ink-secondary dark:text-slate-300">
-              <li class="flex items-start space-x-3">
-                <span class="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 flex-shrink-0"></span>
-                <div>
-                  <strong class="text-ink dark:text-white block mb-0.5">Hidden Technical Debt & Security Holes</strong>
-                  <span>As projects scale, dead code, deprecated function calls, and subtle security vulnerabilities (Bandit/SAST issues) easily escape manual code reviews.</span>
-                </div>
-              </li>
-              <li class="flex items-start space-x-3">
-                <span class="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 flex-shrink-0"></span>
-                <div>
-                  <strong class="text-ink dark:text-white block mb-0.5">High Blast Radius of Changes</strong>
-                  <span>Changing utility functions without mapped dependency call graphs risks breaking unseen downstream modules across large repositories.</span>
-                </div>
-              </li>
-              <li class="flex items-start space-x-3">
-                <span class="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 flex-shrink-0"></span>
-                <div>
-                  <strong class="text-ink dark:text-white block mb-0.5">Repetitive Triage & Forgotten Context</strong>
-                  <span>Reviewers repeatedly reject the same suboptimal patterns because decision rationale is lost across PR comments rather than retained by the tooling.</span>
-                </div>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Column 2: The Solution -->
-          <div class="bg-surface-subtle dark:bg-[#10141F] p-8 rounded-3xl border border-neutral-200/80 dark:border-[#1F2637] space-y-6">
-            <div class="flex items-center space-x-3">
-              <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold font-mono text-xs">
-                ✓
-              </div>
-              <div>
-                <h3 class="font-serif text-xl font-bold text-ink dark:text-white">The Implemented Solution</h3>
-                <p class="text-[11px] text-ink-muted dark:text-slate-400">Verifiable, offline-capable analysis with human approval</p>
-              </div>
-            </div>
-
-            <ul class="space-y-4 text-xs text-ink-secondary dark:text-slate-300">
-              <li class="flex items-start space-x-3">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0"></span>
-                <div>
-                  <strong class="text-ink dark:text-white block mb-0.5">Multi-Engine Static Auditing</strong>
-                  <span>Runs Tree-sitter AST parsing, Radon complexity scoring, Vulture dead-code sweeps, and Bandit security scans locally before touching code.</span>
-                </div>
-              </li>
-              <li class="flex items-start space-x-3">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0"></span>
-                <div>
-                  <strong class="text-ink dark:text-white block mb-0.5">Test-Verified Isolated Sandboxes</strong>
-                  <span>Every candidate fix is generated on a separate Git branch (<code class="text-brand-blue dark:text-blue-400 font-mono">agent-fix-*</code>) and verified with local pytest suites before presentation.</span>
-                </div>
-              </li>
-              <li class="flex items-start space-x-3">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0"></span>
-                <div>
-                  <strong class="text-ink dark:text-white block mb-0.5">Persistent SQLite Decision Memory</strong>
-                  <span>When you approve or reject a candidate fix in the dashboard, the decision rationale is recorded so subsequent runs never repeat rejected patterns.</span>
-                </div>
-              </li>
-            </ul>
-          </div>
-
-        </div>
-
-      </div>
-    </section>
-
-    <!-- ==================== QUICK START (TABBED POWERSHELL / BASH) ==================== -->
-    <section id="quickstart" class="py-16 md:py-24 border-b border-border dark:border-[#1F2430] bg-canvas dark:bg-[#080808] transition-colors">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        <div class="max-w-3xl mb-12">
-          <span class="font-mono text-xs text-brand-blue dark:text-blue-400 uppercase tracking-wider font-semibold">Developer Onboarding</span>
-          <h2 class="font-serif text-3xl sm:text-4xl font-normal text-ink dark:text-white mt-1">
-            Get started in <span class="italic text-brand-blue dark:text-blue-400">five minutes.</span>
-          </h2>
-          <p class="text-ink-secondary dark:text-slate-400 text-sm mt-2">
-            Run the entire system locally with Python 3.11 or 3.12.
-          </p>
-        </div>
-
-        <!-- OS Tab Switcher -->
-        <div class="flex items-center space-x-2 border-b border-border dark:border-[#1F2430] pb-3 mb-8 text-xs font-mono">
-          <span class="text-ink-muted dark:text-slate-400 mr-2">Environment:</span>
-          <button id="tab-btn-win" onclick="switchOsTab('win')" class="px-3.5 py-1.5 rounded-full bg-white dark:bg-[#121622] text-brand-blue dark:text-blue-400 font-semibold border border-brand-blue dark:border-blue-500 shadow-sm focus:outline-none">
-            Windows (PowerShell)
+        <!-- Stepper Bottom Navigation (Prev / Next Buttons) -->
+        <div class="flex items-center justify-between pt-4 border-t border-border dark:border-[#1F2430]">
+          <button onclick="changeStage(-1)" class="px-4 py-2 rounded-full border border-border dark:border-[#21283B] text-xs font-medium text-ink dark:text-slate-300 hover:border-brand-blue flex items-center space-x-1.5 transition">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            <span>Previous Step</span>
           </button>
-          <button id="tab-btn-nix" onclick="switchOsTab('nix')" class="px-3.5 py-1.5 rounded-full bg-neutral-100 dark:bg-[#121622] text-ink-secondary dark:text-slate-400 hover:text-ink dark:hover:text-white border border-neutral-200 dark:border-[#21283B] focus:outline-none">
-            macOS / Linux (Bash)
+          
+          <span class="text-xs font-mono text-ink-muted dark:text-slate-400" id="step-number-text">
+            Step 1 of 6
+          </span>
+
+          <button onclick="changeStage(1)" class="px-4 py-2 rounded-full bg-brand-blue hover:bg-brand-blue-hover text-white text-xs font-semibold flex items-center space-x-1.5 transition shadow-xs">
+            <span>Next Step</span>
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
           </button>
         </div>
 
-        <!-- Step-by-Step Guide -->
-        <div class="space-y-6">
-          
-          <div class="bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-3xl p-6 shadow-sm">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs font-bold text-brand-blue dark:text-blue-400">01 · CLONE REPOSITORY</span>
-              <button onclick="copySnippet('code-clone')" class="text-xs font-mono text-ink-muted dark:text-slate-400 hover:text-brand-blue dark:hover:text-blue-400 flex items-center space-x-1">
-                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                <span id="label-clone">Copy</span>
-              </button>
-            </div>
-            <p class="text-xs text-ink-secondary dark:text-slate-400 mb-3">Clone the project repository to your development machine.</p>
-            <div class="bg-[#090B10] p-4 rounded-2xl font-mono text-xs text-slate-200 overflow-x-auto border border-slate-800">
-              <code id="code-clone">git clone https://github.com/jayeshtak/Codebase-Self-Evolving-Agent.git
-cd Codebase-Self-Evolving-Agent</code>
-            </div>
-          </div>
-
-          <div class="bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-3xl p-6 shadow-sm">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs font-bold text-brand-blue dark:text-blue-400">02 · VIRTUAL ENVIRONMENT</span>
-              <button onclick="copySnippet('code-venv')" class="text-xs font-mono text-ink-muted dark:text-slate-400 hover:text-brand-blue dark:hover:text-blue-400 flex items-center space-x-1">
-                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                <span id="label-venv">Copy</span>
-              </button>
-            </div>
-            <p class="text-xs text-ink-secondary dark:text-slate-400 mb-3">Initialize an isolated Python 3.12 virtual environment.</p>
-            <div class="bg-[#090B10] p-4 rounded-2xl font-mono text-xs text-slate-200 overflow-x-auto border border-slate-800">
-              <code id="code-venv-win">python -m venv venv
-.\venv\Scripts\Activate.ps1</code>
-              <code id="code-venv-nix" class="hidden">python3 -m venv venv
-source venv/bin/activate</code>
-            </div>
-          </div>
-
-          <div class="bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-3xl p-6 shadow-sm">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs font-bold text-brand-blue dark:text-blue-400">03 · INSTALL DEPENDENCIES</span>
-              <button onclick="copySnippet('code-install')" class="text-xs font-mono text-ink-muted dark:text-slate-400 hover:text-brand-blue dark:hover:text-blue-400 flex items-center space-x-1">
-                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                <span id="label-install">Copy</span>
-              </button>
-            </div>
-            <p class="text-xs text-ink-secondary dark:text-slate-400 mb-3">Install all analysis engines and API server dependencies.</p>
-            <div class="bg-[#090B10] p-4 rounded-2xl font-mono text-xs text-slate-200 overflow-x-auto border border-slate-800">
-              <code id="code-install">pip install -r requirements.txt</code>
-            </div>
-          </div>
-
-          <div class="bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-3xl p-6 shadow-sm">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs font-bold text-brand-blue dark:text-blue-400">04 · LAUNCH SERVER</span>
-              <button onclick="copySnippet('code-run')" class="text-xs font-mono text-ink-muted dark:text-slate-400 hover:text-brand-blue dark:hover:text-blue-400 flex items-center space-x-1">
-                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                <span id="label-run">Copy</span>
-              </button>
-            </div>
-            <p class="text-xs text-ink-secondary dark:text-slate-400 mb-3">Start the FastAPI server on port 8000.</p>
-            <div class="bg-[#090B10] p-4 rounded-2xl font-mono text-xs text-slate-200 overflow-x-auto border border-slate-800">
-              <code id="code-run">python -m uvicorn ui.server:app --host 127.0.0.1 --port 8000</code>
-            </div>
-            <div class="text-[11px] text-ink-muted dark:text-slate-400 mt-2 font-mono">
-              Then navigate to: <a href="/app" class="text-brand-blue dark:text-blue-400 font-semibold underline">http://127.0.0.1:8000/app</a>
-            </div>
-          </div>
-
-        </div>
-
       </div>
+
     </section>
 
-    <!-- ==================== ARCHITECTURE DIAGRAM ==================== -->
-    <section id="architecture" class="py-16 md:py-24 border-b border-border dark:border-[#1F2430] bg-white dark:bg-[#0A0D14] transition-colors">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        <div class="max-w-3xl mb-12">
-          <span class="font-mono text-xs text-brand-blue dark:text-blue-400 uppercase tracking-wider font-semibold">Engineering Blueprint</span>
-          <h2 class="font-serif text-3xl sm:text-4xl font-normal text-ink dark:text-white mt-1">
-            System architecture <span class="italic text-brand-blue dark:text-blue-400">& data flow.</span>
+    <!-- ==================== SIMPLE GET STARTED SECTION ==================== -->
+    <section class="bg-surface-subtle dark:bg-[#10141F] border border-neutral-200/80 dark:border-[#1F2637] rounded-3xl p-6 sm:p-8 space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <span class="font-mono text-xs text-brand-blue dark:text-blue-400 uppercase tracking-wider font-semibold">Get Started</span>
+          <h2 class="font-serif text-2xl sm:text-3xl font-bold text-ink dark:text-white mt-1">
+            Try it on your code.
           </h2>
-          <p class="text-ink-secondary dark:text-slate-400 text-sm mt-2">
-            A decoupled architecture uniting user interface, FastAPI server orchestrator, multi-agent core, and persistent memory stores.
+          <p class="text-xs sm:text-sm text-ink-secondary dark:text-slate-400 mt-1">
+            Open the developer console or run the command line tool locally.
           </p>
         </div>
 
-        <div class="bg-surface-warm dark:bg-[#0E121B] border border-neutral-200/80 dark:border-[#1F2637] rounded-3xl p-6 sm:p-8">
-          <div class="w-full overflow-x-auto">
-            <svg class="min-w-[700px] w-full" height="340" viewBox="0 0 800 340" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="20" y="20" width="220" height="90" rx="8" class="arch-card" stroke-width="1.5"/>
-              <text x="35" y="45" fill="#1D4ED8" font-family="JetBrains Mono" font-size="11" font-weight="bold">CLIENT INTERFACE</text>
-              <text x="35" y="70" class="arch-text-title" font-family="Plus Jakarta Sans" font-size="13" font-weight="700">Developer Command Center</text>
-              <text x="35" y="90" class="arch-text-sub" font-family="JetBrains Mono" font-size="10">HTML5 · Tailwind · Lucide SPA</text>
-
-              <path d="M240 65 L290 65" stroke="#1D4ED8" stroke-width="1.5" stroke-dasharray="4 4"/>
-              <polygon points="290,62 297,65 290,68" fill="#1D4ED8"/>
-
-              <rect x="297" y="20" width="230" height="90" rx="8" class="arch-card" stroke-width="1.5"/>
-              <text x="312" y="45" fill="#1D4ED8" font-family="JetBrains Mono" font-size="11" font-weight="bold">SERVER ORCHESTRATOR</text>
-              <text x="312" y="70" class="arch-text-title" font-family="Plus Jakarta Sans" font-size="13" font-weight="700">FastAPI Backend (:8000)</text>
-              <text x="312" y="90" class="arch-text-sub" font-family="JetBrains Mono" font-size="10">REST API · Concurrency Locks</text>
-
-              <path d="M412 110 L412 160" stroke="#1D4ED8" stroke-width="1.5"/>
-              <polygon points="409,160 412,167 415,160" fill="#1D4ED8"/>
-
-              <rect x="20" y="167" width="507" height="150" rx="8" class="arch-card" stroke-width="1.5"/>
-              <text x="35" y="192" fill="#1D4ED8" font-family="JetBrains Mono" font-size="11" font-weight="bold">AUTONOMOUS MULTI-AGENT ENGINE</text>
-              
-              <rect x="35" y="205" width="105" height="90" rx="6" class="arch-sub-card"/>
-              <text x="45" y="225" class="arch-text-title" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">Scanner</text>
-              <text x="45" y="245" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Tree-sitter</text>
-              <text x="45" y="260" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Radon</text>
-              <text x="45" y="275" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Bandit</text>
-
-              <rect x="150" y="205" width="105" height="90" rx="6" class="arch-sub-card"/>
-              <text x="160" y="225" class="arch-text-title" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">Planner</text>
-              <text x="160" y="245" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">NetworkX</text>
-              <text x="160" y="260" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Scoring</text>
-              <text x="160" y="275" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Clusters</text>
-
-              <rect x="265" y="205" width="115" height="90" rx="6" class="arch-sub-card"/>
-              <text x="275" y="225" class="arch-text-title" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">Coder (LLM)</text>
-              <text x="275" y="245" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Gemini Flash</text>
-              <text x="275" y="260" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Few-Shot</text>
-              <text x="275" y="275" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">libcst AST</text>
-
-              <rect x="390" y="205" width="120" height="90" rx="6" class="arch-sub-card"/>
-              <text x="400" y="225" class="arch-text-title" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">Reviewer & Test</text>
-              <text x="400" y="245" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Groq Llama</text>
-              <text x="400" y="260" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Pytest Loop</text>
-              <text x="400" y="275" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Self-Healing</text>
-
-              <rect x="560" y="20" width="220" height="297" rx="8" class="arch-card" stroke-width="1.5"/>
-              <text x="580" y="45" fill="#1D4ED8" font-family="JetBrains Mono" font-size="11" font-weight="bold">PERSISTENCE LAYER</text>
-              
-              <rect x="580" y="65" width="180" height="65" rx="6" class="arch-sub-card"/>
-              <text x="592" y="88" class="arch-text-title" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">SQLite (memory.db)</text>
-              <text x="592" y="105" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Decisions, Issues, History</text>
-
-              <rect x="580" y="145" width="180" height="65" rx="6" class="arch-sub-card"/>
-              <text x="592" y="168" class="arch-text-title" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">ChromaDB Vector Store</text>
-              <text x="592" y="185" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">Embeddings & Semantic RAG</text>
-
-              <rect x="580" y="225" width="180" height="65" rx="6" class="arch-sub-card"/>
-              <text x="592" y="248" class="arch-text-title" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold">Git Workspace</text>
-              <text x="592" y="265" class="arch-text-sub" font-family="JetBrains Mono" font-size="9">agent-fix-* Branches & Rollback</text>
-
-              <path d="M527 240 L560 240" stroke="#1D4ED8" stroke-width="1.5"/>
-              <polygon points="553,237 560,240 553,243" fill="#1D4ED8"/>
-            </svg>
-          </div>
-        </div>
-
+        <a href="/app" class="bg-brand-blue hover:bg-brand-blue-hover text-white text-sm font-semibold px-6 py-3 rounded-full transition shadow-md hover:shadow-lg flex items-center justify-center space-x-2 flex-shrink-0">
+          <span>Launch Developer Console</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </a>
       </div>
-    </section>
 
-    <!-- ==================== FREQUENTLY ASKED QUESTIONS ==================== -->
-    <section id="faq" class="py-16 md:py-24 border-b border-border dark:border-[#1F2430] bg-canvas dark:bg-[#080808] transition-colors">
-      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        <div class="max-w-2xl mb-12">
-          <span class="font-mono text-xs text-brand-blue dark:text-blue-400 uppercase tracking-wider font-semibold">Questions & Clarifications</span>
-          <h2 class="font-serif text-3xl sm:text-4xl font-normal text-ink dark:text-white mt-1">
-            Frequently <span class="italic text-brand-blue dark:text-blue-400">asked.</span>
-          </h2>
-          <p class="text-ink-secondary dark:text-slate-400 text-sm mt-2">
-            Clear, honest answers about safety boundaries and operational constraints.
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+        <div class="p-4 rounded-2xl bg-white dark:bg-[#0E121B] border border-border dark:border-[#1F2430] space-y-1">
+          <div class="text-xs font-mono font-bold text-ink dark:text-white flex items-center space-x-2">
+            <span class="w-5 h-5 rounded-full bg-brand-blue-light dark:bg-blue-950 text-brand-blue dark:text-blue-400 flex items-center justify-center text-[10px]">1</span>
+            <span>Web Console</span>
+          </div>
+          <p class="text-xs text-ink-secondary dark:text-slate-400 pl-7">
+            Navigate to <a href="/app" class="text-brand-blue dark:text-blue-400 underline font-mono">/app</a> to scan your repository and review diffs interactively.
           </p>
         </div>
-
-        <div class="space-y-4 font-sans text-xs">
-          
-          <details class="group bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-2xl p-5 open:border-brand-blue dark:open:border-blue-500 transition">
-            <summary class="font-bold text-sm text-ink dark:text-white cursor-pointer list-none flex items-center justify-between">
-              <span>How does the agent avoid breaking working code?</span>
-              <span class="text-brand-blue dark:text-blue-400 text-lg transition-transform group-open:rotate-45">+</span>
-            </summary>
-            <p class="text-ink-secondary dark:text-slate-400 mt-3 leading-relaxed">
-              Fixes are never committed to your active branch. The system creates isolated <code class="text-brand-blue dark:text-blue-400 font-mono">agent-fix-*</code> branches, runs your test suites (pytest), critiques the diff through a second independent model (Groq Llama 3.3 70B), and forces an immediate rollback to clean HEAD if tests fail.
-            </p>
-          </details>
-
-          <details class="group bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-2xl p-5 open:border-brand-blue dark:open:border-blue-500 transition">
-            <summary class="font-bold text-sm text-ink dark:text-white cursor-pointer list-none flex items-center justify-between">
-              <span>Do I need to pay for API keys to run the agent?</span>
-              <span class="text-brand-blue dark:text-blue-400 text-lg transition-transform group-open:rotate-45">+</span>
-            </summary>
-            <p class="text-ink-secondary dark:text-slate-400 mt-3 leading-relaxed">
-              No. The core AST static analysis, Radon complexity scoring, Vulture dead-code discovery, Bandit security audit, and NetworkX dependency graph run 100% offline with zero API keys. API keys (Gemini or Groq) are only optional when activating the generative patch synthesis loop.
-            </p>
-          </details>
-
-          <details class="group bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-2xl p-5 open:border-brand-blue dark:open:border-blue-500 transition">
-            <summary class="font-bold text-sm text-ink dark:text-white cursor-pointer list-none flex items-center justify-between">
-              <span>Can it run against remote repositories?</span>
-              <span class="text-brand-blue dark:text-blue-400 text-lg transition-transform group-open:rotate-45">+</span>
-            </summary>
-            <p class="text-ink-secondary dark:text-slate-400 mt-3 leading-relaxed">
-              Yes. You can paste any public Git URL into the Workspace Input. The application clones the repository into an isolated sandbox in <code class="text-brand-blue dark:text-blue-400 font-mono">/tmp</code>, establishes branch references, and indexes ASTs without polluting your local working directory.
-            </p>
-          </details>
-
-          <details class="group bg-white dark:bg-[#10141D] border border-border dark:border-[#1F2430] rounded-2xl p-5 open:border-brand-blue dark:open:border-blue-500 transition">
-            <summary class="font-bold text-sm text-ink dark:text-white cursor-pointer list-none flex items-center justify-between">
-              <span>How does the decision memory prevent repeated bad suggestions?</span>
-              <span class="text-brand-blue dark:text-blue-400 text-lg transition-transform group-open:rotate-45">+</span>
-            </summary>
-            <p class="text-ink-secondary dark:text-slate-400 mt-3 leading-relaxed">
-              When you reject a proposed change, the rejection rationale and code slice are stored in SQLite <code class="text-brand-blue dark:text-blue-400 font-mono">memory.db</code>. When synthesizing future patches for related files, the Coder agent queries past rejections and explicitly suppresses unwanted patterns.
-            </p>
-          </details>
-
-        </div>
-
-      </div>
-    </section>
-
-    <!-- ==================== FINAL CALL TO ACTION ==================== -->
-    <section class="py-20 border-b border-border dark:border-[#1F2430] bg-white dark:bg-[#090B10] text-center transition-colors">
-      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        <h2 class="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal text-ink dark:text-white tracking-tight">
-          Give your codebase a <span class="italic text-brand-blue dark:text-blue-400">clearer path forward.</span>
-        </h2>
-        <p class="text-ink-secondary dark:text-slate-400 text-sm sm:text-base leading-relaxed max-w-xl mx-auto">
-          Explore the workflow, understand the architecture, and run the agent against a repository you control.
-        </p>
-        <div class="flex flex-wrap justify-center gap-4 pt-2">
-          <a href="/app" class="bg-brand-blue hover:bg-brand-blue-hover text-white text-sm font-semibold px-7 py-3 rounded-full transition shadow-md hover:shadow-lg flex items-center space-x-2">
-            <span>Launch Developer Console</span>
-            <i data-lucide="arrow-right" class="w-4 h-4"></i>
-          </a>
-          <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="bg-surface-subtle dark:bg-[#121622] hover:bg-neutral-200/70 dark:hover:bg-[#181F30] text-ink dark:text-white border border-border dark:border-[#21283B] text-sm font-medium px-6 py-3 rounded-full transition flex items-center space-x-2">
-            <i data-lucide="github" class="w-4 h-4"></i>
-            <span>Explore on GitHub</span>
-          </a>
+        <div class="p-4 rounded-2xl bg-white dark:bg-[#0E121B] border border-border dark:border-[#1F2430] space-y-1">
+          <div class="text-xs font-mono font-bold text-ink dark:text-white flex items-center space-x-2">
+            <span class="w-5 h-5 rounded-full bg-brand-blue-light dark:bg-blue-950 text-brand-blue dark:text-blue-400 flex items-center justify-center text-[10px]">2</span>
+            <span>CLI Terminal</span>
+          </div>
+          <p class="text-xs text-ink-secondary dark:text-slate-400 pl-7 font-mono">
+            python main.py . --scan --plan
+          </p>
         </div>
       </div>
     </section>
 
   </main>
 
-  <!-- ==================== GRAND FOOTER ==================== -->
-  <footer class="bg-white dark:bg-[#080808] pt-16 pb-12 border-t border-border dark:border-[#1F2430] transition-colors">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-      
-      <!-- Massive Editorial Brand Title -->
-      <div class="pb-8 border-b border-border-subtle dark:border-[#1F2430]">
-        <h2 class="font-serif text-6xl sm:text-8xl lg:text-9xl font-bold tracking-tight text-ink dark:text-white select-none leading-none">
-          Codebase Agent<span class="text-brand-blue dark:text-blue-500">.</span>
-        </h2>
+  <!-- ==================== SIMPLE CLEAN FOOTER ==================== -->
+  <footer class="mt-auto border-t border-border dark:border-[#1F2430] bg-white dark:bg-[#080808] py-8 text-center text-xs text-ink-muted dark:text-slate-500 font-mono transition-colors">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center space-x-2">
+        <span class="font-serif text-sm font-bold text-ink dark:text-white">Codebase Agent</span>
+        <span>— Simple, developer-governed code intelligence.</span>
       </div>
-
-      <!-- Footer Multi-Column Links -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-xs font-sans">
-        <div class="space-y-3">
-          <div class="font-serif text-base font-bold text-ink dark:text-white">Overview</div>
-          <p class="text-ink-secondary dark:text-slate-400 leading-relaxed text-[11px]">
-            Autonomous multi-agent system for continuous technical debt remediation, AST refactoring, and regression testing.
-          </p>
-        </div>
-        <div class="space-y-2">
-          <div class="font-serif text-sm font-bold text-ink dark:text-white">Application</div>
-          <ul class="space-y-1.5 text-ink-muted dark:text-slate-400 text-[11px]">
-            <li><a href="/app" class="hover:text-brand-blue dark:hover:text-blue-400 transition">Developer Console</a></li>
-            <li><a href="#pipeline" class="hover:text-brand-blue dark:hover:text-blue-400 transition">Pipeline Workflow</a></li>
-            <li><a href="#example" class="hover:text-brand-blue dark:hover:text-blue-400 transition">Diff Inspection</a></li>
-            <li><a href="#architecture" class="hover:text-brand-blue dark:hover:text-blue-400 transition">System Architecture</a></li>
-          </ul>
-        </div>
-        <div class="space-y-2">
-          <div class="font-serif text-sm font-bold text-ink dark:text-white">Getting Started</div>
-          <ul class="space-y-1.5 text-ink-muted dark:text-slate-400 text-[11px]">
-            <li><a href="#quickstart" class="hover:text-brand-blue dark:hover:text-blue-400 transition">PowerShell Setup</a></li>
-            <li><a href="#quickstart" class="hover:text-brand-blue dark:hover:text-blue-400 transition">Bash Setup</a></li>
-            <li><a href="#faq" class="hover:text-brand-blue dark:hover:text-blue-400 transition">FAQ & Security</a></li>
-            <li><a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="hover:text-brand-blue dark:hover:text-blue-400 transition">GitHub Repository</a></li>
-          </ul>
-        </div>
-        <div class="space-y-2">
-          <div class="font-serif text-sm font-bold text-ink dark:text-white">Technology Stack</div>
-          <ul class="space-y-1.5 text-ink-muted dark:text-slate-400 text-[11px]">
-            <li>Python 3.12 · FastAPI</li>
-            <li>Tree-sitter · Radon · Bandit</li>
-            <li>ChromaDB · SQLite</li>
-            <li>Gemini 2.5 · Groq Llama 3.3</li>
-          </ul>
-        </div>
+      <div class="flex items-center space-x-6">
+        <a href="/app" class="text-brand-blue dark:text-blue-400 hover:underline">Launch Console</a>
+        <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="hover:text-ink dark:hover:text-white transition">GitHub Repository</a>
       </div>
-
-      <!-- Copyright & Disclaimer -->
-      <div class="pt-6 border-t border-border-subtle dark:border-[#1F2430] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-[11px] text-ink-muted dark:text-slate-500 font-mono">
-        <div>
-          Licensed under <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="underline hover:text-ink dark:hover:text-white">MIT License</a>. Open source project.
-        </div>
-        <div>
-          Human-governed code review · Zero unreviewed merges
-        </div>
-      </div>
-
     </div>
   </footer>
 
-  <!-- ==================== INTERACTIVE SCRIPTS ==================== -->
+  <!-- ==================== ANIMATION JAVASCRIPT ==================== -->
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      lucide.createIcons();
-    });
+    // 6 Real Stages of the Agent Workflow
+    const stages = [
+      {
+        num: "01",
+        label: "Repository",
+        engine: "Workspace Initializer",
+        title: "Point to Your Codebase",
+        desc: "You enter your local project folder path or any public Git URL into the console. The agent maps the directory tree and initializes a sandboxed workspace without modifying your active branch.",
+        safety: "The repository remains read-only during initial setup. No files are moved or changed.",
+        filename: "01_workspace_init.json",
+        code: `{
+  "action": "initialize_workspace",
+  "target_path": "./my-project",
+  "git_branch": "main",
+  "files_discovered": 64,
+  "status": "SANDBOX_READY"
+}`
+      },
+      {
+        num: "02",
+        label: "Scanner",
+        engine: "agents/scanner.py",
+        title: "Scan with Multi-Engine AST Tools",
+        desc: "The agent parses your code using Tree-sitter for syntax analysis, Radon for cyclomatic complexity, Vulture for unused functions, and Bandit for Python security issues.",
+        safety: "Runs 100% locally on your machine. No source code or tokens are sent to any cloud server.",
+        filename: "02_ast_scanner.log",
+        code: `$ python -m agents.scanner
+[Scanner] Indexing AST nodes via Tree-sitter...
+[Scanner] Radon: 3 high-complexity functions detected
+[Scanner] Bandit: 1 insecure MD5 token hashing issue found
+[Scanner] Vulture: 2 dead utility functions identified`
+      },
+      {
+        num: "03",
+        label: "Planner",
+        engine: "core/graph.py + NetworkX",
+        title: "Map Dependency Call Graphs & Plan",
+        desc: "Before suggesting any changes, the agent builds an import and caller graph with NetworkX. It calculates the blast radius of any potential modification so downstream modules don't break.",
+        safety: "High-risk changes with multiple callers are automatically flagged for careful review.",
+        filename: "03_call_graph.json",
+        code: `{
+  "issue": "BANDIT_B303",
+  "file": "auth/hasher.py",
+  "affected_callers": ["api/routes.py", "auth/tokens.py"],
+  "blast_radius_score": 0.14,
+  "plan_priority": "P1_SECURITY"
+}`
+      },
+      {
+        num: "04",
+        label: "Coder",
+        engine: "core/patcher.py (LibCST)",
+        title: "Generate Precise Code Patches",
+        desc: "The Coder agent generates targeted fixes. Instead of guessing text replacements, it uses LibCST to replace specific AST syntax nodes on an isolated 'agent-fix-*' candidate branch.",
+        safety: "All changes happen on isolated Git branches. Your main branch is completely untouched.",
+        filename: "04_ast_patch.diff",
+        code: `--- a/auth/hasher.py
++++ b/auth/hasher.py
+@@ -14,3 +14,3 @@
+-    # Insecure MD5 hash
+-    return hashlib.md5(token.encode()).hexdigest()
++    # Upgraded to SHA-256 with UTF-8 encoding
++    return hashlib.sha256(token.encode('utf-8')).hexdigest()`
+      },
+      {
+        num: "05",
+        label: "Reviewer",
+        engine: "agents/reviewer.py + Pytest",
+        title: "Automated Review & Test Verification",
+        desc: "The agent executes your test suite with pytest on the candidate branch. A secondary reviewer model critiques the diff to confirm that original caller contracts are preserved.",
+        safety: "If any tests fail or syntax errors arise, the candidate branch is immediately rolled back.",
+        filename: "05_verification.log",
+        code: `$ pytest tests/test_hasher.py
+====================== test session starts ======================
+tests/test_hasher.py::test_hash_token PASSED             [ 50%]
+tests/test_hasher.py::test_hash_reproducibility PASSED    [100%]
+====================== 2 passed in 0.12s ========================
+Reviewer: Caller signatures intact. Fix approved for human review.`
+      },
+      {
+        num: "06",
+        label: "Approval",
+        engine: "ui/static/index.html + memory/sqlite.py",
+        title: "You Inspect and Decide",
+        desc: "The candidate fix is presented in the developer console. You review the diff and click Approve or Reject. Your decision is saved in SQLite memory to guide future runs.",
+        safety: "Zero silent merges. Nothing is merged into your project without your explicit click.",
+        filename: "06_developer_decision.json",
+        code: `{
+  "developer_decision": "APPROVED",
+  "merged_to_branch": "agent-fix-token-hash",
+  "memory_recorded": true,
+  "sqlite_db": "data/memory.db",
+  "note": "Decision will guide future recommendations."
+}`
+      }
+    ];
+
+    let currentStageIndex = 0;
+    let isAutoPlaying = true;
+    let autoPlayTimer = null;
+    const AUTO_PLAY_INTERVAL = 4500; // 4.5 seconds per step
+
+    function renderStageTabs() {
+      const container = document.getElementById('step-pills-container');
+      container.innerHTML = stages.map((s, idx) => `
+        <button onclick="setStage(${idx})" class="step-pill ${idx === currentStageIndex ? 'active' : ''} text-xs font-mono font-medium px-3 py-1.5 rounded-full border border-border dark:border-[#21283B] bg-white dark:bg-[#10141D] text-ink dark:text-slate-300 hover:border-brand-blue transition flex items-center space-x-1.5 focus:outline-none">
+          <span class="font-bold text-[10px] opacity-70">${s.num}</span>
+          <span>${s.label}</span>
+        </button>
+      `).join('');
+    }
+
+    function updateStageDisplay() {
+      const stage = stages[currentStageIndex];
+
+      // Update text fields
+      document.getElementById('spot-badge').textContent = `Step ${stage.num} of 06`;
+      document.getElementById('spot-engine').textContent = stage.engine;
+      document.getElementById('spot-title').textContent = stage.title;
+      document.getElementById('spot-desc').textContent = stage.desc;
+      document.getElementById('spot-safety').textContent = stage.safety;
+      document.getElementById('step-number-text').textContent = `Step ${currentStageIndex + 1} of 06`;
+
+      // Update terminal
+      document.getElementById('terminal-filename').textContent = stage.filename;
+      document.getElementById('terminal-output').textContent = stage.code;
+
+      // Update progress bar
+      const pct = ((currentStageIndex + 1) / stages.length) * 100;
+      document.getElementById('stepper-progress-fill').style.width = `${pct}%`;
+
+      // Update pill classes
+      const pills = document.querySelectorAll('.step-pill');
+      pills.forEach((p, idx) => {
+        if (idx === currentStageIndex) {
+          p.classList.add('active');
+        } else {
+          p.classList.remove('active');
+        }
+      });
+
+      // Trigger subtle animation
+      const card = document.getElementById('stage-card-wrapper');
+      card.classList.remove('fade-in');
+      void card.offsetWidth; // trigger reflow
+      card.classList.add('fade-in');
+
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+
+    function setStage(idx) {
+      currentStageIndex = idx;
+      updateStageDisplay();
+      resetAutoPlayTimer();
+    }
+
+    function changeStage(delta) {
+      currentStageIndex = (currentStageIndex + delta + stages.length) % stages.length;
+      updateStageDisplay();
+      resetAutoPlayTimer();
+    }
+
+    function toggleAutoPlay() {
+      isAutoPlaying = !isAutoPlaying;
+      const icon = document.getElementById('autoplay-icon');
+      const text = document.getElementById('autoplay-text');
+      if (isAutoPlaying) {
+        text.textContent = 'Pause Animation';
+        startAutoPlay();
+      } else {
+        text.textContent = 'Play Animation';
+        stopAutoPlay();
+      }
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+
+    function startAutoPlay() {
+      stopAutoPlay();
+      autoPlayTimer = setInterval(() => {
+        currentStageIndex = (currentStageIndex + 1) % stages.length;
+        updateStageDisplay();
+      }, AUTO_PLAY_INTERVAL);
+    }
+
+    function stopAutoPlay() {
+      if (autoPlayTimer) {
+        clearInterval(autoPlayTimer);
+        autoPlayTimer = null;
+      }
+    }
+
+    function resetAutoPlayTimer() {
+      if (isAutoPlaying) {
+        startAutoPlay();
+      }
+    }
 
     // Theme Toggle Functionality with LocalStorage persistence
     function toggleTheme() {
@@ -1134,216 +604,14 @@ source venv/bin/activate</code>
       }
     }
 
-    // Mobile menu toggle
-    const menuBtn = document.getElementById('mobile-menu-btn');
-    const mobileMenu = document.getElementById('mobile-menu');
-    if (menuBtn && mobileMenu) {
-      menuBtn.addEventListener('click', () => {
-        mobileMenu.classList.toggle('hidden');
-      });
-    }
-
-    // 6 Pipeline Stages Data
-    const stages = [
-      {
-        step: "Stage 01",
-        role: "Workspace Environment",
-        title: "Repository Workspace",
-        desc: "The entry point targets any local folder path or clones a remote Git repository into a protected sandbox. The system detects project structure and establishes working tree state.",
-        input: "Target repo path, Git tree, and environment configurations.",
-        output: "Normalized source file list, module boundary definitions, and Git HEAD commit reference.",
-        governance: "Locks repository state to prevent concurrent file conflicts and ensures all modifications happen on isolated candidate branches.",
-        telemetryLabel: "workspace_metadata.json",
-        payload: `{
-  "repository": "Codebase-Self-Evolving-Agent",
-  "branch": "main",
-  "head_commit": "50a9c6d",
-  "status": "ready_for_scan",
-  "file_count": 84,
-  "languages": ["Python", "HTML", "JavaScript"]
-}`
-      },
-      {
-        step: "Stage 02",
-        role: "Static & AST Intelligence",
-        title: "Scanner Agent",
-        desc: "Executes static analysis engines concurrently: Tree-sitter for AST parsing, Radon for cyclomatic complexity, Vulture for dead code, and Bandit for security vulnerabilities.",
-        input: "AST trees of all target files and dependency call maps.",
-        output: "Ranked list of detected findings (dead_code, complexity, security, style, missing_docs).",
-        governance: "Read-only static scanning. Does not alter filesystem contents during audit phases.",
-        telemetryLabel: "scanner_findings_sample.json",
-        payload: `{
-  "scanned_files": 42,
-  "findings_count": 14,
-  "top_issue": {
-    "type": "security",
-    "rule": "B303:md5_hash",
-    "file": "auth/hasher.py",
-    "line": 14,
-    "severity": "HIGH",
-    "description": "Use of insecure MD5 hash function"
-  }
-}`
-      },
-      {
-        step: "Stage 03",
-        role: "Dependency & Priority Engine",
-        title: "Planner Agent",
-        desc: "Ranks issues using multi-factor scoring (severity + complexity + impact score). Evaluates NetworkX dependency graphs to cluster non-conflicting fixes together.",
-        input: "Raw issue list and NetworkX module import and call graph.",
-        output: "Prioritized execution plan with independent fix clusters and conflict mitigation.",
-        governance: "Prevents circular remediation plans and isolates critical files from parallel edits.",
-        telemetryLabel: "planner_execution_graph.json",
-        payload: `{
-  "plan_id": "plan-7f89c2",
-  "total_planned": 8,
-  "clusters": [
-    {
-      "cluster_id": "cluster_security_auth",
-      "files": ["auth/hasher.py"],
-      "impact_score": 1.4,
-      "priority": "P0"
-    }
-  ]
-}`
-      },
-      {
-        step: "Stage 04",
-        role: "Generative Code Synthesis",
-        title: "Coder Agent",
-        desc: "Synthesizes surgical AST modifications using Gemini 2.5 Flash and libcst. Injects few-shot prompt patterns and checks past rejection memory in SQLite.",
-        input: "Issue record, AST slice of target function, and past rejection memory.",
-        output: "Candidate code replacement block with before-and-after line spans.",
-        governance: "Applies changes solely within memory or an isolated candidate branch, never directly to main.",
-        telemetryLabel: "coder_patch_candidate.json",
-        payload: `{
-  "target_file": "auth/hasher.py",
-  "patch_type": "ast_function_replacement",
-  "original_snippet": "return hashlib.md5(token.encode()).hexdigest()",
-  "proposed_snippet": "return hashlib.sha256(token.encode('utf-8')).hexdigest()",
-  "explanation": "Replaced deprecated MD5 hash with collision-resistant SHA-256."
-}`
-      },
-      {
-        step: "Stage 05",
-        role: "Dual-LLM Critique & Test Verification",
-        title: "Reviewer & Test Executor",
-        desc: "Groq Llama 3.3 70B performs strict peer review on the candidate diff. Simultaneously, the Test Executor runs pytest suites against the modified candidate branch.",
-        input: "Generated diff and project test suites.",
-        output: "Approval critique score, test execution pass/fail status, and self-heal diagnostic logs.",
-        governance: "If test suites fail, the self-healing loop triggers up to 2 repair iterations; otherwise, the fix is rolled back.",
-        telemetryLabel: "reviewer_validation_report.json",
-        payload: `{
-  "reviewer_model": "llama-3.3-70b-versatile",
-  "review_score": 94,
-  "critique": "Fix accurately resolves B303 vulnerability without altering function return types.",
-  "pytest_result": "passed",
-  "tests_ran": 4,
-  "failures": 0
-}`
-      },
-      {
-        step: "Stage 06",
-        role: "Developer Verification & Memory",
-        title: "Human Approval Step",
-        desc: "Presents the developer with full context: original finding, side-by-side diff, test outcomes, and critique rationale. The developer clicks Approve or Reject.",
-        input: "Candidate review bundle and developer decision.",
-        output: "Merged branch or rollback signal; feedback logged to SQLite memory.db.",
-        governance: "100% human-in-the-loop governance. Preserves developer authority over production code.",
-        telemetryLabel: "decision_audit_record.json",
-        payload: `{
-  "decision": "APPROVED",
-  "decision_by": "developer",
-  "target_branch": "agent-fix-auth-hasher-20261018",
-  "action": "merged_to_candidate",
-  "memory_recorded": true
-}`
-      }
-    ];
-
-    function selectStage(index) {
-      const cards = document.querySelectorAll('.stage-card');
-      cards.forEach((c, idx) => {
-        if (idx === index) {
-          c.classList.add('active');
-        } else {
-          c.classList.remove('active');
-        }
-      });
-
-      const data = stages[index];
-      if (!data) return;
-
-      document.getElementById('inspector-step-badge').innerText = data.step;
-      document.getElementById('inspector-role-badge').innerText = data.role;
-      document.getElementById('inspector-title').innerText = data.title;
-      document.getElementById('inspector-desc').innerText = data.desc;
-      document.getElementById('inspector-input').innerText = data.input;
-      document.getElementById('inspector-output').innerText = data.output;
-      document.getElementById('inspector-governance').innerText = data.governance;
-      document.getElementById('inspector-telemetry-label').innerText = data.telemetryLabel;
-      document.getElementById('inspector-payload').innerText = data.payload;
-    }
-
-    // OS Switcher for Quick Start
-    function switchOsTab(os) {
-      const btnWin = document.getElementById('tab-btn-win');
-      const btnNix = document.getElementById('tab-btn-nix');
-
-      const venvWin = document.getElementById('code-venv-win');
-      const venvNix = document.getElementById('code-venv-nix');
-
-      if (os === 'win') {
-        btnWin.className = 'px-3.5 py-1.5 rounded-full bg-white dark:bg-[#121622] text-brand-blue dark:text-blue-400 font-semibold border border-brand-blue dark:border-blue-500 shadow-sm focus:outline-none';
-        btnNix.className = 'px-3.5 py-1.5 rounded-full bg-neutral-100 dark:bg-[#121622] text-ink-secondary dark:text-slate-400 hover:text-ink dark:hover:text-white border border-neutral-200 dark:border-[#21283B] focus:outline-none';
-        venvWin.classList.remove('hidden');
-        venvNix.classList.add('hidden');
-      } else {
-        btnNix.className = 'px-3.5 py-1.5 rounded-full bg-white dark:bg-[#121622] text-brand-blue dark:text-blue-400 font-semibold border border-brand-blue dark:border-blue-500 shadow-sm focus:outline-none';
-        btnWin.className = 'px-3.5 py-1.5 rounded-full bg-neutral-100 dark:bg-[#121622] text-ink-secondary dark:text-slate-400 hover:text-ink dark:hover:text-white border border-neutral-200 dark:border-[#21283B] focus:outline-none';
-        venvNix.classList.remove('hidden');
-        venvWin.classList.add('hidden');
-      }
-    }
-
-    // Clipboard Copy Helper
-    function copySnippet(elementId) {
-      const el = document.getElementById(elementId);
-      if (!el) return;
-      const text = el.innerText;
-      navigator.clipboard.writeText(text).then(() => {
-        const labelMap = {
-          'code-clone': 'label-clone',
-          'code-venv': 'label-venv',
-          'code-install': 'label-install',
-          'code-run': 'label-run'
-        };
-        const labelId = labelMap[elementId];
-        if (labelId) {
-          const label = document.getElementById(labelId);
-          if (label) {
-            const original = label.innerText;
-            label.innerText = 'Copied!';
-            setTimeout(() => { label.innerText = original; }, 2000);
-          }
-        }
-      });
-    }
-
-    // Interactive Demo Review Actions
-    function triggerDemoAction(action) {
-      const toast = document.getElementById('demo-feedback-toast');
-      if (!toast) return;
-
-      toast.classList.remove('hidden');
-      if (action === 'approve') {
-        toast.className = 'px-5 py-3 font-mono text-xs border-t border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300';
-        toast.innerHTML = '<strong>[Demo Approved]</strong> In the actual product, this action creates a safe <code>agent-fix-*</code> branch commit, applies the AST change, and logs the approved strategy into SQLite <code>memory.db</code>.';
-      } else {
-        toast.className = 'px-5 py-3 font-mono text-xs border-t border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300';
-        toast.innerHTML = '<strong>[Demo Rejected]</strong> In the actual product, the working tree immediately rolls back to clean HEAD. A rejection record is logged to <code>memory.db</code> so the agent never repeats this proposal.';
-      }
-    }
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      renderStageTabs();
+      updateStageDisplay();
+      startAutoPlay();
+    });
   </script>
+
 </body>
 </html>
