@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Codebase Agent | Your Codebase. Understood. Improved. Evolving.</title>
-  <meta name="description" content="A simple, developer-governed guide to the Codebase Self-Evolving Agent: what it is, how it works, and how it safely analyzes and improves code.">
+  <title>Codebase Agent · Your Codebase. Understood. Improved. Evolving.</title>
+  <meta name="description" content="A simple, developer-governed guide to the Codebase Self-Evolving Agent: what it is, how it works, and how it safely scans and improves code.">
 
   <!-- Local Tailwind CSS & Lucide Icons -->
   <script src="/static/tailwind.js"></script>
   <script src="/static/lucide.min.js"></script>
 
-  <!-- Typography: Playfair Display + Plus Jakarta Sans + JetBrains Mono -->
+  <!-- Typography: DM Sans (Rixel Headings & Sans) + Geist Mono (Rixel Code & Monospace) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <script>
     // Initialize Theme immediately to prevent flash
@@ -28,21 +28,39 @@
       theme: {
         extend: {
           colors: {
-            canvas: '#FBFBFB',
+            // Rixel Zinc Palette
+            canvas: '#FAFAFA',
             surface: '#FFFFFF',
-            'surface-subtle': '#F4F4F6',
-            border: '#E7E7EA',
-            'brand-blue': '#1D4ED8',
-            'brand-blue-hover': '#1E40AF',
+            'surface-nested': '#F4F4F5',
+            border: '#E4E4E7',
+            'border-subtle': '#EEEEF0',
+            primary: '#09090B',
+            'primary-foreground': '#FAFAFA',
+            'brand-blue': '#2563EB',
+            'brand-blue-hover': '#1D4ED8',
             'brand-blue-light': '#EFF6FF',
-            ink: '#0F172A',
-            'ink-secondary': '#475569',
-            'ink-muted': '#64748B'
+            ink: '#09090B',
+            'ink-secondary': '#52525B',
+            'ink-muted': '#71717A',
+            // Dark mode overrides
+            dark: {
+              canvas: '#09090B',
+              surface: '#111114',
+              'surface-nested': '#18181B',
+              border: '#27272A',
+              primary: '#FAFAFA',
+              'primary-foreground': '#09090B'
+            }
           },
           fontFamily: {
-            serif: ['Playfair Display', 'Georgia', 'serif'],
-            sans: ['Plus Jakarta Sans', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-            mono: ['JetBrains Mono', 'Menlo', 'Consolas', 'monospace']
+            heading: ['"DM Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+            sans: ['"DM Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['"Geist Mono"', 'JetBrains Mono', 'monospace']
+          },
+          letterSpacing: {
+            tighter: '-0.035em',
+            tight: '-0.02em',
+            normal: '-0.01em'
           }
         }
       }
@@ -51,166 +69,181 @@
 
   <style>
     body {
-      background-color: #FBFBFB;
-      color: #0F172A;
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #FAFAFA;
+      color: #09090B;
+      font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
       text-rendering: optimizeLegibility;
       -webkit-font-smoothing: antialiased;
-      transition: background-color 0.25s ease, color 0.25s ease;
+      transition: background-color 0.2s ease, color 0.2s ease;
     }
 
     .dark body {
-      background-color: #080808;
-      color: #F8FAFC;
+      background-color: #09090B;
+      color: #FAFAFA;
     }
 
+    /* Rixel subtle grid background overlay */
+    .bg-grid-pattern {
+      background-size: 32px 32px;
+      background-image: linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+    }
+    .dark .bg-grid-pattern {
+      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    }
+
+    /* Custom thin scrollbar */
     ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+      width: 5px;
+      height: 5px;
     }
     ::-webkit-scrollbar-thumb {
       background: #D4D4D8;
-      border-radius: 3px;
+      border-radius: 4px;
     }
     .dark ::-webkit-scrollbar-thumb {
       background: #27272A;
     }
 
-    /* Active stage tab pill styling */
+    /* Active step pill state (Rixel style) */
     .step-pill.active {
-      border-color: #1D4ED8;
+      border-color: #2563EB;
       background-color: #EFF6FF;
-      color: #1D4ED8;
-      box-shadow: 0 2px 8px rgba(29, 78, 216, 0.12);
+      color: #2563EB;
+      box-shadow: 0 1px 4px rgba(37, 99, 235, 0.12);
     }
     .dark .step-pill.active {
       border-color: #3B82F6;
-      background-color: #121A2E;
-      color: #60A5FA;
-      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+      background-color: #172554;
+      color: #93C5FD;
+      box-shadow: 0 1px 4px rgba(59, 130, 246, 0.2);
     }
 
-    /* Animated transition on stage card change */
-    .fade-in {
-      animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    /* Smooth animated card transition */
+    .fade-step {
+      animation: stepFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
+    @keyframes stepFade {
+      from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col bg-canvas dark:bg-[#080808] text-ink dark:text-slate-100 selection:bg-brand-blue selection:text-white transition-colors">
+<body class="min-h-screen flex flex-col selection:bg-brand-blue selection:text-white transition-colors">
 
-  <!-- ==================== CLEAN TOP NAVIGATION ==================== -->
-  <header class="sticky top-0 z-50 bg-white/90 dark:bg-[#090B10]/90 backdrop-blur-md border-b border-border dark:border-[#1F2430] transition-colors">
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+  <!-- ==================== RIXEL-STYLE FLOATING NAV ==================== -->
+  <header class="sticky top-0 z-50 pt-4 px-4 sm:px-6 transition-all">
+    <div class="max-w-4xl mx-auto h-14 px-4 sm:px-5 rounded-full border border-zinc-200/90 dark:border-zinc-800/90 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md shadow-xs flex items-center justify-between transition-colors">
       
-      <!-- Brand Logo -->
+      <!-- Brand Wordmark -->
       <a href="/" class="flex items-center space-x-2.5 group">
-        <div class="w-8 h-8 rounded-full bg-brand-blue flex items-center justify-center text-white shadow-xs transition transform group-hover:scale-105">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <div class="w-7 h-7 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center transition-transform group-hover:scale-105 shadow-xs">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
             <path d="m18 16 4-4-4-4"/>
             <path d="m6 8-4 4 4 4"/>
             <path d="m14.5 4-5 16"/>
           </svg>
         </div>
-        <div class="flex items-baseline space-x-1">
-          <span class="font-serif text-lg font-bold tracking-tight text-ink dark:text-white">Codebase Agent</span>
-          <span class="w-1.5 h-1.5 rounded-full bg-brand-blue inline-block"></span>
-        </div>
+        <span class="font-heading font-semibold text-sm tracking-tight text-zinc-900 dark:text-zinc-50">
+          Codebase Agent
+        </span>
       </a>
 
-      <!-- Quick Actions & Theme Switcher -->
-      <div class="flex items-center space-x-3">
+      <!-- Center Links -->
+      <nav class="hidden md:flex items-center space-x-6 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+        <a href="#what-is-this" class="hover:text-zinc-900 dark:hover:text-white transition">What is this?</a>
+        <a href="#how-it-works" class="hover:text-zinc-900 dark:hover:text-white transition">How it works</a>
+        <a href="#get-started" class="hover:text-zinc-900 dark:hover:text-white transition">Get Started</a>
+      </nav>
+
+      <!-- Right Actions: Theme Toggle + Launch Console Button -->
+      <div class="flex items-center space-x-2.5">
         <!-- Theme Toggle -->
-        <button onclick="toggleTheme()" class="p-2 rounded-full border border-border dark:border-[#2A3447] bg-white dark:bg-[#121622] text-ink-secondary dark:text-slate-300 hover:text-ink dark:hover:text-white transition flex items-center justify-center" aria-label="Toggle theme" title="Toggle Light/Dark Theme">
-          <i data-lucide="sun" class="w-4 h-4 hidden dark:block text-amber-400"></i>
-          <i data-lucide="moon" class="w-4 h-4 block dark:hidden text-slate-700"></i>
+        <button onclick="toggleTheme()" class="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-100/70 dark:bg-zinc-900/70 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition flex items-center justify-center" aria-label="Toggle Theme" title="Toggle Light/Dark Theme">
+          <i data-lucide="sun" class="w-3.5 h-3.5 hidden dark:block text-amber-400"></i>
+          <i data-lucide="moon" class="w-3.5 h-3.5 block dark:hidden text-zinc-700"></i>
         </button>
 
-        <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="hidden sm:flex text-ink-secondary dark:text-slate-400 hover:text-ink dark:hover:text-white text-xs font-mono font-medium px-3 py-1.5 transition items-center space-x-1.5">
-          <i data-lucide="github" class="w-4 h-4"></i>
-          <span>GitHub</span>
+        <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="hidden sm:inline-flex text-xs font-mono font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white px-2.5 py-1.5 transition">
+          GitHub
         </a>
 
-        <!-- Launch Console CTA -->
-        <a href="/app" class="bg-brand-blue hover:bg-brand-blue-hover text-white text-xs font-semibold px-4 py-2 rounded-full transition shadow-sm flex items-center space-x-1.5">
+        <!-- Launch Console CTA (Rixel Pill) -->
+        <a href="/app" class="h-8 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 px-4 text-xs font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition shadow-xs flex items-center space-x-1.5">
           <span>Launch Console</span>
-          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          <i data-lucide="arrow-right" class="w-3 h-3"></i>
         </a>
       </div>
 
     </div>
   </header>
 
-  <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
-  <main class="flex-grow max-w-5xl mx-auto px-4 sm:px-6 py-12 md:py-16 space-y-16">
+  <!-- ==================== MAIN CONTENT ==================== -->
+  <main class="flex-grow max-w-4xl mx-auto px-4 sm:px-6 py-12 md:py-16 space-y-20">
 
     <!-- ==================== WHAT IS THIS? (HERO) ==================== -->
-    <section class="text-center max-w-3xl mx-auto space-y-6">
+    <section id="what-is-this" class="text-center max-w-2xl mx-auto space-y-6 pt-4">
       
-      <!-- Pill Badge -->
-      <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-brand-blue-light dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 text-[11px] font-semibold text-brand-blue dark:text-blue-400">
-        <span class="w-1.5 h-1.5 rounded-full bg-brand-blue dark:bg-blue-400 animate-pulse"></span>
-        <span>A Simple Developer Guide</span>
+      <!-- Rixel Status Badge with Pulsing Dot -->
+      <div class="inline-flex items-center gap-2 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1 text-xs font-medium text-zinc-700 dark:text-zinc-300 shadow-xs">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="font-mono text-[11px]">Developer Guide · 100% Offline Core</span>
       </div>
 
-      <!-- Main Requested Headline -->
-      <h1 class="font-serif text-5xl sm:text-6xl font-normal tracking-tight text-ink dark:text-white leading-[1.08]">
+      <!-- Headline: "Your Codebase. Understood. Improved. Evolving." with Rixel Modern Sans -->
+      <h1 class="font-heading text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tighter text-zinc-950 dark:text-zinc-50 leading-[1.08] text-balance">
         Your Codebase.<br/>
-        <span class="italic font-normal text-brand-blue dark:text-blue-400">Understood. Improved. Evolving.</span>
+        <span class="text-brand-blue dark:text-blue-400">Understood. Improved. Evolving.</span>
       </h1>
 
-      <!-- Plain English "What is this?" Explanation -->
-      <div class="text-ink-secondary dark:text-slate-300 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto space-y-3">
-        <p>
-          <strong class="text-ink dark:text-white font-semibold">What is this project?</strong> It is an open-source development agent that inspects your software codebase, discovers bugs, dead code, and security vulnerabilities with local AST tools, proposes targeted fixes on isolated Git branches, and asks for your review before anything touches your code.
-        </p>
-      </div>
+      <!-- Plain English Explanation: What is this? -->
+      <p class="text-zinc-600 dark:text-zinc-400 text-base sm:text-lg leading-relaxed text-balance">
+        <strong class="text-zinc-900 dark:text-zinc-100 font-medium">What is this?</strong> An open-source tool that scans your codebase for technical debt and security oversights, maps dependency impact, generates verified fixes on isolated Git branches, and asks for your review before anything merges.
+      </p>
 
-      <!-- Action Buttons -->
-      <div class="flex flex-wrap justify-center items-center gap-4 pt-2">
-        <a href="/app" class="bg-brand-blue hover:bg-brand-blue-hover text-white text-sm font-semibold px-6 py-3 rounded-full transition shadow-md hover:shadow-lg flex items-center space-x-2">
+      <!-- CTA Buttons (Rixel Style) -->
+      <div class="flex flex-wrap justify-center items-center gap-3 pt-2">
+        <a href="/app" class="h-11 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 px-6 font-medium text-sm hover:bg-zinc-800 dark:hover:bg-zinc-200 transition shadow-sm flex items-center space-x-2">
           <span>Open Developer Console</span>
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </a>
-        <a href="#how-it-works" class="bg-surface-subtle dark:bg-[#121622] hover:bg-neutral-200/70 dark:hover:bg-[#181F30] text-ink dark:text-slate-200 text-sm font-medium px-5 py-3 rounded-full transition border border-border dark:border-[#21283B] flex items-center space-x-2">
+        <a href="#how-it-works" class="h-11 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 text-zinc-800 dark:text-zinc-200 px-5 font-medium text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition flex items-center space-x-2">
           <i data-lucide="play-circle" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
           <span>See How It Works</span>
         </a>
       </div>
 
-      <!-- 3 Real Guarantees (No fake statistics) -->
-      <div class="pt-8 border-t border-neutral-200/60 dark:border-[#1F2430] grid grid-cols-1 sm:grid-cols-3 gap-4 text-left font-sans">
-        <div class="p-3.5 rounded-2xl bg-white dark:bg-[#0E121B] border border-border dark:border-[#1F2430]">
-          <div class="font-mono text-xs font-bold text-ink dark:text-white flex items-center space-x-1.5">
-            <i data-lucide="shield-check" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
-            <span>100% Offline Core</span>
+      <!-- 3 Real Technical Guarantees -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-6 text-left">
+        <div class="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 shadow-xs space-y-1">
+          <div class="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center space-x-1.5">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-brand-blue dark:text-blue-400"></i>
+            <span>Local & Offline</span>
           </div>
-          <div class="text-[11px] text-ink-muted dark:text-slate-400 mt-1">
-            AST parsing, Radon complexity, and Bandit SAST run locally with zero API keys required.
-          </div>
+          <p class="text-xs text-zinc-500 dark:text-zinc-400 leading-normal">
+            Tree-sitter AST, Radon, and Bandit scans run locally without sending source code externally.
+          </p>
         </div>
 
-        <div class="p-3.5 rounded-2xl bg-white dark:bg-[#0E121B] border border-border dark:border-[#1F2430]">
-          <div class="font-mono text-xs font-bold text-ink dark:text-white flex items-center space-x-1.5">
-            <i data-lucide="git-branch" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
-            <span>Isolated Git Branches</span>
+        <div class="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 shadow-xs space-y-1">
+          <div class="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center space-x-1.5">
+            <i data-lucide="git-branch" class="w-3.5 h-3.5 text-brand-blue dark:text-blue-400"></i>
+            <span>Isolated Branches</span>
           </div>
-          <div class="text-[11px] text-ink-muted dark:text-slate-400 mt-1">
-            Fixes run on temporary <code class="text-brand-blue dark:text-blue-400">agent-fix-*</code> branches with automatic rollback on test failures.
-          </div>
+          <p class="text-xs text-zinc-500 dark:text-zinc-400 leading-normal">
+            Fixes run on temporary <code class="text-brand-blue dark:text-blue-400">agent-fix-*</code> branches with automatic test rollback.
+          </p>
         </div>
 
-        <div class="p-3.5 rounded-2xl bg-white dark:bg-[#0E121B] border border-border dark:border-[#1F2430]">
-          <div class="font-mono text-xs font-bold text-ink dark:text-white flex items-center space-x-1.5">
-            <i data-lucide="check-circle" class="w-4 h-4 text-brand-blue dark:text-blue-400"></i>
-            <span>Human-Governed</span>
+        <div class="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 shadow-xs space-y-1">
+          <div class="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center space-x-1.5">
+            <i data-lucide="user-check" class="w-3.5 h-3.5 text-brand-blue dark:text-blue-400"></i>
+            <span>You're in Control</span>
           </div>
-          <div class="text-[11px] text-ink-muted dark:text-slate-400 mt-1">
-            Zero silent merges. You review before-and-after diffs and click approve before anything is applied.
-          </div>
+          <p class="text-xs text-zinc-500 dark:text-zinc-400 leading-normal">
+            Zero silent merges. You inspect before-and-after diffs and click approve before anything applies.
+          </p>
         </div>
       </div>
 
@@ -219,76 +252,76 @@
     <!-- ==================== ANIMATED HOW IT WORKS ==================== -->
     <section id="how-it-works" class="space-y-6 scroll-mt-24">
       
-      <div class="text-center max-w-2xl mx-auto space-y-2">
-        <span class="font-mono text-xs text-brand-blue dark:text-blue-400 uppercase tracking-wider font-semibold">Interactive Walkthrough</span>
-        <h2 class="font-serif text-3xl sm:text-4xl font-normal text-ink dark:text-white">
-          How it works, <span class="italic text-brand-blue dark:text-blue-400">step by step.</span>
+      <div class="text-center max-w-xl mx-auto space-y-1.5">
+        <span class="font-mono text-xs text-brand-blue dark:text-blue-400 font-semibold uppercase tracking-wider">How It Works</span>
+        <h2 class="font-heading text-3xl sm:text-4xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+          From first scan to clean code.
         </h2>
-        <p class="text-xs sm:text-sm text-ink-secondary dark:text-slate-400">
-          Watch the automated workflow in action below. Click any step or pause the flow at any time.
+        <p class="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">
+          The flow advances automatically through each step. Click any pill to inspect it or pause the animation.
         </p>
       </div>
 
-      <!-- The Main Interactive Animated Card -->
-      <div class="bg-white dark:bg-[#0E121B] border border-border dark:border-[#1F2430] rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+      <!-- Rixel-Style Clean Interactive Bento Container -->
+      <div class="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-6 sm:p-8 shadow-sm space-y-6">
         
-        <!-- Controls Bar: Step Selection Tabs + Play/Pause Button -->
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-4 border-b border-border dark:border-[#1F2430]">
+        <!-- Controls Bar: Step Pills (01 to 06) + Play/Pause Button -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3.5 pb-4 border-b border-zinc-100 dark:border-zinc-800">
           
           <!-- Stepper Pills (01 to 06) -->
-          <div class="flex flex-wrap items-center justify-center gap-2" id="step-pills-container">
+          <div class="flex flex-wrap items-center justify-center gap-1.5" id="step-pills-container">
             <!-- Dynamically populated by JS -->
           </div>
 
           <!-- Play / Pause Button -->
-          <button id="autoplay-btn" onclick="toggleAutoPlay()" class="flex items-center space-x-1.5 text-xs font-mono px-3.5 py-1.5 rounded-full border border-border dark:border-[#21283B] bg-surface-subtle dark:bg-[#141824] text-ink dark:text-slate-300 hover:border-brand-blue transition flex-shrink-0">
-            <i data-lucide="pause" id="autoplay-icon" class="w-3.5 h-3.5 text-brand-blue"></i>
-            <span id="autoplay-text">Pause Animation</span>
+          <button id="autoplay-btn" onclick="toggleAutoPlay()" class="h-8 flex items-center space-x-1.5 text-xs font-mono px-3.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-600 transition flex-shrink-0">
+            <i data-lucide="pause" id="autoplay-icon" class="w-3 h-3 text-brand-blue"></i>
+            <span id="autoplay-text">Pause Flow</span>
           </button>
         </div>
 
-        <!-- Animated Stage Spotlight -->
-        <div id="stage-card-wrapper" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center fade-in">
+        <!-- Spotlight Stage Area -->
+        <div id="stage-card-wrapper" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center fade-step">
           
           <!-- Left: Explanatory Content -->
           <div class="lg:col-span-6 space-y-4">
-            <div class="flex items-center space-x-2.5">
-              <span id="spot-badge" class="font-mono text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/60 text-brand-blue dark:text-blue-400 font-bold border border-blue-200 dark:border-blue-900">
-                Step 01 of 06
+            <div class="flex items-center space-x-2">
+              <span id="spot-badge" class="font-mono text-xs px-2.5 py-0.5 rounded-full bg-brand-blue-light dark:bg-blue-950/70 text-brand-blue dark:text-blue-400 font-semibold border border-blue-200 dark:border-blue-900">
+                01 · SCAN
               </span>
-              <span id="spot-engine" class="font-mono text-xs text-ink-muted dark:text-slate-400">
-                Workspace Target
+              <span id="spot-engine" class="font-mono text-xs text-zinc-400">
+                Workspace Initializer
               </span>
             </div>
 
-            <h3 id="spot-title" class="font-serif text-2xl sm:text-3xl font-bold text-ink dark:text-white">
-              Connect Repository
+            <h3 id="spot-title" class="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+              Point to Your Codebase
             </h3>
 
-            <p id="spot-desc" class="text-sm text-ink-secondary dark:text-slate-300 leading-relaxed">
-              Enter your local folder path or any public GitHub URL into the developer console. The application initializes the working tree without modifying your primary branches.
+            <p id="spot-desc" class="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+              Enter your local folder path or a GitHub repository link in the console. The agent indexes your project files without touching existing branches.
             </p>
 
-            <div class="p-4 rounded-2xl bg-surface-subtle dark:bg-[#121622] border border-neutral-200/60 dark:border-[#1F2637] space-y-1.5 text-xs">
-              <div class="flex items-center space-x-1.5 font-mono text-ink-muted dark:text-slate-400">
-                <i data-lucide="shield" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></i>
-                <span class="font-bold text-ink dark:text-slate-200">How Safety Is Maintained:</span>
+            <div class="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs">
+              <div class="flex items-center space-x-1.5 font-mono text-zinc-700 dark:text-zinc-300 font-medium">
+                <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i>
+                <span>Safety Guarantee</span>
               </div>
-              <p id="spot-safety" class="text-ink-secondary dark:text-slate-400 font-sans leading-relaxed">
-                Repository state is opened in a sandboxed mode so your original commit tree remains untouched.
+              <p id="spot-safety" class="text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                Repository state is opened in read-only mode so no accidental file changes happen during workspace initialization.
               </p>
             </div>
           </div>
 
-          <!-- Right: Animated Terminal / Visual Simulation -->
+          <!-- Right: Rixel-Style Terminal / Visual Output -->
           <div class="lg:col-span-6">
-            <div class="bg-[#090B10] rounded-2xl p-5 border border-slate-800 shadow-inner font-mono text-xs space-y-3">
-              <div class="flex items-center justify-between pb-2 border-b border-slate-800 text-[11px] text-slate-500">
+            <div class="rounded-2xl border border-zinc-800 bg-[#09090B] p-4 font-mono text-xs shadow-inner space-y-3">
+              <div class="flex items-center justify-between pb-2 border-b border-zinc-800/80 text-[11px] text-zinc-400">
                 <div class="flex items-center space-x-2">
-                  <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
-                  <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
-                  <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
-                  <span class="ml-2 text-slate-400 font-medium" id="terminal-filename">step_01_repo.json</span>
+                  <span class="w-2.5 h-2.5 rounded-full bg-zinc-700"></span>
+                  <span class="w-2.5 h-2.5 rounded-full bg-zinc-700"></span>
+                  <span class="w-2.5 h-2.5 rounded-full bg-zinc-700"></span>
+                  <span class="ml-1 text-zinc-300 font-medium" id="terminal-filename">01_workspace.json</span>
                 </div>
                 <div class="flex items-center space-x-1.5 text-emerald-400 text-[10px]">
                   <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -296,11 +329,11 @@
                 </div>
               </div>
 
-              <!-- Animated Content Terminal -->
-              <pre id="terminal-output" class="text-[11px] leading-relaxed text-slate-300 overflow-x-auto min-h-[175px] p-3 bg-[#050608] rounded-xl border border-slate-900 font-mono"></pre>
+              <!-- Animated Content Terminal Output -->
+              <pre id="terminal-output" class="text-[11px] leading-relaxed text-zinc-300 overflow-x-auto min-h-[175px] p-3 bg-[#0C0C0E] rounded-xl border border-zinc-900 font-mono"></pre>
 
-              <!-- Animated Step Progress Bar -->
-              <div class="w-full bg-slate-800 rounded-full h-1 overflow-hidden mt-2">
+              <!-- Progress bar at bottom of card -->
+              <div class="w-full bg-zinc-800 rounded-full h-1 overflow-hidden mt-2">
                 <div id="stepper-progress-fill" class="bg-brand-blue h-1 transition-all duration-300" style="width: 16.66%;"></div>
               </div>
             </div>
@@ -308,20 +341,20 @@
 
         </div>
 
-        <!-- Stepper Bottom Navigation (Prev / Next Buttons) -->
-        <div class="flex items-center justify-between pt-4 border-t border-border dark:border-[#1F2430]">
-          <button onclick="changeStage(-1)" class="px-4 py-2 rounded-full border border-border dark:border-[#21283B] text-xs font-medium text-ink dark:text-slate-300 hover:border-brand-blue flex items-center space-x-1.5 transition">
-            <i data-lucide="chevron-left" class="w-4 h-4"></i>
-            <span>Previous Step</span>
+        <!-- Previous / Next Stepper Nav Buttons -->
+        <div class="flex items-center justify-between pt-4 border-t border-zinc-100 dark:border-zinc-800">
+          <button onclick="changeStage(-1)" class="h-8 px-3.5 rounded-full border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-600 flex items-center space-x-1.5 transition">
+            <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+            <span>Previous</span>
           </button>
           
-          <span class="text-xs font-mono text-ink-muted dark:text-slate-400" id="step-number-text">
+          <span class="text-xs font-mono text-zinc-500 dark:text-zinc-400" id="step-number-text">
             Step 1 of 6
           </span>
 
-          <button onclick="changeStage(1)" class="px-4 py-2 rounded-full bg-brand-blue hover:bg-brand-blue-hover text-white text-xs font-semibold flex items-center space-x-1.5 transition shadow-xs">
-            <span>Next Step</span>
-            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          <button onclick="changeStage(1)" class="h-8 px-4 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 text-xs font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 flex items-center space-x-1.5 transition shadow-xs">
+            <span>Next</span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
           </button>
         </div>
 
@@ -329,64 +362,68 @@
 
     </section>
 
-    <!-- ==================== SIMPLE GET STARTED SECTION ==================== -->
-    <section class="bg-surface-subtle dark:bg-[#10141F] border border-neutral-200/80 dark:border-[#1F2637] rounded-3xl p-6 sm:p-8 space-y-6">
+    <!-- ==================== GET STARTED (COMPACT RIXEL STYLE) ==================== -->
+    <section id="get-started" class="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-6 sm:p-8 space-y-6">
+      
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <span class="font-mono text-xs text-brand-blue dark:text-blue-400 uppercase tracking-wider font-semibold">Get Started</span>
-          <h2 class="font-serif text-2xl sm:text-3xl font-bold text-ink dark:text-white mt-1">
-            Try it on your code.
+          <span class="font-mono text-xs text-brand-blue dark:text-blue-400 uppercase tracking-wider font-semibold">Start In Seconds</span>
+          <h2 class="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50 mt-1">
+            Ready to inspect your code?
           </h2>
-          <p class="text-xs sm:text-sm text-ink-secondary dark:text-slate-400 mt-1">
+          <p class="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mt-1">
             Open the developer console or run the command line tool locally.
           </p>
         </div>
 
-        <a href="/app" class="bg-brand-blue hover:bg-brand-blue-hover text-white text-sm font-semibold px-6 py-3 rounded-full transition shadow-md hover:shadow-lg flex items-center justify-center space-x-2 flex-shrink-0">
-          <span>Launch Developer Console</span>
+        <a href="/app" class="h-11 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 px-6 font-medium text-sm hover:bg-zinc-800 dark:hover:bg-zinc-200 transition shadow-sm flex items-center justify-center space-x-2 flex-shrink-0">
+          <span>Launch Console (/app)</span>
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </a>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-        <div class="p-4 rounded-2xl bg-white dark:bg-[#0E121B] border border-border dark:border-[#1F2430] space-y-1">
-          <div class="text-xs font-mono font-bold text-ink dark:text-white flex items-center space-x-2">
-            <span class="w-5 h-5 rounded-full bg-brand-blue-light dark:bg-blue-950 text-brand-blue dark:text-blue-400 flex items-center justify-center text-[10px]">1</span>
-            <span>Web Console</span>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
+        <div class="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950 space-y-1">
+          <div class="text-xs font-mono font-semibold text-zinc-900 dark:text-zinc-100 flex items-center space-x-2">
+            <span class="w-5 h-5 rounded-full bg-brand-blue-light dark:bg-blue-950 text-brand-blue dark:text-blue-400 flex items-center justify-center text-[10px] font-bold">1</span>
+            <span>Interactive Web Console</span>
           </div>
-          <p class="text-xs text-ink-secondary dark:text-slate-400 pl-7">
-            Navigate to <a href="/app" class="text-brand-blue dark:text-blue-400 underline font-mono">/app</a> to scan your repository and review diffs interactively.
+          <p class="text-xs text-zinc-500 dark:text-zinc-400 pl-7 leading-normal">
+            Visit <a href="/app" class="text-brand-blue dark:text-blue-400 underline font-mono">/app</a> to scan repositories, trigger audits, and inspect side-by-side diffs.
           </p>
         </div>
-        <div class="p-4 rounded-2xl bg-white dark:bg-[#0E121B] border border-border dark:border-[#1F2430] space-y-1">
-          <div class="text-xs font-mono font-bold text-ink dark:text-white flex items-center space-x-2">
-            <span class="w-5 h-5 rounded-full bg-brand-blue-light dark:bg-blue-950 text-brand-blue dark:text-blue-400 flex items-center justify-center text-[10px]">2</span>
-            <span>CLI Terminal</span>
+
+        <div class="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950 space-y-1">
+          <div class="text-xs font-mono font-semibold text-zinc-900 dark:text-zinc-100 flex items-center space-x-2">
+            <span class="w-5 h-5 rounded-full bg-brand-blue-light dark:bg-blue-950 text-brand-blue dark:text-blue-400 flex items-center justify-center text-[10px] font-bold">2</span>
+            <span>Terminal CLI</span>
           </div>
-          <p class="text-xs text-ink-secondary dark:text-slate-400 pl-7 font-mono">
+          <p class="text-xs text-zinc-500 dark:text-zinc-400 pl-7 font-mono leading-normal">
             python main.py . --scan --plan
           </p>
         </div>
       </div>
+
     </section>
 
   </main>
 
-  <!-- ==================== SIMPLE CLEAN FOOTER ==================== -->
-  <footer class="mt-auto border-t border-border dark:border-[#1F2430] bg-white dark:bg-[#080808] py-8 text-center text-xs text-ink-muted dark:text-slate-500 font-mono transition-colors">
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+  <!-- ==================== RIXEL-STYLE MINIMAL FOOTER ==================== -->
+  <footer class="mt-auto border-t border-zinc-200 dark:border-zinc-800/80 py-8 text-xs text-zinc-500 font-mono transition-colors">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="flex items-center space-x-2">
-        <span class="font-serif text-sm font-bold text-ink dark:text-white">Codebase Agent</span>
-        <span>— Simple, developer-governed code intelligence.</span>
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span class="font-medium text-zinc-800 dark:text-zinc-200">Codebase Agent</span>
+        <span>— Human-governed, offline-capable code intelligence.</span>
       </div>
-      <div class="flex items-center space-x-6">
+      <div class="flex items-center space-x-5">
         <a href="/app" class="text-brand-blue dark:text-blue-400 hover:underline">Launch Console</a>
-        <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="hover:text-ink dark:hover:text-white transition">GitHub Repository</a>
+        <a href="https://github.com/jayeshtak/Codebase-Self-Evolving-Agent" target="_blank" rel="noopener noreferrer" class="hover:text-zinc-900 dark:hover:text-white transition">GitHub Repository</a>
       </div>
     </div>
   </footer>
 
-  <!-- ==================== ANIMATION JAVASCRIPT ==================== -->
+  <!-- ==================== ANIMATED STEPPER JAVASCRIPT ==================== -->
   <script>
     // 6 Real Stages of the Agent Workflow
     const stages = [
@@ -395,8 +432,8 @@
         label: "Repository",
         engine: "Workspace Initializer",
         title: "Point to Your Codebase",
-        desc: "You enter your local project folder path or any public Git URL into the console. The agent maps the directory tree and initializes a sandboxed workspace without modifying your active branch.",
-        safety: "The repository remains read-only during initial setup. No files are moved or changed.",
+        desc: "Enter your local project folder path or any public GitHub URL. The agent maps your directory structure and sets up an isolated workspace without modifying your active branches.",
+        safety: "Repository state is opened in read-only mode so no file changes can occur during initial setup.",
         filename: "01_workspace_init.json",
         code: `{
   "action": "initialize_workspace",
@@ -411,8 +448,8 @@
         label: "Scanner",
         engine: "agents/scanner.py",
         title: "Scan with Multi-Engine AST Tools",
-        desc: "The agent parses your code using Tree-sitter for syntax analysis, Radon for cyclomatic complexity, Vulture for unused functions, and Bandit for Python security issues.",
-        safety: "Runs 100% locally on your machine. No source code or tokens are sent to any cloud server.",
+        desc: "The agent parses your code using Tree-sitter for syntax analysis, Radon for cyclomatic complexity, Vulture for dead functions, and Bandit for Python security vulnerabilities.",
+        safety: "Runs 100% locally on your machine. No source code or tokens are ever uploaded to cloud servers.",
         filename: "02_ast_scanner.log",
         code: `$ python -m agents.scanner
 [Scanner] Indexing AST nodes via Tree-sitter...
@@ -424,9 +461,9 @@
         num: "03",
         label: "Planner",
         engine: "core/graph.py + NetworkX",
-        title: "Map Dependency Call Graphs & Plan",
-        desc: "Before suggesting any changes, the agent builds an import and caller graph with NetworkX. It calculates the blast radius of any potential modification so downstream modules don't break.",
-        safety: "High-risk changes with multiple callers are automatically flagged for careful review.",
+        title: "Map Call Graphs & Blast Radius",
+        desc: "Before suggesting changes, the agent builds an import and caller graph with NetworkX. It calculates the blast radius of any modification so downstream callers don't break.",
+        safety: "High-risk changes with multiple downstream callers are flagged with priority warnings.",
         filename: "03_call_graph.json",
         code: `{
   "issue": "BANDIT_B303",
@@ -440,9 +477,9 @@
         num: "04",
         label: "Coder",
         engine: "core/patcher.py (LibCST)",
-        title: "Generate Precise Code Patches",
+        title: "Generate Precise AST Patches",
         desc: "The Coder agent generates targeted fixes. Instead of guessing text replacements, it uses LibCST to replace specific AST syntax nodes on an isolated 'agent-fix-*' candidate branch.",
-        safety: "All changes happen on isolated Git branches. Your main branch is completely untouched.",
+        safety: "All changes happen on isolated Git branches. Your main branch remains completely untouched.",
         filename: "04_ast_patch.diff",
         code: `--- a/auth/hasher.py
 +++ b/auth/hasher.py
@@ -457,8 +494,8 @@
         label: "Reviewer",
         engine: "agents/reviewer.py + Pytest",
         title: "Automated Review & Test Verification",
-        desc: "The agent executes your test suite with pytest on the candidate branch. A secondary reviewer model critiques the diff to confirm that original caller contracts are preserved.",
-        safety: "If any tests fail or syntax errors arise, the candidate branch is immediately rolled back.",
+        desc: "The agent executes your test suite with pytest on the candidate branch. A secondary reviewer model verifies the diff to ensure original function contracts are preserved.",
+        safety: "If any tests fail or syntax errors are detected, the candidate branch is automatically rolled back.",
         filename: "05_verification.log",
         code: `$ pytest tests/test_hasher.py
 ====================== test session starts ======================
@@ -472,15 +509,15 @@ Reviewer: Caller signatures intact. Fix approved for human review.`
         label: "Approval",
         engine: "ui/static/index.html + memory/sqlite.py",
         title: "You Inspect and Decide",
-        desc: "The candidate fix is presented in the developer console. You review the diff and click Approve or Reject. Your decision is saved in SQLite memory to guide future runs.",
-        safety: "Zero silent merges. Nothing is merged into your project without your explicit click.",
+        desc: "The candidate fix is presented in your browser console. You inspect the diff and click Approve or Reject. Your decision is recorded in SQLite memory to guide future runs.",
+        safety: "Zero silent merges. Nothing is merged into your project without your direct approval click.",
         filename: "06_developer_decision.json",
         code: `{
   "developer_decision": "APPROVED",
   "merged_to_branch": "agent-fix-token-hash",
   "memory_recorded": true,
   "sqlite_db": "data/memory.db",
-  "note": "Decision will guide future recommendations."
+  "note": "Decision recorded to guide future runs."
 }`
       }
     ];
@@ -493,8 +530,8 @@ Reviewer: Caller signatures intact. Fix approved for human review.`
     function renderStageTabs() {
       const container = document.getElementById('step-pills-container');
       container.innerHTML = stages.map((s, idx) => `
-        <button onclick="setStage(${idx})" class="step-pill ${idx === currentStageIndex ? 'active' : ''} text-xs font-mono font-medium px-3 py-1.5 rounded-full border border-border dark:border-[#21283B] bg-white dark:bg-[#10141D] text-ink dark:text-slate-300 hover:border-brand-blue transition flex items-center space-x-1.5 focus:outline-none">
-          <span class="font-bold text-[10px] opacity-70">${s.num}</span>
+        <button onclick="setStage(${idx})" class="step-pill ${idx === currentStageIndex ? 'active' : ''} text-xs font-mono font-medium px-3 py-1 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-600 transition flex items-center space-x-1.5 focus:outline-none">
+          <span class="font-bold text-[10px] opacity-75">${s.num}</span>
           <span>${s.label}</span>
         </button>
       `).join('');
@@ -504,7 +541,7 @@ Reviewer: Caller signatures intact. Fix approved for human review.`
       const stage = stages[currentStageIndex];
 
       // Update text fields
-      document.getElementById('spot-badge').textContent = `Step ${stage.num} of 06`;
+      document.getElementById('spot-badge').textContent = `${stage.num} · ${stage.label.toUpperCase()}`;
       document.getElementById('spot-engine').textContent = stage.engine;
       document.getElementById('spot-title').textContent = stage.title;
       document.getElementById('spot-desc').textContent = stage.desc;
@@ -531,9 +568,9 @@ Reviewer: Caller signatures intact. Fix approved for human review.`
 
       // Trigger subtle animation
       const card = document.getElementById('stage-card-wrapper');
-      card.classList.remove('fade-in');
+      card.classList.remove('fade-step');
       void card.offsetWidth; // trigger reflow
-      card.classList.add('fade-in');
+      card.classList.add('fade-step');
 
       if (window.lucide) {
         lucide.createIcons();
@@ -554,13 +591,12 @@ Reviewer: Caller signatures intact. Fix approved for human review.`
 
     function toggleAutoPlay() {
       isAutoPlaying = !isAutoPlaying;
-      const icon = document.getElementById('autoplay-icon');
       const text = document.getElementById('autoplay-text');
       if (isAutoPlaying) {
-        text.textContent = 'Pause Animation';
+        text.textContent = 'Pause Flow';
         startAutoPlay();
       } else {
-        text.textContent = 'Play Animation';
+        text.textContent = 'Play Flow';
         stopAutoPlay();
       }
       if (window.lucide) {
